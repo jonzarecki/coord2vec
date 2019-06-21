@@ -1,0 +1,51 @@
+name: coord2vec
+channels:
+- conda-forge
+- defaults
+
+dependencies:
+# Core scientific python
+- numpy
+- matplotlib
+- python>=3.6
+- seaborn
+- tqdm
+- pip
+- scikit-learn
+
+# Deep Learning
+- pytorch
+- torchvision
+- cudatoolkit=9.0
+
+# Spatial packages
+- rasterstats
+- geopy
+- cartopy
+- geopandas
+- rasterio
+- contextily
+- pysal
+- pyproj
+- folium
+- gdal
+- libgdal
+- kealib
+- geocoder
+- geojson
+
+# Jupyter Environment
+- autopep8
+- notebook
+- ipython
+- jupyter_contrib_nbextensions
+- jupyterlab
+- nb_conda
+
+# tile2vec
+
+- pip:
+    - nbclean
+    - mapboxgl
+    - hydrofunctions
+    - imageio
