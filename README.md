@@ -1,2 +1,2 @@
-# coord2vec
+# Coord2Vec
 Code repository for Coord2Vec
