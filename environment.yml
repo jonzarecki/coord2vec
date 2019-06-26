@@ -42,10 +42,11 @@ dependencies:
 - jupyterlab
 - nb_conda
 
-# tile2vec
+# coord2vec
 
 - pip:
     - nbclean
     - mapboxgl
     - hydrofunctions
     - imageio
+    - geomancer
