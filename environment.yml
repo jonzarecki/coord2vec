@@ -33,6 +33,7 @@ dependencies:
 - kealib
 - geocoder
 - geojson
+- psycopg2
 
 # Jupyter Environment
 - autopep8
