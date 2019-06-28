@@ -20,15 +20,18 @@ cd $p
 
 
 # restart exited docker
-#docker start  `docker ps -q -l` # restart it in the background
-#docker attach `docker ps -q -l` # reattach the terminal & stdin
+#    docker start  `docker ps -q -l` # restart it in the background
+#    docker attach `docker ps -q -l` # reattach the terminal & stdin
 
-nano /etc/postgresql/10/main/postgresql.conf
-# change  listen_address='*'
 
-nano /etc/postgresql/10/main/pg_hba.conf
-# add  host    all             all             0.0.0.0/0            trust
-
-now you can write `psql -h localhost -U postgres -d gis -U postgres`
-and it will move to the correct postgres cmdline
-sudo /etc/init.d/postgresql restart
+############ now done in the dockerfile
+# Change docker to
+#    nano /etc/postgresql/10/main/postgresql.conf
+#    # change  listen_address='*'
+#
+#    nano /etc/postgresql/10/main/pg_hba.conf
+#    # add  host    all             all             0.0.0.0/0            trust
+#
+#    now you can write `psql -h localhost -U postgres -d gis -U postgres`
+#    and it will move to the correct postgres cmdline
+#    sudo /etc/init.d/postgresql restart

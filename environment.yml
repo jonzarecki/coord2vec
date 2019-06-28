@@ -43,8 +43,6 @@ dependencies:
 - jupyterlab
 - nb_conda
 
-# coord2vec
-
 - pip:
     - nbclean
     - mapboxgl
