@@ -1,12 +1,20 @@
 import psycopg2
 
-def connect_to_db():
-    # TODO: implement
-    conn = psycopg2.connect("dbname=gis user=renderer")
+import pandas as pd
+import pandas.io.sql as sqlio
+
+from psycopg2._psycopg import connection
+
+
+def connect_to_db() -> connection:
+    """
+    Build connection object for the postgres server
+    """
+    conn = psycopg2.connect(host='127.0.0.1', port=15432, database='gis', user='renderer')
     return conn
 
 
-def execute_query(query: str, conn, dispose_conn=False) -> list:
+def read_df(query: str, conn: connection, dispose_conn=False) -> pd.DataFrame:
     """
     Executes the query and fetches the results
     Args:
@@ -15,12 +23,11 @@ def execute_query(query: str, conn, dispose_conn=False) -> list:
         dispose_conn: Whether to close the connection after the query
 
     Returns:
-        The results of the query as a list
+        The results of the query as a DataFrame
     """
-    with conn.cursor() as cur:
-        res = cur.execute(query).fetchall()
+    res = sqlio.read_sql_query(query, conn)
 
     if dispose_conn:
-        dispose_conn.close()
+        conn.close()
 
     return res

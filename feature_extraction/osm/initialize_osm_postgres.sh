@@ -32,8 +32,5 @@ cd $p
 #    nano /etc/postgresql/10/main/pg_hba.conf
 #    # add  `host    all             all             0.0.0.0/0            trust`
 #
-#    now you can write `psql -h localhost -U postgres -d gis -U postgres`
+#    now you can write `psql -h 127.0.0.1 -p 15432 -d gis -U renderer`
 #    and it will move to the correct postgres cmdline
-#    sudo /etc/init.d/postgresql restart
-# Connect via
-# `psql -h 127.0.0.1 -p 15432 -d gis -U renderer`
