@@ -21,22 +21,25 @@ class Feature(ABC):
         self.apply_type = apply_type
 
     def apply_nearest_neighbour(self, geo: BaseGeometry, conn: connection) -> float:
+        geo_wkt = f"ST_Transform(ST_GeomFromText('{wkt.dumps(geo)}', 4326), 3857)"
         q = f"""
-        SELECT ST_Distance(t.geom, ST_GeomFromText('{wkt.dumps(geo)}', 4326)) as min_distance
-            FROM ({self.get_postgis_connection()}) t
-            ORDER BY ST_Distance(t.geom, ST_GeomFromText('{wkt.dumps(geo)}')) ASC
+        SELECT ST_Distance_Sphere(t.geom, {geo_wkt}) as dist
+            FROM ({self._build_postgres_query()}) t
+            ORDER BY dist ASC
             LIMIT 1;
         """
 
         df = get_df(q, conn, dispose_conn=True)
 
-        return df['min_distance'].iloc[0]
+        return df['dist'].iloc[0]
 
     def apply_number_of(self, geo: BaseGeometry, conn: connection, max_radius_meter: float) -> int:
+        geo_wkt = f"ST_Transform(ST_GeomFromText('{wkt.dumps(geo)}', 4326), 3857)"
+
         q = f"""
         SELECT count(*) as cnt
-            FROM ({self.get_postgis_connection()}) t
-            WHERE ST_Distance(t.geom, ST_GeomFromText('{wkt.dumps(geo)}')) <= {max_radius_meter};
+            FROM ({self._build_postgres_query()}) t
+            WHERE ST_DWithin(t.geom, {geo_wkt}, {max_radius_meter});
         """
 
         df = get_df(q, conn, dispose_conn=True)

@@ -5,7 +5,7 @@ SCHOOL = "amenity='school'"
 PLACE_OF_WORSHIP = "religion='christian' OR religion='jewish' OR religion='muslim'" \
                     " OR religion='buddhist' OR religion='hindu' OR religion='taoist'" \
                     " OR religion='shintoist' OR religion='sikh'"
-
+HOSPITAL = "amenity='hospital'"
 
 
 

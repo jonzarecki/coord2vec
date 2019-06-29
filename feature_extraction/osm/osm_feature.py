@@ -17,7 +17,7 @@ class OsmFeature(Feature):
 
     def _build_postgres_query(self) -> str:
         return f"""
-        select * from planet_osm_point
+        select way as geom from planet_osm_point
             where {self.filter_sql}
         """
 
