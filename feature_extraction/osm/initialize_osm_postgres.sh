@@ -15,7 +15,7 @@ if [[ ! -f ./data.osm.pbf ]]; then
 fi
 
 cdir=`pwd`
-docker run -e THREADS=24 -p 5432:5432 -v $cdir/data.osm.pbf:/data.osm.pbf -v openstreetmap-data:/var/lib/postgresql/10/main osm-postgis-server import
+docker run -e THREADS=24 -p 127.0.0.1:15432:5432 -v $cdir/data.osm.pbf:/data.osm.pbf -v openstreetmap-data:/var/lib/postgresql/10/main -td osm-postgis-server import
 cd $p
 
 
@@ -30,8 +30,10 @@ cd $p
 #    # change  listen_address='*'
 #
 #    nano /etc/postgresql/10/main/pg_hba.conf
-#    # add  host    all             all             0.0.0.0/0            trust
+#    # add  `host    all             all             0.0.0.0/0            trust`
 #
 #    now you can write `psql -h localhost -U postgres -d gis -U postgres`
 #    and it will move to the correct postgres cmdline
 #    sudo /etc/init.d/postgresql restart
+# Connect via
+# `psql -h 127.0.0.1 -p 15432 -d gis -U renderer`

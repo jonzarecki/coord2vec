@@ -90,11 +90,16 @@ USER root
 RUN apt-get install -y postgresql postgresql-contrib postgis postgresql-10-postgis-2.4
 USER renderer
 
-
 # Change conf files to make postgres accessible from the outside
-RUN echo 'add  host    all             all             0.0.0.0/0            trust' >> /etc/postgresql/10/main/pg_hba.conf
-COPY postgresql.conf /etc/postgresql/10/main/postgresql.conf
+USER root
+RUN echo 'host    all             all             0.0.0.0/0            trust' >> /etc/postgresql/10/main/pg_hba.conf
+RUN sed -i -e 's/localhost/*/g' /etc/postgresql/10/main/postgresql.conf
+RUN sed -i -e 's/#listen_addresses/listen_addresses/g' /etc/postgresql/10/main/postgresql.conf
+#COPY postgresql.conf /etc/postgresql/10/main/postgresql.conf
 
+
+
+USER renderer
 
 # Start running
 USER root

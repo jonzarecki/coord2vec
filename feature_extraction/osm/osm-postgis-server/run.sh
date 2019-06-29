@@ -23,5 +23,6 @@ if [ "$1" = "import" ]; then
     service postgresql start
 
     echo 'done'
+    tail -f /dev/null  # keeps the docker running after it's finished
 fi
 
