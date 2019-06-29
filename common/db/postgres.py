@@ -14,7 +14,7 @@ def connect_to_db() -> connection:
     return conn
 
 
-def read_df(query: str, conn: connection, dispose_conn=False) -> pd.DataFrame:
+def get_df(query: str, conn: connection, dispose_conn=False) -> pd.DataFrame:
     """
     Executes the query and fetches the results
     Args:
