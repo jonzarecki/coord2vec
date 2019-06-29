@@ -23,7 +23,7 @@ class Feature(ABC):
     def apply_nearest_neighbour(self, geo: BaseGeometry, conn: connection) -> float:
         geo_wkt = f"ST_Transform(ST_GeomFromText('{wkt.dumps(geo)}', 4326), 3857)"
         q = f"""
-        SELECT ST_Distance_Sphere(t.geom, {geo_wkt}) as dist
+        SELECT ST_Distance(t.geom, {geo_wkt}) as dist
             FROM ({self._build_postgres_query()}) t
             ORDER BY dist ASC
             LIMIT 1;
@@ -49,7 +49,7 @@ class Feature(ABC):
     @abstractmethod
     def get_postgis_connection(self) -> connection:
         """
-        Retrieves the correct connection ojbect in the correct db scheme
+        Retrieves the correct connection object in the correct db scheme
         Returns:
             The connection object
         """
