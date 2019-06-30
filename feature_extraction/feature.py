@@ -66,7 +66,7 @@ class Feature(ABC):
         pass
 
     def extract(self, gdf: GeoDataFrame) -> pd.Series:
-        with connect_to_db() as conn:
-            res = gdf.geometry.apply(lambda x: self.apply_func(geo=x, conn=conn))
-
+        conn = connect_to_db()
+        res = gdf.geometry.apply(lambda x: self.apply_func(geo=x, conn=conn))
+        conn.close()
         return res
