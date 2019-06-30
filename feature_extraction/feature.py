@@ -9,6 +9,18 @@ from shapely.geometry.base import BaseGeometry
 from common.db.postgres import get_df, connect_to_db, connection
 
 
+def geo2sql(geo: BaseGeometry) -> str:
+    """
+    Transforms $geo to the correct srid geometry sql statement
+    Args:
+        geo: The geometry we want to transform
+
+    Returns:
+        The query as a str
+    """
+    return f"ST_Transform(ST_GeomFromText('{wkt.dumps(geo)}', 4326), 3857)"
+
+
 class Feature(ABC):
     def __init__(self, apply_type: str, **kwargs):
         if apply_type == 'nearest_neighbour':
@@ -20,29 +32,29 @@ class Feature(ABC):
 
         self.apply_type = apply_type
 
-    def apply_nearest_neighbour(self, geo: BaseGeometry, conn: connection) -> float:
-        geo_wkt = f"ST_Transform(ST_GeomFromText('{wkt.dumps(geo)}', 4326), 3857)"
+
+    @staticmethod
+    def apply_nearest_neighbour(base_query: str, geo: BaseGeometry, conn: connection, **kwargs) -> float:
         q = f"""
-        SELECT ST_Distance(t.geom, {geo_wkt}) as dist
-            FROM ({self._build_postgres_query()}) t
+        SELECT ST_Distance(t.geom, {geo2sql(geo)}) as dist
+            FROM ({base_query}) t
             ORDER BY dist ASC
             LIMIT 1;
         """
 
-        df = get_df(q, conn, dispose_conn=True)
+        df = get_df(q, conn)
 
         return df['dist'].iloc[0]
 
-    def apply_number_of(self, geo: BaseGeometry, conn: connection, max_radius_meter: float) -> int:
-        geo_wkt = f"ST_Transform(ST_GeomFromText('{wkt.dumps(geo)}', 4326), 3857)"
-
+    @staticmethod
+    def apply_number_of(base_query: str, geo: BaseGeometry, conn: connection, max_radius_meter: float, **kwargs) -> int:
         q = f"""
         SELECT count(*) as cnt
-            FROM ({self._build_postgres_query()}) t
-            WHERE ST_DWithin(t.geom, {geo_wkt}, {max_radius_meter});
+            FROM ({base_query}) t
+            WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter});
         """
 
-        df = get_df(q, conn, dispose_conn=True)
+        df = get_df(q, conn)
 
         return df['cnt'].iloc[0]
 
@@ -67,6 +79,6 @@ class Feature(ABC):
 
     def extract(self, gdf: GeoDataFrame) -> pd.Series:
         conn = connect_to_db()
-        res = gdf.geometry.apply(lambda x: self.apply_func(geo=x, conn=conn))
+        res = gdf.geometry.apply(lambda x: self.apply_func(base_query=self._build_postgres_query(), geo=x, conn=conn))
         conn.close()
         return res
