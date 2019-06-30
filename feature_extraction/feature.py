@@ -23,13 +23,11 @@ def geo2sql(geo: BaseGeometry) -> str:
 
 class Feature(ABC):
     def __init__(self, apply_type: str, **kwargs):
-        if apply_type == 'nearest_neighbour':
-            self.apply_func = partial(self.apply_nearest_neighbour, **kwargs)
-        elif apply_type == 'number_of':
-            self.apply_func = partial(self.apply_number_of, **kwargs)
-        else:
-            raise AssertionError("apply_type does not match a function")
-
+        #  Classes that add apply functions should add them to the dictionary
+        self.apply_functions = {
+            'nearest_neighbour': partial(self.apply_nearest_neighbour, **kwargs),
+            'number_of': partial(self.apply_number_of, **kwargs)
+        }
         self.apply_type = apply_type
 
 
@@ -78,7 +76,10 @@ class Feature(ABC):
         pass
 
     def extract(self, gdf: GeoDataFrame) -> pd.Series:
+        assert self.apply_type in self.apply_functions, "apply_type does not match a function"
+
+        func = self.apply_functions[self.apply_type]
         conn = connect_to_db()
-        res = gdf.geometry.apply(lambda x: self.apply_func(base_query=self._build_postgres_query(), geo=x, conn=conn))
+        res = gdf.geometry.apply(lambda x: func(base_query=self._build_postgres_query(), geo=x, conn=conn))
         conn.close()
         return res
