@@ -4,20 +4,13 @@ from feature_extraction.feature import Feature
 
 class OsmFeature(Feature):
     """
-    This class filters objects from planet_osm_point.
+    This class filters objects from the osm postgres db.
     It filters different tags to build the different features
     """
-
-    def get_postgis_connection(self) -> connection:
-        return connect_to_db()
 
     def __init__(self, filter_sql: str, apply_type: str):
         super().__init__(apply_type)
         self.filter_sql = filter_sql
 
-    def _build_postgres_query(self) -> str:
-        return f"""
-        select way as geom from planet_osm_point
-            where {self.filter_sql}
-        """
-
+    def get_postgis_connection(self) -> connection:
+        return connect_to_db()
