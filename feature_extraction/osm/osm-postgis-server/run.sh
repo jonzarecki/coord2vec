@@ -1,5 +1,4 @@
-#!/bin/bash
-
+#!/bin/sh
 
 
 if [ "$1" = "import" ]; then
