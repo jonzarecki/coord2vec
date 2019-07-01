@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 p=`pwd`
-cd "${0%/*}"
+cd "${0%/*}/"
+echo `pwd`
 
 docker stop $(docker ps -aq) && docker rm $(docker ps -aq)
 docker volume rm openstreetmap-data

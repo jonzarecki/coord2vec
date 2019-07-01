@@ -13,6 +13,9 @@ MOTORWAY = "highway='motorway'"
 TRUNK = "highway='trunk'"
 PRIMARY = "highway='primary'"
 
+# smaller roads
+RESIDENTIAL_ROAD = "highway='residential'"
+
 # Polygons
 
 SCHOOL = "amenity='school'"

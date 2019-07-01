@@ -31,9 +31,9 @@ class PolygonMixin(Feature):
             The total length as float
         """
         q = f"""
-                SELECT SUM(ST_Area(t.geom)) as total_area
+                SELECT SUM(ST_Area(t.geom, true)) as total_area
                     FROM ({base_query}) t
-                    WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter});
+                    WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter}, true);
                 """
 
         df = get_df(q, conn)

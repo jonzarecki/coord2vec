@@ -18,7 +18,7 @@ def geo2sql(geo: BaseGeometry) -> str:
     Returns:
         The query as a str
     """
-    return f"ST_Transform(ST_GeomFromText('{wkt.dumps(geo)}', 4326), 3857)"
+    return f"ST_GeomFromText('{wkt.dumps(geo)}', 4326)"
 
 
 class Feature(ABC):
@@ -34,7 +34,7 @@ class Feature(ABC):
     @staticmethod
     def apply_nearest_neighbour(base_query: str, geo: BaseGeometry, conn: connection, **kwargs) -> float:
         q = f"""
-        SELECT ST_Distance(t.geom, {geo2sql(geo)}) as dist
+        SELECT ST_DistanceSpheroid(t.geom, {geo2sql(geo)}, 'SPHEROID["WGS 84",6378137,298.257223563]') as dist
             FROM ({base_query}) t
             ORDER BY dist ASC
             LIMIT 1;
@@ -49,7 +49,7 @@ class Feature(ABC):
         q = f"""
         SELECT count(*) as cnt
             FROM ({base_query}) t
-            WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter});
+            WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter}, true);
         """
 
         df = get_df(q, conn)
@@ -76,6 +76,14 @@ class Feature(ABC):
         pass
 
     def extract(self, gdf: GeoDataFrame) -> pd.Series:
+        """
+        Applies the feature on the gdf, returns the series afther the apply
+        Args:
+            gdf: The gdf we want to apply the feature on
+
+        Returns:
+            The return values as a Series
+        """
         assert self.apply_type in self.apply_functions, "apply_type does not match a function"
 
         func = self.apply_functions[self.apply_type]

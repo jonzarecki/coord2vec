@@ -1,7 +1,8 @@
+from feature_extraction.line_mixin import LineMixin
 from feature_extraction.osm.osm_feature import OsmFeature
 
 
-class OsmLineFeature(OsmFeature):
+class OsmLineFeature(OsmFeature, LineMixin):
     """
     This class filters objects from planet_osm_line.
     It filters different tags to build the different features
