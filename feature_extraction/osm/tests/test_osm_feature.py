@@ -34,9 +34,16 @@ class TestOsmFeatures(unittest.TestCase):
         res = hospital_area_feat.extract(self.gdf)
         self.assertEqual(1, res.iloc[0])
 
-    def test_residential_roads_near_bet_lewinstein(self):
+    def test_residential_roads_length_near_bet_lewinstein_only_tlalim(self):
         hospital_area_feat = OsmLineFeature(RESIDENTIAL_ROAD, 'length_of', max_radius_meter=10)
         res = hospital_area_feat.extract(self.hatlalim_gdf)
         self.assertAlmostEqual(res.iloc[0], 434, delta=1)
+
+    def test_residential_roads_number_near_bet_lewinstein_only_tlalim(self):
+        hospital_area_feat = OsmLineFeature(RESIDENTIAL_ROAD, 'number_of', max_radius_meter=10)
+        res = hospital_area_feat.extract(self.hatlalim_gdf)
+        self.assertEqual(res.iloc[0], 1)
+
+
 if __name__ == '__main__':
     unittest.main()

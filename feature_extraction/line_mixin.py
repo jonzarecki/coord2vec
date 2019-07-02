@@ -1,9 +1,8 @@
-from abc import ABC
 from functools import partial
 
 from shapely.geometry.base import BaseGeometry
-from common.db.postgres import connection, get_df
 
+from common.db.postgres import connection, get_df
 from feature_extraction.feature import Feature, geo2sql
 
 
