@@ -3,7 +3,7 @@ from functools import partial
 from shapely.geometry.base import BaseGeometry
 
 from common.db.postgres import connection, get_df
-from feature_extraction.feature import Feature, geo2sql
+from feature_extraction.feature import Feature, geo2sql, LENGTH_OF_line
 
 
 class LineMixin(Feature):
@@ -11,13 +11,14 @@ class LineMixin(Feature):
         super().__init__(apply_type, **kwargs)
 
         line_func = {
-            'length_of': partial(LineMixin.apply_total_length, **kwargs),
+            LENGTH_OF_line: partial(LineMixin.apply_total_length, **kwargs),
 
         }
         self.apply_functions.update(line_func)
 
     @staticmethod
-    def apply_total_length(base_query: str, geo: BaseGeometry, conn: connection, max_radius_meter: float, **kwargs) -> float:
+    def apply_total_length(base_query: str, geo: BaseGeometry, conn: connection, max_radius_meter: float,
+                           **kwargs) -> float:
         """
         Retrieves the total length of the line geometries within $max_radius_meter
         Args:

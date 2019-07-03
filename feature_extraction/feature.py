@@ -8,6 +8,17 @@ from shapely.geometry.base import BaseGeometry
 
 from common.db.postgres import get_df, connect_to_db, connection
 
+# Apply Types
+## All features
+NEAREST_NEIGHBOUR_all = 'nearest_neighbour'
+NUMBER_OF_all = 'number_of'
+
+## Polygon features
+AREA_OF_poly = 'area_of'
+
+## Line features
+LENGTH_OF_line = 'length_of'
+
 
 def geo2sql(geo: BaseGeometry) -> str:
     """
@@ -25,11 +36,10 @@ class Feature(ABC):
     def __init__(self, apply_type: str, **kwargs):
         #  Classes that add apply functions should add them to the dictionary
         self.apply_functions = {
-            'nearest_neighbour': partial(self.apply_nearest_neighbour, **kwargs),
-            'number_of': partial(self.apply_number_of, **kwargs)
+            NEAREST_NEIGHBOUR_all: partial(self.apply_nearest_neighbour, **kwargs),
+            NUMBER_OF_all: partial(self.apply_number_of, **kwargs)
         }
         self.apply_type = apply_type
-
 
     @staticmethod
     def apply_nearest_neighbour(base_query: str, geo: BaseGeometry, conn: connection, **kwargs) -> float:
