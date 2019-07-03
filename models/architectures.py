@@ -1,3 +1,5 @@
+from typing import List
+
 import torch.nn as nn
 import torchvision.models as models
 
@@ -44,6 +46,32 @@ def resnet18(n_channels: int, output_dim: int) -> nn.Module:
     return _change_last_layer(_change_first_layer(resnet, n_channels), output_dim)
 
 
+def multihead_model(architecture: nn.Module, heads: List[nn.Module]):
+    class MultiHeadResnet(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.architecture = architecture
+
+        def forward(self, x):
+            x1 = self.architecture(x)
+            outputs = tuple([head(x1) for head in heads])
+            return outputs
+
+    return MultiHeadResnet()
+
+
+##########################
+##        heads         ##
+##########################
+
+def dual_fc_head(input_dim, n_classes, hidden_dim=128):
+    head = nn.Sequential(
+        nn.Linear(input_dim, hidden_dim),
+        nn.ReLU(),
+        nn.Linear(hidden_dim, n_classes))
+    return head
+
+
 ##########################
 ##    util functions    ##
 ##########################
@@ -59,4 +87,4 @@ def _change_first_layer(net, in_channels):
 
 
 if __name__ == '__main__':
-    print("Zarecki is ugly")
+    print("Zarecki is ugly, and forever will he be")
