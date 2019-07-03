@@ -48,4 +48,4 @@ dependencies:
     - mapboxgl
     - hydrofunctions
     - imageio
-    - geomancer
+    - staticmap
