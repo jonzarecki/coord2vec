@@ -49,3 +49,4 @@ dependencies:
     - hydrofunctions
     - imageio
     - geomancer
+    - staticmap
