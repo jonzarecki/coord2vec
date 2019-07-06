@@ -15,7 +15,7 @@ class TestOsmFeatures(unittest.TestCase):
     def setUpClass(cls):
         near_levinshtein_house = wkt.loads('POINT (34.8576548 32.1869038)')
         hatlalim_rd_raanana = wkt.loads('POINT (34.8583825 32.1874658)')
-        cls.gdf = GeoDataFrame(pd.DataFrame({'geom': [near_levinshtein_house]}), geometry='geom')
+        cls.gdf = GeoDataFrame(pd.DataFrame({'geom': [near_levinshtein_house, hatlalim_rd_raanana]}), geometry='geom')
         cls.hatlalim_gdf = GeoDataFrame(pd.DataFrame({'geom': [hatlalim_rd_raanana]}), geometry='geom')
 
     def test_beit_lewinstein_hospital_nearest_in_raanana(self):
@@ -36,13 +36,13 @@ class TestOsmFeatures(unittest.TestCase):
 
     def test_residential_roads_length_near_bet_lewinstein_only_tlalim(self):
         hospital_area_feat = OsmLineFeature(RESIDENTIAL_ROAD, 'length_of', max_radius_meter=10)
-        res = hospital_area_feat.extract(self.hatlalim_gdf)
-        self.assertAlmostEqual(res.iloc[0], 434, delta=1)
+        res = hospital_area_feat.extract(self.gdf)
+        self.assertAlmostEqual(res.iloc[1], 434, delta=1)
 
     def test_residential_roads_number_near_bet_lewinstein_only_tlalim(self):
         hospital_area_feat = OsmLineFeature(RESIDENTIAL_ROAD, 'number_of', max_radius_meter=10)
-        res = hospital_area_feat.extract(self.hatlalim_gdf)
-        self.assertEqual(res.iloc[0], 1)
+        res = hospital_area_feat.extract(self.gdf)
+        self.assertEqual(res.iloc[1], 1)
 
 
 if __name__ == '__main__':

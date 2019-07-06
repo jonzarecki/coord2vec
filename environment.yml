@@ -12,6 +12,7 @@ dependencies:
 - tqdm
 - pip
 - scikit-learn
+- scikit-image
 
 # Deep Learning
 - pytorch
