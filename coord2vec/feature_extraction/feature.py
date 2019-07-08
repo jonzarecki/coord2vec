@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import partial
+from typing import Tuple
 
 import pandas as pd
 from geopandas import GeoDataFrame
@@ -91,3 +92,18 @@ class Feature(ABC):
         res = gdf.geometry.apply(lambda x: func(base_query=self._build_postgres_query(), geo=x, conn=conn))
         conn.close()
         return res
+
+    def extract_single_coord(self, coordinate: Tuple[float, float]) -> float:
+        """
+        Applies the feature on the gdf, returns the series afther the apply
+        Args:
+            coordinate: (lat, lon) the coordinate to extract the feature on
+
+        Returns:
+            The return value
+        """
+        # TODO: test
+        assert self.apply_type in self.apply_functions, "apply_type does not match a function"
+        p = wkt.loads(f'POINT ({coordinate[1]} {coordinate[0]})')
+        gdf = GeoDataFrame(pd.DataFrame({'geom': [p]}), geometry='geom')
+        return self.extract(gdf).iloc[0]
