@@ -50,3 +50,4 @@ dependencies:
     - hydrofunctions
     - imageio
     - staticmap
+    - h2o
