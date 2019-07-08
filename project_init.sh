@@ -6,5 +6,5 @@ conda env create -f environment.yml
 conda activate coord2vec
 
 
-bash ./feature_extraction/osm/initialize_osm_postgres.sh
-bash ./image_extraction/init_tile_servers.sh
+bash ./coord2vec/feature_extraction/osm/initialize_osm_postgres.sh
+bash ./coord2vec/image_extraction/init_tile_servers.sh

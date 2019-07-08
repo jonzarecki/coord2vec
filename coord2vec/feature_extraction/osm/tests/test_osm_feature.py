@@ -4,9 +4,9 @@ import pandas as pd
 from geopandas import GeoDataFrame
 from shapely import wkt
 
-from feature_extraction.osm.osm_line_feature import OsmLineFeature
-from feature_extraction.osm.osm_polygon_feature import OsmPolygonFeature
-from feature_extraction.osm.osm_tag_filters import HOSPITAL, RESIDENTIAL_ROAD
+from coord2vec.feature_extraction.osm import OsmLineFeature
+from coord2vec.feature_extraction.osm.osm_polygon_feature import OsmPolygonFeature
+from coord2vec.feature_extraction.osm.osm_tag_filters import HOSPITAL, RESIDENTIAL_ROAD
 
 
 class TestOsmFeatures(unittest.TestCase):

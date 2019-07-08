@@ -1,4 +1,4 @@
-from feature_extraction.osm.osm_feature import OsmFeature
+from coord2vec.feature_extraction.osm import OsmFeature
 
 
 class OsmPointFeature(OsmFeature):

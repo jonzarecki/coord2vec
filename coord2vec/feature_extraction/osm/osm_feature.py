@@ -1,5 +1,5 @@
-from common.db.postgres import connect_to_db, connection
-from feature_extraction.feature import Feature
+from coord2vec.common.db.postgres import connect_to_db, connection
+from coord2vec.feature_extraction.feature import Feature
 
 
 class OsmFeature(Feature):

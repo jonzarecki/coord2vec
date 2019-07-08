@@ -6,7 +6,7 @@ from geopandas import GeoDataFrame
 from shapely import wkt
 from shapely.geometry.base import BaseGeometry
 
-from common.db.postgres import get_df, connect_to_db, connection
+from coord2vec.common.db.postgres import get_df, connect_to_db, connection
 
 
 def geo2sql(geo: BaseGeometry) -> str:

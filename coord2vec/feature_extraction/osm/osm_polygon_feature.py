@@ -1,5 +1,5 @@
-from feature_extraction.osm.osm_feature import OsmFeature
-from feature_extraction.polygon_mixin import PolygonMixin
+from coord2vec.feature_extraction.osm import OsmFeature
+from coord2vec.feature_extraction.polygon_mixin import PolygonMixin
 
 
 class OsmPolygonFeature(OsmFeature, PolygonMixin):
