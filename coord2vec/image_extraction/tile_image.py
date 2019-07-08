@@ -4,6 +4,8 @@ from PIL import Image
 from staticmap import StaticMap, Polygon
 from staticmap.staticmap import _lon_to_x, _lat_to_y
 
+from coord2vec import config
+
 im_width, im_height = (500, 500)
 
 
@@ -76,9 +78,9 @@ def render_multi_channel(static_maps: List[StaticMap], ext: list) -> np.array:
 
 
 if __name__ == '__main__':
-    m = StaticMap(500, 500, url_template='http://52.232.47.43:8080/tile/{z}/{x}/{y}.png')
+    m = StaticMap(500, 500, url_template=config.tile_server_dns_noport.format(p=8080))
     center = [34.7855, 32.1070]
-    s = generate_static_maps('http://52.232.47.43:{p}/tile/{z}/{x}/{y}.png', [8080, 8081])
+    s = generate_static_maps(config.tile_server_dns_noport, [8080, 8081])
     ext = [34.7855, 32.1070, 34.7855 + 0.001, 32.1070 + 0.001]
 
     image = render_single_tile(m, ext)
