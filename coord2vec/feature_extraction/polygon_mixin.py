@@ -3,7 +3,7 @@ from functools import partial
 from shapely.geometry.base import BaseGeometry
 
 from coord2vec.common.db.postgres import connection, get_df
-from coord2vec.feature_extraction.feature import Feature, geo2sql, AREA_OF_poly
+from coord2vec.feature_extraction.feature import Feature, geo2sql
 
 
 class PolygonMixin(Feature):
@@ -11,7 +11,7 @@ class PolygonMixin(Feature):
         super().__init__(apply_type, **kwargs)
 
         poly_func = {
-            AREA_OF_poly: partial(PolygonMixin.apply_area_of, **kwargs),
+            'area_of': partial(PolygonMixin.apply_area_of, **kwargs),
 
         }
         self.apply_functions.update(poly_func)

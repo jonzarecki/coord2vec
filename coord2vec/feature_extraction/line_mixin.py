@@ -3,7 +3,7 @@ from functools import partial
 from shapely.geometry.base import BaseGeometry
 
 from coord2vec.common.db.postgres import connection, get_df
-from coord2vec.feature_extraction.feature import Feature, geo2sql, LENGTH_OF_line
+from coord2vec.feature_extraction.feature import Feature, geo2sql
 
 
 class LineMixin(Feature):
@@ -11,7 +11,7 @@ class LineMixin(Feature):
         super().__init__(apply_type, **kwargs)
 
         line_func = {
-            LENGTH_OF_line: partial(LineMixin.apply_total_length, **kwargs),
+            'length_of': partial(LineMixin.apply_total_length, **kwargs),
 
         }
         self.apply_functions.update(line_func)
