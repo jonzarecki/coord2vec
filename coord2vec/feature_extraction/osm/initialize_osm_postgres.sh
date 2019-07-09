@@ -7,6 +7,8 @@ echo `pwd`
 docker stop $(docker ps -aq --filter ancestor=osm-postgis-server) && docker rm $(docker ps -aq --filter ancestor=osm-postgis-server)
 docker volume rm osm-postgis-data
 docker volume create osm-postgis-data
+sudo chmod 777 osm-postgis-server/run.sh
+
 docker build osm-postgis-server/ -t osm-postgis-server
 
 # Download Israel as sample if no data is provided

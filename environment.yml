@@ -12,6 +12,7 @@ dependencies:
 - tqdm
 - pip
 - scikit-learn
+- scikit-image
 
 # Deep Learning
 - pytorch
@@ -48,4 +49,5 @@ dependencies:
     - mapboxgl
     - hydrofunctions
     - imageio
-    - geomancer
+    - staticmap
+    - h2o

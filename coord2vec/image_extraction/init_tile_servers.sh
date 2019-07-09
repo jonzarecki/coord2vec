@@ -17,25 +17,20 @@ cdir=`pwd`
 #docker run -e THREADS=24 -p 127.0.0.1:8080:80 -v $cdir/data.osm.pbf:/data.osm.pbf \
 #            -v openstreetmap-data-tile:/var/lib/postgresql/10/main -td osm-tile-server import
 
-docker volume rm osm-data-tile-building
-docker volume create osm-data-tile-building
 
-docker volume rm osm-data-tile-road
-docker volume create osm-data-tile-road
+docker volume rm osm-data-tile
+docker volume create osm-data-tile
 
-docker run -v $cdir/data.osm.pbf:/data.osm.pbf -v osm-data-tile-building:/var/lib/postgresql/10/main \
-                osm-tile-server import &
-
-docker run -v $cdir/data.osm.pbf:/data.osm.pbf -v osm-data-tile-road:/var/lib/postgresql/10/main \
+docker run -v $cdir/data.osm.pbf:/data.osm.pbf -v osm-data-tile:/var/lib/postgresql/10/main \
                 osm-tile-server import &
 
 wait
 
-docker run -e THREADS=24 -p 8080:80 -v osm-data-tile-building:/var/lib/postgresql/10/main \
+docker run -e THREADS=24 -p 8080:80 -v osm-data-tile:/var/lib/postgresql/10/main \
                     -d osm-tile-server run project_building_only.mml &
 
 
-docker run -e THREADS=24 -p 8081:80 -v osm-data-tile-road:/var/lib/postgresql/10/main \
+docker run -e THREADS=24 -p 8081:80 -v osm-data-tile:/var/lib/postgresql/10/main \
                     -d osm-tile-server run project_road_only.mml &
 
 wait

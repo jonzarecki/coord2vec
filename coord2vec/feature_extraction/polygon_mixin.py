@@ -2,8 +2,8 @@ from functools import partial
 
 from shapely.geometry.base import BaseGeometry
 
-from common.db.postgres import connection, get_df
-from feature_extraction.feature import Feature, geo2sql, AREA_OF_poly
+from coord2vec.common.db.postgres import connection, get_df
+from coord2vec.feature_extraction.feature import Feature, geo2sql, AREA_OF_poly
 
 
 class PolygonMixin(Feature):

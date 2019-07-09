@@ -27,9 +27,7 @@ if [ "$1" = "run" ]; then
     echo "$2"
     p=`pwd`
     cd /home/renderer/src/
-    sudo -u renderer rm -rf /home/renderer/src/openstreetmap-carto/
 
-    sudo -u renderer git clone https://github.com/jonzarecki/openstreetmap-carto.git
     sudo -u renderer carto /home/renderer/src/openstreetmap-carto/"$2" > /home/renderer/src/openstreetmap-carto/mapnik.xml
     cd $p
 
@@ -38,10 +36,15 @@ if [ "$1" = "run" ]; then
     service apache2 restart
 
     # Configure renderd threads
-    sed -i -E "s/num_threads=[0-9]+/num_threads=${THREADS:-4}/g" /usr/local/etc/renderd.conf
+    cd /home/renderer/
+    mkdir /home/renderer/"$2"/
+    cp /usr/local/etc/renderd.conf /home/renderer/"$2"/
+    sudo -u renderer carto /home/renderer/src/openstreetmap-carto/"$2" > /home/renderer/"$2"/mapnik.xml
+
+    sed -i -E "s/num_threads=[0-9]+/num_threads=${THREADS:-4}/g" /home/renderer/"$2"/renderd.conf
 
     # Run
-    sudo -u renderer renderd -f -c /usr/local/etc/renderd.conf
+    sudo -u renderer renderd -f -c /home/renderer/"$2"/renderd.conf
 
     exit 0
 fi
