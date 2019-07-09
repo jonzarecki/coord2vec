@@ -7,6 +7,10 @@ import numpy as np
 
 
 class multihead_loss(_Loss):
+    """
+    multihead loss based on "https://arxiv.org/pdf/1705.07115.pdf"
+    """
+
     def __init__(self, losses: List[_Loss], weights: List[float] = None):
         super().__init__()
         assert (len(losses) == len(weights))
@@ -21,5 +25,6 @@ class multihead_loss(_Loss):
         assert (len(target) == self.n_heads)
 
         losses = [self.losses[i](input[i], target[i]) for i in range(self.n_heads)]
-        homosced_losses = [torch.exp(-self.log_vars[i]) * losses[i] + self.log_vars[i] for i in range(self.n_heads)]
+        homosced_losses = [self.weights[i] * torch.exp(-self.log_vars[i]) * losses[i] + self.log_vars[i]
+                           for i in range(self.n_heads)]
         return sum(homosced_losses)
