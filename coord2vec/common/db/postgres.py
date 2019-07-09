@@ -5,12 +5,14 @@ import pandas.io.sql as sqlio
 
 from psycopg2._psycopg import connection
 
+from coord2vec import config
+
 
 def connect_to_db() -> connection:
     """
     Build connection object for the postgres server
     """
-    conn = psycopg2.connect(host='127.0.0.1', port=15432, database='gis', user='renderer')
+    conn = psycopg2.connect(host=config.postgis_server_ip, port=config.postgis_port, database='gis', user='renderer')
     return conn
 
 

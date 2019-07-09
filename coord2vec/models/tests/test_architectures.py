@@ -1,7 +1,7 @@
 import torch.nn as nn
 from unittest import TestCase
 
-from coord2vec.models.utils import rgb_pretrained_resnet50, rgb_resnet50, resnet50, resnet18, \
+from coord2vec.models.architectures import rgb_pretrained_resnet50, rgb_resnet50, resnet50, resnet18, \
     multihead_model, dual_fc_head
 
 
