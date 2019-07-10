@@ -4,7 +4,7 @@ import pickle
 from coord2vec import config
 from coord2vec.feature_extraction.features_builders import example_features_builder
 from coord2vec.models.data_loading.tile_features_loader import get_files_from_path
-from coord2vec.models.data_loading.create_dataset_script import save_sampled_dataset
+from coord2vec.models.data_loading.create_dataset_script import sample_and_save_dataset
 
 
 class Coord2Featrues(BaseEstimator):
@@ -16,8 +16,8 @@ class Coord2Featrues(BaseEstimator):
 
     def fit(self, cache_dir, sample=False, entropy_threshold=0.1, coord_range=config.israel_range, sample_num=50000):
         if sample:
-            save_sampled_dataset(cache_dir, entropy_threshold=entropy_threshold, coord_range=coord_range,
-                                 sample_num=sample_num)
+            sample_and_save_dataset(cache_dir, entropy_threshold=entropy_threshold, coord_range=coord_range,
+                                    sample_num=sample_num)
 
         features = []
         pkl_paths = get_files_from_path(cache_dir)

@@ -26,8 +26,8 @@ class TestArchitectures(TestCase):
         n_channels = 10
         z_dim = 128
         model = resnet18(10, z_dim)
-        head1 = dual_fc_head(z_dim, n_classes=5)
-        head2 = dual_fc_head(z_dim, n_classes=10)
+        head1 = dual_fc_head(z_dim)
+        head2 = dual_fc_head(z_dim)
 
         model = multihead_model(model, [head1, head2])
         assert (isinstance(model, nn.Module))
