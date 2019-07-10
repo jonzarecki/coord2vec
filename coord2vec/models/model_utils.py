@@ -11,10 +11,9 @@ def extract_embeddings(model, coordinates: List[Tuple[float, float]]) -> np.arra
     # TODO: implement
     pass
 
-
 def get_pytorch_dataset(root_dir: str = CACHE_DIR):
     return TileFeaturesDataset(root_dir=root_dir)
 
 
-def get_data_loader():
-    return DataLoader(get_pytorch_dataset(), batch_size=4, shuffle=True, num_workers=4)
+def get_data_loader(cache_dir=CACHE_DIR):
+    return DataLoader(get_pytorch_dataset(cache_dir), batch_size=4, shuffle=True, num_workers=4)

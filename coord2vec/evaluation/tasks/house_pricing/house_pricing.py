@@ -1,12 +1,14 @@
 import os
 from typing import Callable, Tuple, Any
 
+from coord2vec import config
 from coord2vec.evaluation.tasks.task_handler import TaskHandler
 
 import numpy as np
 import pandas as pd
 
 from coord2vec.feature_extraction.features_builders import house_price_builder
+from coord2vec.models.baselines import *
 
 
 def get_random_embeddings(coords):
@@ -34,9 +36,19 @@ class HousePricing(TaskHandler):
 if __name__ == '__main__':
     hp = HousePricing()
     coords, feats, y = hp.get_data()
-    X = get_example_house_pricing_features(coords)
-    print("X,y ready, starting AutoML")
-    X_all = pd.concat([X, feats], axis=1)
-    hp.fit(X_all, y)
+
+    ############# get embeddings #############
+
+    # X = get_example_house_pricing_features(coords)
+    # print("X,y ready, starting AutoML")
+    # X_all = pd.concat([X, feats], axis=1)
+
+    coord2vec = Random()
+    coord2vec.fit(cache_dir=config.CACHE_DIR, sample=False)
+    # coord2vec.load_trained_model()
+    X = coord2vec.predict(coords)
+    ##########################################
+
+    hp.fit(X, y)
     scores = hp.scores()
     print(scores)
