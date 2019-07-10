@@ -13,21 +13,13 @@ from coord2vec.image_extraction.tile_image import render_multi_channel, generate
 
 ENTROPY_THRESHOLD = 0.1
 
-
-def feature_extractor(coord) -> np.array:
-    # placeholder for building more complicated features
-    building_count_feat = OsmPolygonFeature(BUILDING, 'number_of', max_radius_meter=50)
-    res = building_count_feat.extract_single_coord(coord)
-    return np.array([res])
-
-
 israel_range = [34.482724,31.492354,34.583301,31.585196]
 
 if __name__ == '__main__':
     os.makedirs(CACHE_DIR, exist_ok=True)
     sampled_coords = {}
     s = generate_static_maps(config.tile_server_dns_noport, [8080, 8081])
-    for i in tqdm(range(SAMPLE_NUM)):
+    for i in tqdm(range(SAMPLE_NUM), desc='rendering images', unit='image'):
 
         entropy, counter = 0, 0
         while entropy < ENTROPY_THRESHOLD:

@@ -12,3 +12,5 @@ bash ./coord2vec/image_extraction/init_tile_servers.sh
 sudo apt install openjdk-11-jdk -y
 java -version
 sudo update-alternatives --config java
+
+bash jupyter notebook --ip=0.0.0.0 --port=8200
