@@ -22,6 +22,7 @@ class multihead_loss(_Loss):
         assert (len(losses) == len(self.weights))
 
     def forward(self, input, target):
+        print(len(self.losses))
         assert (len(input) == self.n_heads)
         assert (len(target) == self.n_heads)
 

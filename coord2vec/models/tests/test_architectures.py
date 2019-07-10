@@ -22,7 +22,7 @@ class TestArchitectures(TestCase):
         model = resnet18(10, 10)
         assert (isinstance(model, nn.Module))
 
-    def test_multihead_resnet18(self):
+    def test_multihead_model(self):
         n_channels = 10
         z_dim = 128
         model = resnet18(10, z_dim)

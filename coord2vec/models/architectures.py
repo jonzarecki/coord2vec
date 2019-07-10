@@ -65,11 +65,11 @@ def multihead_model(architecture: nn.Module, heads: List[nn.Module]):
 ##        heads         ##
 ##########################
 
-def dual_fc_head(input_dim, n_classes, hidden_dim=128):
+def dual_fc_head(input_dim, hidden_dim=128):
     head = nn.Sequential(
         nn.Linear(input_dim, hidden_dim),
         nn.ReLU(),
-        nn.Linear(hidden_dim, n_classes))
+        nn.Linear(hidden_dim, 1))
     return head.float()
 
 
