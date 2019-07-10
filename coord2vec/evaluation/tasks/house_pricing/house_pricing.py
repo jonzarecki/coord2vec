@@ -47,3 +47,7 @@ if __name__ == '__main__':
     hp.fit(X, y)
     scores = hp.scores()
     print(scores)
+
+
+    # according to https://www.kaggle.com/gavinmandias/beijing-housing-prices-analysing-and-predicting
+    # final rmse can be 144.75553313583714

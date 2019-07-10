@@ -3,7 +3,9 @@ import unittest
 import pandas as pd
 from geopandas import GeoDataFrame
 from shapely import wkt
+from unittest.mock import patch
 
+from coord2vec.feature_extraction.feature import Feature
 from coord2vec.feature_extraction.osm import OsmLineFeature
 from coord2vec.feature_extraction.osm.osm_polygon_feature import OsmPolygonFeature
 from coord2vec.feature_extraction.osm.osm_tag_filters import HOSPITAL, RESIDENTIAL_ROAD
@@ -44,6 +46,14 @@ class TestOsmFeatures(unittest.TestCase):
         res = hospital_area_feat.extract(self.gdf)
         self.assertEqual(res.iloc[1], 1)
     # TODO: add test for the middle of nowhere returns zeros
+
+    # @patch('coord2vec.feature_extraction.osm.OsmLineFeature.extract', return_value='pumpkins')
+    # @patch.multiple(Feature, __abstractmethods__=set())
+    # def test_extract_single_coord_calls_gdf(self):
+    #     hospital_area_feat = Feature(RESIDENTIAL_ROAD, 'number_of', max_radius_meter=10)
+    #     res = hospital_area_feat.extract_single_coord((1,2))
+    #     self.assertEqual(res, 'pumpkins')
+
 
 if __name__ == '__main__':
     unittest.main()

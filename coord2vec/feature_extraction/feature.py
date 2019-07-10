@@ -106,7 +106,7 @@ class Feature(ABC):
 
     def extract_single_coord(self, coordinate: Tuple[float, float]) -> float:
         """
-        Applies the feature on the gdf, returns the series afther the apply
+        Applies the feature on the gdf, returns the series after the apply
         Args:
             coordinate: (lat, lon) the coordinate to extract the feature on
 
