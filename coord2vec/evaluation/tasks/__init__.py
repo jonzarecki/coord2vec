@@ -1,0 +1,1 @@
+from coord2vec.evaluation.tasks.house_pricing.house_pricing import HousePricing
