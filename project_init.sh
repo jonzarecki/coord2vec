@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-
+conda init
 conda --version  # make sure anaconda is installed
 conda env create -f environment.yml
 conda activate coord2vec
