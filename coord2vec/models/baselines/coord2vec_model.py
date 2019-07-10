@@ -11,9 +11,9 @@ from coord2vec import config
 from coord2vec.image_extraction.tile_image import generate_static_maps, render_multi_channel
 from coord2vec.image_extraction.tile_utils import build_tile_extent
 from coord2vec.models.architectures import resnet18, dual_fc_head, multihead_model
-from coord2vec.models.data_loading.create_dataset_script import save_sampled_dataset
+from coord2vec.models.data_loading.create_dataset_script import sample_and_save_dataset
+from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
 from coord2vec.models.losses import multihead_loss
-from coord2vec.models.model_utils import get_data_loader, get_pytorch_dataset
 
 
 class Coord2Vec(BaseEstimator):
@@ -38,7 +38,7 @@ class Coord2Vec(BaseEstimator):
             num_workers: int = 4,
 
             sample: bool = False,
-            coord_range: List[float, float, float, float] = config.israel_range,
+            coord_range: List[float] = config.israel_range,
             entropy_threshold: float = 0.1,
             sample_num: int = 50000):
         """
@@ -49,6 +49,7 @@ class Coord2Vec(BaseEstimator):
             num_workers: number of workers for the network
 
             # If you want to create data from scratch use these parameters:
+            # the new data will be saved in 'cache_dir'
             sample: assign True if you want to create new data
             coord_range: coordinates bounding box where to sample coords from
             entropy_threshold: entropy threshold to filter images by
@@ -60,9 +61,9 @@ class Coord2Vec(BaseEstimator):
 
         # create data loader
         if sample:
-            save_sampled_dataset(cache_dir, entropy_threshold=entropy_threshold, coord_range=coord_range,
-                                 sample_num=sample_num)
-        data_loader = DataLoader(get_pytorch_dataset(cache_dir), batch_size=batch_size, shuffle=True,
+            sample_and_save_dataset(cache_dir, entropy_threshold=entropy_threshold, coord_range=coord_range,
+                                    sample_num=sample_num)
+        data_loader = DataLoader(TileFeaturesDataset(cache_dir), batch_size=batch_size, shuffle=True,
                                  num_workers=num_workers)
 
         # extract some parameters from the data loader

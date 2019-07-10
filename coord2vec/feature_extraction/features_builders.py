@@ -34,8 +34,7 @@ class FeaturesBuilder:
         Returns:
             a pandas dataframe, with columns as features, and rows as the points in gdf
         """
-        features_gs_list = [feature.extract(gdf) for feature in tqdm(self.features, unit='feature',
-                                                                     desc='Calculating Features for Coords: ')]
+        features_gs_list = [feature.extract(gdf) for feature in self.features]
         features_df = pd.concat(features_gs_list, axis=1)
         features_df.columns = [feature.name for feature in self.features]
         return features_df

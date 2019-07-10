@@ -21,7 +21,7 @@ def feature_extractor(coord) -> np.array:
     return np.array([res])
 
 
-def save_sampled_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coord_range=config.israel_range, sample_num=SAMPLE_NUM):
+def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coord_range=config.israel_range, sample_num=SAMPLE_NUM):
     s = generate_static_maps(config.tile_server_dns_noport, [8080, 8081])
     os.makedirs(cache_dir, exist_ok=True)
 
@@ -40,11 +40,11 @@ def save_sampled_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coord_r
             counter += 1
             assert counter <= 5
 
-        feature_vec = example_features_builder.extract_coordinate(coord)
+        feature_vec = example_features_builder.extract_coordinates([coord])
 
         with open(f"{cache_dir}/{i}.pkl", 'wb') as f:
             pickle.dump((image, feature_vec), f)
 
 
 if __name__ == '__main__':
-    save_sampled_dataset(CACHE_DIR)
+    sample_and_save_dataset(CACHE_DIR)
