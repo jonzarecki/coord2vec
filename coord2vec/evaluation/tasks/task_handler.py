@@ -3,10 +3,14 @@ from abc import ABC, abstractmethod
 import h2o
 from h2o import H2OFrame
 from h2o.automl import H2OAutoML
-h2o.init()
+
 
 class TaskHandler(ABC):
+    """
+    Abstract class for evaluation tasks
+    """
     def __init__(self):
+        h2o.init()
         self.aml = H2OAutoML(max_models=20, seed=1)
 
     @abstractmethod

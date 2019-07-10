@@ -9,7 +9,10 @@ def get_embeddings(coords):
 
 
 class HousePricing(TaskHandler):
+    """
+    House pricing prediction task for house prices in Beijing.
 
+    """
     def get_data(self):
         df = pd.read_csv(r"Housing price in Beijing.csv", encoding="latin").iloc[:50]
         df['coord'] = df.apply(lambda row: tuple(row[['Lng', 'Lat']].values), axis=1)
