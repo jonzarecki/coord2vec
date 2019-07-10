@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Callable, Tuple
 
 import h2o
 from h2o import H2OFrame
@@ -14,7 +15,7 @@ class TaskHandler(ABC):
         self.aml = H2OAutoML(max_models=20, seed=1)
 
     @abstractmethod
-    def get_data(self):
+    def get_data(self) -> Tuple[list, list]:
         pass
 
     def fit(self, X, y):

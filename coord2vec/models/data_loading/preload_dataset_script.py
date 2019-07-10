@@ -21,7 +21,7 @@ def feature_extractor(coord) -> np.array:
     return np.array([res])
 
 
-israel_range = [29.593, 34.085, 32.857, 34.958]
+israel_range = [34.482724,31.492354,34.583301,31.585196]
 
 if __name__ == '__main__':
     os.makedirs(CACHE_DIR, exist_ok=True)

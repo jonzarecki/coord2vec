@@ -1,16 +1,17 @@
 from typing import List, Tuple
 import pandas as pd
+from future.moves import itertools
 from shapely import wkt
 
 from coord2vec.feature_extraction.feature import Feature, NEAREST_NEIGHBOUR_all, AREA_OF_poly, NUMBER_OF_all, \
     LENGTH_OF_line
 from coord2vec.feature_extraction.osm.osm_line_feature import OsmLineFeature
 from coord2vec.feature_extraction.osm.osm_polygon_feature import OsmPolygonFeature
-from coord2vec.feature_extraction.osm.osm_tag_filters import HOSPITAL, RESIDENTIAL_ROAD
+from coord2vec.feature_extraction.osm.osm_tag_filters import *
 from geopandas import GeoDataFrame
 
 
-class FeaturesBuilder():
+class FeaturesBuilder:
     """
     A data class for choosing the desired features
     """
@@ -21,7 +22,8 @@ class FeaturesBuilder():
         Args:
             features: a list of features (of class Feature)
         """
-        self.features = features
+        flatten = lambda l: list(itertools.chain.from_iterable([(i if isinstance(i, list) else [i]) for i in l]))
+        self.features = flatten(features)
 
     def extract(self, gdf: GeoDataFrame):
         """
@@ -37,7 +39,7 @@ class FeaturesBuilder():
         features_df.columns = [feature.name for feature in self.features]
         return features_df
 
-    def extract_coordinate(self, coord:Tuple[float,float]):
+    def extract_coordinate(self, coord: Tuple[float, float]):
         """
         extract the desired features on desired points
         Args:
@@ -51,6 +53,12 @@ class FeaturesBuilder():
         return self.extract(gdf)
 
 
+def poly_multi_feature(filter, name):
+    return [OsmPolygonFeature(filter, name=f'nearest_{name}', apply_type=NEAREST_NEIGHBOUR_all),
+            OsmPolygonFeature(filter, name=f'area_of_{name}_1km', apply_type=AREA_OF_poly, max_radius_meter=1000),
+            OsmPolygonFeature(filter, name=f'number_of_{name}_2km', apply_type=NUMBER_OF_all, max_radius_meter=2000)]
+
+
 example_features_builder = FeaturesBuilder(
     [OsmPolygonFeature(HOSPITAL, name='nearest_hospital', apply_type=NEAREST_NEIGHBOUR_all),
      OsmPolygonFeature(HOSPITAL, name='area_of_hospital_1km', apply_type=AREA_OF_poly, max_radius_meter=1000),
@@ -60,3 +68,16 @@ example_features_builder = FeaturesBuilder(
      OsmLineFeature(RESIDENTIAL_ROAD, name='number_of_residential_roads_10m', apply_type=NUMBER_OF_all,
                     max_radius_meter=10)
      ])
+
+house_price_builder = FeaturesBuilder(
+    [poly_multi_feature(BUILDING, 'building'),
+     OsmLineFeature(RESIDENTIAL_ROAD, name='length_of_residential_roads_500m', apply_type=LENGTH_OF_line,
+                    max_radius_meter=500),
+     OsmLineFeature(RESIDENTIAL_ROAD, name='number_of_residential_roads_500m', apply_type=NUMBER_OF_all,
+                    max_radius_meter=500),
+     OsmLineFeature(RESIDENTIAL_ROAD, name='nearest_residential_road', apply_type=NEAREST_NEIGHBOUR_all),
+     poly_multi_feature(AMENITY, 'amenity'),
+     poly_multi_feature(SHOP, 'shop'),
+     ]
+
+)

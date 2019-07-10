@@ -13,6 +13,7 @@ dependencies:
 - pip
 - scikit-learn
 - scikit-image
+- h2oai::h2o
 
 # Deep Learning
 - pytorch

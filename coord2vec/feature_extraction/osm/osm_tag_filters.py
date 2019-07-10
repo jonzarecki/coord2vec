@@ -24,3 +24,5 @@ PLACE_OF_WORSHIP = "religion='christian' OR religion='jewish' OR religion='musli
                     " OR religion='shintoist' OR religion='sikh'"
 HOSPITAL = "amenity='hospital'"  # 'building=hostpital' is weird and should not be included
 BUILDING = "building IS NOT NULL"
+AMENITY = "amenity IS NOT NULL"
+SHOP = "shop IS NOT NULL"
