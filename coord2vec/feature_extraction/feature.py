@@ -34,8 +34,9 @@ def geo2sql(geo: BaseGeometry) -> str:
 
 
 class Feature(ABC):
-    def __init__(self, apply_type: str, **kwargs):
+    def __init__(self, apply_type: str, name: str = 'anonymos_feature', **kwargs):
         #  Classes that add apply functions should add them to the dictionary
+        self.name = name
         self.apply_functions = {
             NEAREST_NEIGHBOUR_all: partial(self.apply_nearest_neighbour, **kwargs),
             NUMBER_OF_all: partial(self.apply_number_of, **kwargs)

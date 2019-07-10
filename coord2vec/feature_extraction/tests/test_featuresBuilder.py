@@ -3,7 +3,7 @@ from unittest import TestCase
 from geopandas import GeoDataFrame
 from shapely import wkt
 
-from coord2vec.feature_extraction.features_builders import baseline_builder
+from coord2vec.feature_extraction.features_builders import example_features_builder
 import pandas as pd
 
 
@@ -17,5 +17,6 @@ class TestFeaturesBuilder(TestCase):
         # cls.hatlalim_gdf = GeoDataFrame(pd.DataFrame({'geom': [hatlalim_rd_raanana]}), geometry='geom')
 
     def test_extract(self):
-        results = baseline_builder.extract(self.gdf)
-        self.assertEqual(len(results), len(baseline_builder.features))
+        results = example_features_builder.extract(self.gdf)
+        self.assertEqual(results.shape[0], self.gdf.shape[0])
+        self.assertEqual(results.shape[1], len(example_features_builder.features))
