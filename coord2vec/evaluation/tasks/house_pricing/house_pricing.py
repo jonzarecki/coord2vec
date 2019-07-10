@@ -11,26 +11,21 @@ from coord2vec.feature_extraction.features_builders import house_price_builder
 from coord2vec.models.baselines import *
 
 
-def get_random_embeddings(coords):
-    return np.random.rand(len(coords), 100)
-
-
-def get_example_house_pricing_features(coords):
-    return house_price_builder.extract_coordinates(coords)
-
 class HousePricing(TaskHandler):
     """
     House pricing prediction task for house prices in Beijing.
 
     """
+
     def get_data(self) -> Tuple[Any, Any, Any]:
-        df = pd.read_csv(os.path.join(os.path.dirname(__file__), r"Housing price in Beijing.csv"), encoding="latin").iloc[:50]
+        df = pd.read_csv(os.path.join(os.path.dirname(__file__), r"Housing price in Beijing.csv"),
+                         encoding="latin").iloc[:50]
         df['coord'] = df.apply(lambda row: tuple(row[['Lng', 'Lat']].values), axis=1)
 
-        return df['coord'].values, df[['square', 'livingRoom', 'drawingRoom', 'kitchen', \
-       'bathRoom', 'floor', 'buildingType', 'constructionTime',\
-       'renovationCondition', 'buildingStructure', 'ladderRatio', 'elevator',\
-       'fiveYearsProperty', 'subway', 'district', 'communityAverage']], df['price'].values
+        return df['coord'].values, df[['square', 'livingRoom', 'drawingRoom', 'kitchen', 'bathRoom', 'floor', 'buildingType', 'constructionTime',
+                                       'renovationCondition', 'buildingStructure', 'ladderRatio', 'elevator',
+                                       'fiveYearsProperty', 'subway', 'district', 'communityAverage']], df[
+                   'price'].values
 
 
 if __name__ == '__main__':
