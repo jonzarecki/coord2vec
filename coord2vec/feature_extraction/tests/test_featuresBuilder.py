@@ -20,3 +20,8 @@ class TestFeaturesBuilder(TestCase):
         results = example_features_builder.extract(self.gdf)
         self.assertEqual(results.shape[0], self.gdf.shape[0])
         self.assertEqual(results.shape[1], len(example_features_builder.features))
+
+    def test_extract_coordinates(self):
+        results = example_features_builder.extract_coordinate((34.8576548, 32.1869038))
+        self.assertEqual(results.shape[0], 1)
+        self.assertEqual(results.shape[1], len(example_features_builder.features))

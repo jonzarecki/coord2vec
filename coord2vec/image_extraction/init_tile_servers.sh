@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 p=`pwd`
 cd "${0%/*}/"
 echo `pwd`

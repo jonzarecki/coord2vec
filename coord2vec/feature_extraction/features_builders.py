@@ -1,5 +1,7 @@
-from typing import List
+from typing import List, Tuple
 import pandas as pd
+from shapely import wkt
+
 from coord2vec.feature_extraction.feature import Feature, NEAREST_NEIGHBOUR_all, AREA_OF_poly, NUMBER_OF_all, \
     LENGTH_OF_line
 from coord2vec.feature_extraction.osm.osm_line_feature import OsmLineFeature
@@ -34,6 +36,19 @@ class FeaturesBuilder():
         features_df = pd.concat(features_gs_list, axis=1)
         features_df.columns = [feature.name for feature in self.features]
         return features_df
+
+    def extract_coordinate(self, coord:Tuple[float,float]):
+        """
+        extract the desired features on desired points
+        Args:
+            coord: a GeoDataFrame with at least one column of the desired POINTS
+
+        Returns:
+            a single row pandas dataframe, with columns as features, and rows as the points in gdf
+        """
+        wkt_point = wkt.loads(f'POINT ({coord[0]} {coord[1]})')
+        gdf = GeoDataFrame(pd.DataFrame({'geom': [wkt_point]}), geometry='geom')
+        return self.extract(gdf)
 
 
 example_features_builder = FeaturesBuilder(

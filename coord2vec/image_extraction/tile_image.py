@@ -53,7 +53,8 @@ def generate_static_maps(url_port_template: str, ports: List[int]) -> List[Stati
     Returns:
         List of StaticMaps object initialized with the correct url_templates
     """
-    return [StaticMap(im_width, im_height, url_template=url_port_template.format(p=p, z='{z}', x='{x}', y='{y}'))
+    return [StaticMap(im_width, im_height, url_template=url_port_template.format(p=p, z='{z}', x='{x}', y='{y}'),
+                      delay_between_retries=15, tile_request_timeout=5)
             for p in ports]
 
 
