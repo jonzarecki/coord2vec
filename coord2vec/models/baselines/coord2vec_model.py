@@ -39,8 +39,8 @@ class Coord2Vec(BaseEstimator):
 
             sample: bool = False,
             coord_range: List[float] = config.israel_range,
-            entropy_threshold: float = 0.1,
-            sample_num: int = 50000):
+            entropy_threshold: float = config.ENTROPY_THRESHOLD,
+            sample_num: int = config.SAMPLE_NUM):
         """
         Args:
             cache_dir: directory path of the data
@@ -70,7 +70,7 @@ class Coord2Vec(BaseEstimator):
         n_channels = data_loader.dataset[0][0].shape[0]
         n_features = data_loader.dataset[0][1].shape[0]
 
-        # create losses of it was None
+        # create losses if it was None
         self.losses = [L1Loss for i in range(n_features)] if self.losses is None else self.losses
         assert len(self.losses) == n_features, "Number of losses must be equal to number of features"
 
@@ -95,11 +95,17 @@ class Coord2Vec(BaseEstimator):
         self.model = model
         return self.model
 
-    def load_trained_model(self):
-        #################### brus ######################
+    def load_trained_model(self, path: str):
+        """
+        load a trained model
+        Args:
+            path: path of the saved torch NN
 
-        ################################################
-        pass
+        Returns:
+            the trained model in 'path'
+        """
+        self.model = torch.load(path)
+        return self.model
 
     def predict(self, coords: List[Tuple[float, float]]):
         """

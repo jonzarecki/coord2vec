@@ -10,3 +10,4 @@ TEST_CACHE_DIR = os.path.join(os.path.dirname(__file__), "train_cache", "test_di
 SAMPLE_NUM = 100
 IMG_WIDTH, IMG_HEIGHT = (224, 224)
 israel_range = [34.482724,31.492354,34.583301,31.585196]
+ENTROPY_THRESHOLD = 0.1

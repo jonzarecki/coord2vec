@@ -20,7 +20,7 @@ class TestTileImage(unittest.TestCase):
     def test_rendering_multi_channel_image_works(self):
         s = generate_static_maps('http://52.232.47.43:{p}/tile/{z}/{x}/{y}.png', [8080, 8081])
         image = render_multi_channel(s, self.ext)
-        self.assertTupleEqual((500, 500, 2), image.shape)
+        self.assertTupleEqual((2, 224, 224), image.shape)
 
 
 if __name__ == '__main__':
