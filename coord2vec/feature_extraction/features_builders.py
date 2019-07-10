@@ -9,7 +9,7 @@ from coord2vec.feature_extraction.osm.osm_line_feature import OsmLineFeature
 from coord2vec.feature_extraction.osm.osm_polygon_feature import OsmPolygonFeature
 from coord2vec.feature_extraction.osm.osm_tag_filters import *
 from geopandas import GeoDataFrame
-
+from tqdm import tqdm
 
 class FeaturesBuilder:
     """
@@ -34,22 +34,23 @@ class FeaturesBuilder:
         Returns:
             a pandas dataframe, with columns as features, and rows as the points in gdf
         """
-        features_gs_list = [feature.extract(gdf) for feature in self.features]
+        features_gs_list = [feature.extract(gdf) for feature in tqdm(self.features, unit='feature',
+                                                                     desc='Calculating Features for Coords: ')]
         features_df = pd.concat(features_gs_list, axis=1)
         features_df.columns = [feature.name for feature in self.features]
         return features_df
 
-    def extract_coordinate(self, coord: Tuple[float, float]):
+    def extract_coordinates(self, coords: List[Tuple[float, float]]) -> pd.DataFrame:
         """
         extract the desired features on desired points
         Args:
-            coord: a GeoDataFrame with at least one column of the desired POINTS
+            coords: list of coordinates
 
         Returns:
-            a single row pandas dataframe, with columns as features, and rows as the points in gdf
+            a pandas dataframe, with columns as features, and rows as the points in gdf
         """
-        wkt_point = wkt.loads(f'POINT ({coord[0]} {coord[1]})')
-        gdf = GeoDataFrame(pd.DataFrame({'geom': [wkt_point]}), geometry='geom')
+        wkt_points = [wkt.loads(f'POINT ({coord[0]} {coord[1]})') for coord in coords]
+        gdf = GeoDataFrame(pd.DataFrame({'geom': wkt_points}), geometry='geom')
         return self.extract(gdf)
 
 

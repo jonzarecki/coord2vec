@@ -43,7 +43,7 @@ class TestOsmFeatures(unittest.TestCase):
         hospital_area_feat = OsmLineFeature(RESIDENTIAL_ROAD, 'number_of', max_radius_meter=10)
         res = hospital_area_feat.extract(self.gdf)
         self.assertEqual(res.iloc[1], 1)
-
+    # TODO: add test for the middle of nowhere returns zeros
 
 if __name__ == '__main__':
     unittest.main()

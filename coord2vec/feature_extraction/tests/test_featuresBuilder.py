@@ -22,6 +22,6 @@ class TestFeaturesBuilder(TestCase):
         self.assertEqual(results.shape[1], len(example_features_builder.features))
 
     def test_extract_coordinates(self):
-        results = example_features_builder.extract_coordinate((34.8576548, 32.1869038))
+        results = example_features_builder.extract_coordinates([(34.8576548, 32.1869038)])
         self.assertEqual(results.shape[0], 1)
         self.assertEqual(results.shape[1], len(example_features_builder.features))
