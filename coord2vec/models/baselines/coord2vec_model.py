@@ -3,9 +3,11 @@ from typing import List, Tuple
 import torch
 from sklearn.base import BaseEstimator
 from torch import optim
+from torch import nn
 from torch.nn.modules.loss import _Loss, L1Loss
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+import pickle
 
 from coord2vec import config
 from coord2vec.image_extraction.tile_image import generate_static_maps, render_multi_channel
@@ -91,6 +93,7 @@ class Coord2Vec(BaseEstimator):
                 loss = criterion(output, split_features_batch)
                 loss.backward()
                 optimizer.step()
+            self.save_trained_model(f"/home/morpheus/coord2vec/coord2vec/trained_model.pkl")
         self.model = model
         return self.model
 
@@ -103,8 +106,19 @@ class Coord2Vec(BaseEstimator):
         Returns:
             the trained model in 'path'
         """
-        self.model = torch.load(path)
-        return self.model
+        with open(path, 'rb') as f:
+            self.embedding_dim, self.losses, self.model = pickle.load(f)
+        # self.model = torch.load(path)
+        # return self.model
+
+    def save_trained_model(self, path: str):
+        """
+        save a trained model
+        Args:
+            path: path of the saved torch NN
+        """
+        with open(path, 'wb') as f:
+            pickle.dump((self.embedding_dim, self.losses, self.model), f)
 
     def predict(self, coords: List[Tuple[float, float]]):
         """
@@ -135,3 +149,8 @@ class Coord2Vec(BaseEstimator):
         heads = [dual_fc_head(self.embedding_dim) for i in range(n_heads)]
         model = multihead_model(model, heads)
         return model
+
+if __name__ == '__main__':
+    losses = [nn.L1Loss() for i in range(5)]
+    coord2vec = Coord2Vec(losses=losses, embedding_dim=16)
+    coord2vec.fit(f"/home/morpheus/coord2vec/coord2vec/train_cache")

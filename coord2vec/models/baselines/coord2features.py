@@ -22,7 +22,7 @@ class Coord2Featrues(BaseEstimator):
         features = []
         pkl_paths = get_files_from_path(cache_dir)
         for pkl_path in pkl_paths:
-            with open(pkl_path, 'wb') as f:
+            with open(pkl_path, 'rb') as f:
                 _, feature_vec = pickle.load(f)
             features.append(feature_vec)
 
