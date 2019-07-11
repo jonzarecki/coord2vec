@@ -87,7 +87,6 @@ class Coord2Vec(BaseEstimator):
                 split_features_batch = torch.split(features_batch, 1, dim=1)
 
                 optimizer.zero_grad()
-                print(len(split_features_batch))
                 output = model.forward(images_batch)[1]
                 loss = criterion(output, split_features_batch)
                 loss.backward()
