@@ -30,7 +30,7 @@ class Coord2Vec(BaseEstimator):
             losses: a list of losses to use. must be same length of the number of features
             embedding_dim: dimension of the embedding to create
         """
-
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.embedding_dim = embedding_dim
         self.losses = losses
 
@@ -78,6 +78,7 @@ class Coord2Vec(BaseEstimator):
 
         # create the model
         model = self._build_model(n_channels, n_features)
+        model = model.to(self.device)
         criterion = multihead_loss(self.losses)
         optimizer = optim.Adam(model.parameters())
 
@@ -85,6 +86,8 @@ class Coord2Vec(BaseEstimator):
         for epoch in tqdm(range(epochs), desc='Epochs', unit='epoch'):
             # Training
             for images_batch, features_batch in data_loader:
+                images_batch = images_batch.to(self.device)
+                features_batch = features_batch.to(self.device)
                 # split the features into the multi_heads:
                 split_features_batch = torch.split(features_batch, 1, dim=1)
 
@@ -93,8 +96,8 @@ class Coord2Vec(BaseEstimator):
                 loss = criterion(output, split_features_batch)
                 loss.backward()
                 optimizer.step()
+            self.model = model
             self.save_trained_model(f"/home/morpheus/coord2vec/coord2vec/trained_model.pkl")
-        self.model = model
         return self.model
 
     def load_trained_model(self, path: str):
@@ -108,6 +111,7 @@ class Coord2Vec(BaseEstimator):
         """
         with open(path, 'rb') as f:
             self.embedding_dim, self.losses, self.model = pickle.load(f)
+        self.model = self.model.to(self.device)
         # self.model = torch.load(path)
         # return self.model
 
@@ -117,6 +121,7 @@ class Coord2Vec(BaseEstimator):
         Args:
             path: path of the saved torch NN
         """
+        self.model = self.model.to('cpu')
         with open(path, 'wb') as f:
             pickle.dump((self.embedding_dim, self.losses, self.model), f)
 
@@ -151,6 +156,6 @@ class Coord2Vec(BaseEstimator):
         return model
 
 if __name__ == '__main__':
-    losses = [nn.L1Loss() for i in range(5)]
-    coord2vec = Coord2Vec(losses=losses, embedding_dim=16)
+    losses = [nn.L1Loss() for i in range(12)]
+    coord2vec = Coord2Vec(losses=losses, embedding_dim=128)
     coord2vec.fit(f"/home/morpheus/coord2vec/coord2vec/train_cache")

@@ -52,11 +52,17 @@ def multihead_model(architecture: nn.Module, heads: List[nn.Module]):
         def __init__(self):
             super().__init__()
             self.architecture = architecture
+            self.heads = heads
 
         def forward(self, x):
             x1 = self.architecture(x)
-            outputs = tuple([head(x1) for head in heads])
+            outputs = tuple([head(x1) for head in self.heads])
             return x1, outputs
+
+        def to(self, *args, **kwargs):
+            self.architecture = self.architecture.to(*args,**kwargs)
+            self.heads = [head.to(*args,**kwargs) for head in self.heads]
+            return self
 
     return MultiHeadResnet()
 
