@@ -1,6 +1,6 @@
 from typing import List, Tuple
 import pandas as pd
-from future.moves import itertools
+import itertools
 from shapely import wkt
 
 from coord2vec.feature_extraction.feature import Feature, NEAREST_NEIGHBOUR_all, AREA_OF_poly, NUMBER_OF_all, \

@@ -1,16 +1,27 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 conda init bash
-conda --version  # make sure anaconda is installed
-#conda env create -f environment.yml
-conda activate coord2vec
 
+if conda --version | grep -q "conda" ; then # make sure anaconda is installed
+#    eval "$(conda shell.bash hook)"
+#    conda env update -f environment.yml
+#    conda activate coord2vec
+    echo "Virtual env updated, activate using 'conda activate coord2vec'"
+else
+    exit 1
+fi
+
+if [[ -n `which java` ]] ; then
+    echo "java is installed"
+else
+    sudo apt install openjdk-11-jdk -y
+    sudo update-alternatives --config java
+fi
+
+# start osm servers
 sudo chmod 777 /var/run/docker.sock
-bash ./coord2vec/feature_extraction/osm/initialize_osm_postgres.sh
-bash ./coord2vec/image_extraction/init_tile_servers.sh
+./coord2vec/feature_extraction/osm/initialize_osm_postgres.sh
+./coord2vec/image_extraction/init_tile_servers.sh
 
-sudo apt install openjdk-11-jdk -y
-java -version
-sudo update-alternatives --config java
 
-bash jupyter notebook --ip=0.0.0.0 --port=8200
+jupyter notebook --ip=0.0.0.0 --port=8200

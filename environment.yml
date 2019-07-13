@@ -1,5 +1,7 @@
 name: coord2vec
 channels:
+- pytorch
+- h2oai
 - conda-forge
 - defaults
 
@@ -9,31 +11,30 @@ dependencies:
 - matplotlib
 - python>=3.6
 - seaborn
-- tqdm
 - pip
 - scikit-learn
 - scikit-image
-- h2oai::h2o
+- h2o  # install via conda install -c h2oai h2o
 
 # Deep Learning
-- pytorch
+- pytorch=1.1.0
 - torchvision
-- cudatoolkit=9.0
+- cudatoolkit
 
 # Spatial packages
-- rasterstats
+#- rasterstats
 - geopy
-- cartopy
+#- cartopy
 - geopandas
-- rasterio
-- contextily
-- pysal
+#- rasterio
+#- contextily
+#- pysal
 - pyproj
 - folium
 - gdal
 - libgdal
-- kealib
-- geocoder
+#- kealib
+#- geocoder
 - geojson
 - psycopg2
 
@@ -48,8 +49,7 @@ dependencies:
 
 - pip:
     - nbclean
-    - mapboxgl
-    - hydrofunctions
     - imageio
+    - tqdm
     - staticmap
     - pathos
