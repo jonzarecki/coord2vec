@@ -14,7 +14,7 @@ def parmap(f, X, nprocs=multiprocessing.cpu_count(), force_parallel=False, chunk
     # nprocs = min(nprocs, cn.max_procs)
     if nprocs != multiprocessing.cpu_count() and len(X) < nprocs * chunk_size:
         chunk_size = 1  # use chunk_size = 1 if there is enough procs for a batch size of 1
-    nprocs  = max(1, min(nprocs, len(X) / chunk_size))  # at least 1
+    nprocs  = int(max(1, min(nprocs, len(X) / chunk_size)))  # at least 1
     if len(X) < nprocs:
         if nprocs != multiprocessing.cpu_count(): print("parmap too much procs")
         nprocs = len(X)  # too much procs

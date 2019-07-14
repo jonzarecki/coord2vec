@@ -30,9 +30,12 @@ class PolygonMixin(Feature):
             The total length as float
         """
         q = f"""
-                SELECT SUM(ST_Area(t.geom, true)) as total_area
-                    FROM ({base_query}) t
-                    WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter}, true);
+            SELECT 
+                CASE WHEN COUNT(*) > 0 THEN 
+                    SUM(COALESCE (ST_Area(t.geom, true), 0.)) 
+                ELSE 0. END as total_area
+            FROM ({base_query}) t
+            WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter}, true);
                 """
 
         df = get_df(q, conn)

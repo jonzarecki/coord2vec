@@ -1,6 +1,6 @@
 #!/bin/bash
 
-conda init bash
+#conda init bash
 
 if conda --version | grep -q "conda" ; then # make sure anaconda is installed
 #    eval "$(conda shell.bash hook)"
@@ -20,8 +20,8 @@ fi
 
 # start osm servers
 sudo chmod 777 /var/run/docker.sock
-./coord2vec/feature_extraction/osm/initialize_osm_postgres.sh
-./coord2vec/image_extraction/init_tile_servers.sh
+bash ./coord2vec/feature_extraction/osm/initialize_osm_postgres.sh
+bash ./coord2vec/image_extraction/init_tile_servers.sh
 
 
 jupyter notebook --ip=0.0.0.0 --port=8200

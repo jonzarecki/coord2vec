@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from coord2vec import config
 from coord2vec.common.multiproc_util import parmap
-from coord2vec.config import CACHE_DIR, SAMPLE_NUM, ENTROPY_THRESHOLD
+from coord2vec.config import CACHE_DIR, SAMPLE_NUM, ENTROPY_THRESHOLD, HALF_TILE_LENGTH
 from coord2vec.feature_extraction.features_builders import example_features_builder, house_price_builder
 from coord2vec.feature_extraction.osm import OsmPolygonFeature
 from coord2vec.feature_extraction.osm.osm_tag_filters import BUILDING
@@ -20,25 +20,30 @@ def feature_extractor(coord) -> np.array:
     return np.array([res])
 
 
+def _get_image_entropy(image):
+    signal = image.flatten()
+    hist = np.histogram(signal, bins=256)[0]
+    probas = hist[hist > 0] / signal.size
+    entropy = -np.sum(probas * np.log2(probas), axis=0)
+    return entropy
+
+
 def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coord_range=config.israel_range,
-                            sample_num=SAMPLE_NUM):
+                            sample_num=SAMPLE_NUM, use_existing=True, feature_builder = example_features_builder):
     s = generate_static_maps(config.tile_server_dns_noport, [8080, 8081])
     os.makedirs(cache_dir, exist_ok=True)
 
     def foo(i):
+        if use_existing and os.path.exists(f"{cache_dir}/{i}.pkl"):
+            return
         entropy = 0
         while entropy < entropy_threshold:
             coord = sample_coordinate_in_range(*coord_range)
-            ext = build_tile_extent(coord, radius_in_meters=50)
-
+            ext = build_tile_extent(coord, radius_in_meters=HALF_TILE_LENGTH)
             image = render_multi_channel(s, ext)
+            entropy = _get_image_entropy(image)
 
-            signal = image.flatten()
-            hist = np.histogram(signal, bins=256)[0]
-            probas = hist[hist > 0] / signal.size
-            entropy = -np.sum(probas * np.log2(probas), axis=0)
-
-        feature_vec = house_price_builder.extract_coordinates([coord])
+        feature_vec = feature_builder.extract_coordinates([coord])
 
         with open(f"{cache_dir}/{i}.pkl", 'wb') as f:
             pickle.dump((image, feature_vec), f)
@@ -47,4 +52,4 @@ def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coor
 
 
 if __name__ == '__main__':
-    sample_and_save_dataset(CACHE_DIR)
+    sample_and_save_dataset(CACHE_DIR, feature_builder=house_price_builder)
