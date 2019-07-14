@@ -1,12 +1,12 @@
 import multiprocessing
-
-from pathos.multiprocessing import ProcessingPool as Pool
+from tqdm import tqdm
+from pathos.pools import ProcessPool as Pool
 
 i = 0
 proc_count = 1
 
 
-def parmap(f, X, nprocs=multiprocessing.cpu_count(), force_parallel=False, chunk_size=1):
+def parmap(f, X, nprocs=multiprocessing.cpu_count(), force_parallel=False, chunk_size=1, use_tqdm=False, **tqdm_kwargs):
 
     if len(X) == 0:
         return []  # like map
@@ -47,7 +47,15 @@ def parmap(f, X, nprocs=multiprocessing.cpu_count(), force_parallel=False, chunk
         proc_count = nprocs
         p = Pool(nprocs)
         p.restart(force=True)
-        retval_par = p.map(_spawn_fun, X, [f]*len(X), chunk_size=chunk_size)  # can throw if current proc is daemon
+        # can throw if current proc is daemon
+        if use_tqdm:
+            print()
+            retval_par = tqdm(p.imap(_spawn_fun, X, [f] * len(X), chunk_size=chunk_size), total=len(X), **tqdm_kwargs)
+        else:
+            retval_par = p.map(_spawn_fun, X, [f]*len(X), chunk_size=chunk_size)
+
+        retval = list(map(lambda res_dict: res_dict["res"], retval_par))  # make it like the original map
+
         p.terminate()
         # for res_dict in retval_par:  # add all experiments params we missed
         #     curr_params_list = res_dict["curr_params_list"]
@@ -55,7 +63,6 @@ def parmap(f, X, nprocs=multiprocessing.cpu_count(), force_parallel=False, chunk
         #         cn.add_experiment_param(param)
         # cn.experiment_purpose = retval_par[0]["experiment_purpose"]  # use the "experiment_purpose" from the fork
         # function_cache.merge_cache_dicts_from_parallel_runs(map(lambda a: a["functions_dict"], retval_par))  # merge all
-        retval = list(map(lambda res_dict: res_dict["res"], retval_par))  # make it like the original map
         proc_count = old_proc_count
         global i
         i += 1
