@@ -79,11 +79,12 @@ class Coord2Vec(BaseEstimator):
         # create the model
         model = self._build_model(n_channels, n_features)
         model = model.to(self.device)
-        criterion = multihead_loss(self.losses)
-        optimizer = optim.Adam(model.parameters())
+        criterion = multihead_loss(self.losses).to(self.device)
+        self.optimizer = optim.Adam(model.parameters())
 
         # train the model
         for epoch in tqdm(range(epochs), desc='Epochs', unit='epoch'):
+            self.epoch = epoch
             # Training
             for images_batch, features_batch in data_loader:
                 images_batch = images_batch.to(self.device)
@@ -91,13 +92,13 @@ class Coord2Vec(BaseEstimator):
                 # split the features into the multi_heads:
                 split_features_batch = torch.split(features_batch, 1, dim=1)
 
-                optimizer.zero_grad()
+                self.optimizer.zero_grad()
                 output = model.forward(images_batch)[1]
                 loss = criterion(output, split_features_batch)
                 loss.backward()
-                optimizer.step()
+                self.optimizer.step()
             self.model = model
-            self.save_trained_model(f"/home/morpheus/coord2vec/coord2vec/trained_model.pkl")
+            self.save_trained_model(f"../../trained_model.pkl")
         return self.model
 
     def load_trained_model(self, path: str):
@@ -109,11 +110,14 @@ class Coord2Vec(BaseEstimator):
         Returns:
             the trained model in 'path'
         """
-        with open(path, 'rb') as f:
-            self.embedding_dim, self.losses, self.model = pickle.load(f)
+        checkpoint = torch.load(path)
+        self.epoch = checkpoint['epoch']
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.embedding_dim = checkpoint['embedding_dim']
+        self.losses = checkpoint['losses']
+
         self.model = self.model.to(self.device)
-        # self.model = torch.load(path)
-        # return self.model
 
     def save_trained_model(self, path: str):
         """
@@ -122,8 +126,16 @@ class Coord2Vec(BaseEstimator):
             path: path of the saved torch NN
         """
         self.model = self.model.to('cpu')
-        with open(path, 'wb') as f:
-            pickle.dump((self.embedding_dim, self.losses, self.model), f)
+
+        torch.save({
+            'epoch': self.epoch,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'embedding_dim': self.embedding_dim,
+            'losses': self.losses,
+        }, path)
+
+        self.model = self.model.to(self.device)
 
     def predict(self, coords: List[Tuple[float, float]]):
         """
@@ -158,4 +170,4 @@ class Coord2Vec(BaseEstimator):
 if __name__ == '__main__':
     losses = [nn.L1Loss() for i in range(12)]
     coord2vec = Coord2Vec(losses=losses, embedding_dim=128)
-    coord2vec.fit(f"/home/morpheus/coord2vec/coord2vec/train_cache")
+    coord2vec.fit(f"../../train_cache")
