@@ -52,4 +52,4 @@ def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coor
 
 
 if __name__ == '__main__':
-    sample_and_save_dataset(CACHE_DIR)
+    sample_and_save_dataset(CACHE_DIR, feature_builder=house_price_builder)

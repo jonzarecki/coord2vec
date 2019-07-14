@@ -32,8 +32,8 @@ class PolygonMixin(Feature):
         q = f"""
             SELECT 
                 CASE WHEN COUNT(*) > 0 THEN 
-                    SUM(ST_Area(t.geom, true)) 
-                ELSE 0 END as total_area
+                    SUM(COALESCE (ST_Area(t.geom, true), 0.)) 
+                ELSE 0. END as total_area
             FROM ({base_query}) t
             WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter}, true);
                 """

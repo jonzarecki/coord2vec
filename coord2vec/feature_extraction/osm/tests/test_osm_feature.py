@@ -56,6 +56,7 @@ class TestOsmFeatures(unittest.TestCase):
         self.assertGreater(res.iloc[0], 1_000_000)  # the coordinate is very far from everything
 
     def test_nowhere_has_zero_hospital_area(self):
+        # TODO: check why some objects return NULL when applied with ST_Area
         hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'area_of', max_radius_meter=2 * 1000)
         res = hospital_area_feat.extract(self.nowhere_gdf)
         self.assertEqual(res.iloc[0], 0)
@@ -68,7 +69,7 @@ class TestOsmFeatures(unittest.TestCase):
     def test_nowhere_returns_zero_road_length(self):
         hospital_area_feat = OsmLineFeature(RESIDENTIAL_ROAD, 'length_of', max_radius_meter=10)
         res = hospital_area_feat.extract(self.nowhere_gdf)
-        self.assertEqual(res.iloc[0], 0)
+        self.assertEqual(0, res.iloc[0])
 
     # @patch('coord2vec.feature_extraction.osm.OsmLineFeature.extract', return_value='pumpkins')
     # @patch.multiple(Feature, __abstractmethods__=set())

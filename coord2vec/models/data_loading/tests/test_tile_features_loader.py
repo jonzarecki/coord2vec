@@ -1,5 +1,5 @@
 import unittest
-import numpy as np
+import torch
 
 from coord2vec import config
 from coord2vec.models.data_loading.create_dataset_script import sample_and_save_dataset
@@ -13,7 +13,7 @@ class TestTileFeaturesDataset(unittest.TestCase):
 
         for i in range(len(ds)):
             im, feats = ds[i]
-            self.assertTrue(all(feats != np.nan))
+            self.assertFalse(any(torch.isnan(feats)), f"{feats}")
 
 
 if __name__ == '__main__':

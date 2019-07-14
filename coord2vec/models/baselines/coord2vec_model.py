@@ -114,7 +114,7 @@ class Coord2Vec(BaseEstimator):
                 self.optimizer.step()
 
                 # tensorboard
-                writer.add_scalar('Loss', loss, global_step=epoch)
+                writer.add_scalar('Loss', loss, global_step=global_step)
                 for i in range(n_features):
                     writer.add_scalar(f'Multiple Losses/{feature_builder.features[i].name}', multi_losses[i],
                                       global_step=global_step)
