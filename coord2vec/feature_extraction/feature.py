@@ -46,10 +46,12 @@ class Feature(ABC):
     @staticmethod
     def apply_nearest_neighbour(base_query: str, geo: BaseGeometry, conn: connection, **kwargs) -> float:
         q = f"""
-        SELECT ST_DistanceSpheroid(t.geom, {geo2sql(geo)}, 'SPHEROID["WGS 84",6378137,298.257223563]') as dist
+        SELECT COALESCE (
+           (SELECT ST_DistanceSpheroid(t.geom, {geo2sql(geo)}, 'SPHEROID["WGS 84",6378137,298.257223563]') as dist
             FROM ({base_query}) t
             ORDER BY dist ASC
-            LIMIT 1;
+            LIMIT 1), 
+        FLOAT '+infinity') as dist;
         """
 
         df = get_df(q, conn)
