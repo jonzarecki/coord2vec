@@ -39,7 +39,7 @@ if [ "$1" = "run" ]; then
     cd /home/renderer/
     mkdir /home/renderer/"$2"/
     cp /usr/local/etc/renderd.conf /home/renderer/"$2"/
-    sudo -u renderer carto /home/renderer/src/openstreetmap-carto/"$2" > /home/renderer/"$2"/mapnik.xml
+#    sudo -u renderer carto /home/renderer/src/openstreetmap-carto/"$2" > /home/renderer/"$2"/mapnik.xml
 
     sed -i -E "s/num_threads=[0-9]+/num_threads=${THREADS:-4}/g" /home/renderer/"$2"/renderd.conf
 

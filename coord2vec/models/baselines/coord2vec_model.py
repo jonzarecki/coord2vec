@@ -121,7 +121,7 @@ class Coord2Vec(BaseEstimator):
                 global_step += 1
 
             self.model = model
-            self.save_trained_model(f"../../trained_model.pkl")
+            self.save_trained_model(config.COORD2VEC_DIR_PATH + "/models/trained_model.pkl")
         return self.model
 
     def load_trained_model(self, path: str):
