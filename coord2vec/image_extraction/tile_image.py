@@ -80,7 +80,7 @@ def render_multi_channel(static_maps: List[StaticMap], ext: list) -> np.array:
 if __name__ == '__main__':
     m = StaticMap(IMG_WIDTH, IMG_HEIGHT, url_template=config.tile_server_dns_noport.replace('{p}', '8080'))
     center = [34.7805, 32.1170]
-    s = generate_static_maps(config.tile_server_dns_noport, [8080, 8081])
+    s = generate_static_maps(config.tile_server_dns_noport, config.tile_server_ports)
     ext = [34.7855, 32.1070, 34.7855 + 0.001, 32.1070 + 0.001]
 
     image = render_single_tile(m, ext)

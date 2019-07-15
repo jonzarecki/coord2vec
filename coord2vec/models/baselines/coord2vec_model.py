@@ -171,7 +171,7 @@ class Coord2Vec(BaseEstimator):
         """
 
         # create tiles using the coords
-        s = generate_static_maps(config.tile_server_dns_noport, [8080, 8081])
+        s = generate_static_maps(config.tile_server_dns_noport, config.tile_server_ports)
 
         images = []
         for coord in coords:
