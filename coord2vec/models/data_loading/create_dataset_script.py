@@ -1,6 +1,7 @@
 import os
 import pickle
 import numpy as np
+import shutil
 from tqdm import tqdm
 
 from coord2vec import config
@@ -30,7 +31,9 @@ def _get_image_entropy(image):
 
 def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coord_range=config.israel_range,
                             sample_num=SAMPLE_NUM, use_existing=True, feature_builder = example_features_builder):
-    s = generate_static_maps(config.tile_server_dns_noport, [8080, 8081])
+    s = generate_static_maps(config.tile_server_dns_noport, [8080, 8081, 8082])
+    if not use_existing:
+        shutil.rmtree(cache_dir, ignore_errors=True) # remove old directory
     os.makedirs(cache_dir, exist_ok=True)
 
     def foo(i):
@@ -52,4 +55,4 @@ def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coor
 
 
 if __name__ == '__main__':
-    sample_and_save_dataset(CACHE_DIR, feature_builder=house_price_builder)
+    sample_and_save_dataset(CACHE_DIR, feature_builder=house_price_builder, use_existing=False)

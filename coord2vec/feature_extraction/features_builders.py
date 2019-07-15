@@ -56,20 +56,20 @@ class FeaturesBuilder:
 
 def poly_multi_feature(filter, name):
     return [OsmPolygonFeature(filter, name=f'nearest_{name}', apply_type=NEAREST_NEIGHBOUR_all),
-            OsmPolygonFeature(filter, name=f'area_of_{name}_100m', apply_type=AREA_OF_poly, max_radius_meter=100),
-            OsmPolygonFeature(filter, name=f'number_of_{name}_100m', apply_type=NUMBER_OF_all, max_radius_meter=100)]
+            OsmPolygonFeature(filter, name=f'area_of_{name}_100m', apply_type=AREA_OF_poly, max_radius_meter=50),
+            OsmPolygonFeature(filter, name=f'number_of_{name}_100m', apply_type=NUMBER_OF_all, max_radius_meter=50)]
+
+
+def line_multi_feature(filter, name):
+    return [OsmPolygonFeature(filter, name=f'nearest_{name}', apply_type=NEAREST_NEIGHBOUR_all),
+            OsmPolygonFeature(filter, name=f'length_of_{name}_100m', apply_type=LENGTH_OF_line, max_radius_meter=50),
+            OsmPolygonFeature(filter, name=f'number_of_{name}_100m', apply_type=NUMBER_OF_all, max_radius_meter=50)]
 
 
 house_price_builder = FeaturesBuilder(
     [poly_multi_feature(BUILDING, 'building'),
-     OsmLineFeature(RESIDENTIAL_ROAD, name='length_of_residential_roads_50m', apply_type=LENGTH_OF_line,
-                    max_radius_meter=50),
-     OsmLineFeature(RESIDENTIAL_ROAD, name='number_of_residential_roads_50m', apply_type=NUMBER_OF_all,
-                    max_radius_meter=50),
-     OsmLineFeature(RESIDENTIAL_ROAD, name='nearest_residential_road', apply_type=NEAREST_NEIGHBOUR_all),
-     poly_multi_feature(AMENITY, 'amenity'),
-     poly_multi_feature(SHOP, 'shop'),
-     ]
+     poly_multi_feature(PARK, 'building'),
+     line_multi_feature(ROAD, 'building')]
 )
 
 example_features_builder = FeaturesBuilder(

@@ -30,14 +30,15 @@ wait
 docker run -e THREADS=24 -p 8080:80 -v osm-data-tile:/var/lib/postgresql/10/main \
                     -d osm-tile-server run project_building_only.mml &
 
-
 docker run -e THREADS=24 -p 8081:80 -v osm-data-tile:/var/lib/postgresql/10/main \
                     -d osm-tile-server run project_road_only.mml &
+
+docker run -e THREADS=24 -p 8082:80 -v osm-data-tile:/var/lib/postgresql/10/main \
+                    -d osm-tile-server run project_landcover_only.mml &
 
 wait
 
 
-#docker run -e THREADS=24 -p 8081:80 -v osm-data-tile-road:/var/lib/postgresql/10/main \
-#                    -d osm-tile-server run project_landcover_only.mml
+
 
 cd $p

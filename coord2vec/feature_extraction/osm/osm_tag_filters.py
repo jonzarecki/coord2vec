@@ -9,6 +9,7 @@
 # Lines
 
 # major roads
+ROAD = 'highway IS NOT NULL'
 MOTORWAY = "highway='motorway'"
 TRUNK = "highway='trunk'"
 PRIMARY = "highway='primary'"
@@ -26,3 +27,5 @@ HOSPITAL = "amenity='hospital'"  # 'building=hostpital' is weird and should not 
 BUILDING = "building IS NOT NULL"
 AMENITY = "amenity IS NOT NULL"
 SHOP = "shop IS NOT NULL"
+PARK = "leisure IS NOT NULL"
+
