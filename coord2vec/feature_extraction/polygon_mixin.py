@@ -3,7 +3,7 @@ from functools import partial
 from shapely.geometry.base import BaseGeometry
 
 from coord2vec.common.db.postgres import connection, get_df
-from coord2vec.feature_extraction.feature import Feature, geo2sql
+from coord2vec.feature_extraction.feature import Feature, geo2sql, AREA_OF_poly
 
 
 class PolygonMixin(Feature):
@@ -11,7 +11,7 @@ class PolygonMixin(Feature):
         super().__init__(apply_type, **kwargs)
 
         poly_func = {
-            'area_of': partial(PolygonMixin.apply_area_of, **kwargs),
+            AREA_OF_poly: partial(PolygonMixin.apply_area_of, **kwargs),
 
         }
         self.apply_functions.update(poly_func)
@@ -30,9 +30,12 @@ class PolygonMixin(Feature):
             The total length as float
         """
         q = f"""
-                SELECT SUM(ST_Area(t.geom, true)) as total_area
-                    FROM ({base_query}) t
-                    WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter}, true);
+            SELECT 
+                CASE WHEN COUNT(*) > 0 THEN 
+                    SUM(COALESCE (ST_Area(t.geom, true), 0.)) 
+                ELSE 0. END as total_area
+            FROM ({base_query}) t
+            WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter}, true);
                 """
 
         df = get_df(q, conn)

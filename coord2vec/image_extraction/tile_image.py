@@ -5,8 +5,7 @@ from staticmap import StaticMap, Polygon
 from staticmap.staticmap import _lon_to_x, _lat_to_y
 
 from coord2vec import config
-
-im_width, im_height = (500, 500)
+from coord2vec.config import IMG_WIDTH, IMG_HEIGHT
 
 
 def render_single_tile(m: StaticMap, ext: list) -> Image:
@@ -53,7 +52,8 @@ def generate_static_maps(url_port_template: str, ports: List[int]) -> List[Stati
     Returns:
         List of StaticMaps object initialized with the correct url_templates
     """
-    return [StaticMap(im_width, im_height, url_template=url_port_template.format(p=p, z='{z}', x='{x}', y='{y}'))
+    return [StaticMap(IMG_WIDTH, IMG_HEIGHT, url_template=url_port_template.replace('{p}', str(p)),
+                      delay_between_retries=15, tile_request_timeout=5)
             for p in ports]
 
 
@@ -66,25 +66,26 @@ def render_multi_channel(static_maps: List[StaticMap], ext: list) -> np.array:
         ext: The extent of the image
 
     Returns:
-        numpy array where each channel is a grayscale
+        numpy array where each channel is a greyscale
     """
-    multi_arr = np.zeros((im_height, im_width, len(static_maps)))
+    multi_arr = np.zeros((len(static_maps), IMG_HEIGHT, IMG_WIDTH,))
 
     for i, m in enumerate(static_maps):
         im_arr = np.array(render_single_tile(m, ext).convert('L'))
-        multi_arr[:, :, i] = im_arr
+        multi_arr[i, :, :] = im_arr
 
     return multi_arr
 
 
 if __name__ == '__main__':
-    m = StaticMap(500, 500, url_template=config.tile_server_dns_noport.format(p=8080))
-    center = [34.7855, 32.1070]
+    m = StaticMap(IMG_WIDTH, IMG_HEIGHT, url_template=config.tile_server_dns_noport.replace('{p}', '8080'))
+    center = [34.7805, 32.1170]
     s = generate_static_maps(config.tile_server_dns_noport, [8080, 8081])
     ext = [34.7855, 32.1070, 34.7855 + 0.001, 32.1070 + 0.001]
 
     image = render_single_tile(m, ext)
+    image_multi = render_multi_channel(s, ext)
 
     image.save('marker2.png')
-
+    Image.fromarray(image_multi[1], mode='L').save('aa.png')
     image.show()

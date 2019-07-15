@@ -5,9 +5,20 @@ from typing import Tuple
 import pandas as pd
 from geopandas import GeoDataFrame
 from shapely import wkt
+from shapely.geometry import Point
 from shapely.geometry.base import BaseGeometry
 
 from coord2vec.common.db.postgres import get_df, connect_to_db, connection
+
+# general feature types
+NEAREST_NEIGHBOUR_all = 'nearest_neighbour'
+NUMBER_OF_all = 'number_of'
+
+# polygon feature types
+AREA_OF_poly = 'area_of'
+
+# line feature types
+LENGTH_OF_line = 'length_of'
 
 
 def geo2sql(geo: BaseGeometry) -> str:
@@ -23,22 +34,24 @@ def geo2sql(geo: BaseGeometry) -> str:
 
 
 class Feature(ABC):
-    def __init__(self, apply_type: str, **kwargs):
+    def __init__(self, apply_type: str, name: str = 'anonymos_feature', **kwargs):
         #  Classes that add apply functions should add them to the dictionary
+        self.name = name
         self.apply_functions = {
-            'nearest_neighbour': partial(self.apply_nearest_neighbour, **kwargs),
-            'number_of': partial(self.apply_number_of, **kwargs)
+            NEAREST_NEIGHBOUR_all: partial(self.apply_nearest_neighbour, **kwargs),
+            NUMBER_OF_all: partial(self.apply_number_of, **kwargs)
         }
         self.apply_type = apply_type
-
 
     @staticmethod
     def apply_nearest_neighbour(base_query: str, geo: BaseGeometry, conn: connection, **kwargs) -> float:
         q = f"""
-        SELECT ST_DistanceSpheroid(t.geom, {geo2sql(geo)}, 'SPHEROID["WGS 84",6378137,298.257223563]') as dist
+        SELECT COALESCE (
+           (SELECT ST_DistanceSpheroid(t.geom, {geo2sql(geo)}, 'SPHEROID["WGS 84",6378137,298.257223563]') as dist
             FROM ({base_query}) t
             ORDER BY dist ASC
-            LIMIT 1;
+            LIMIT 1), 
+        FLOAT '+infinity') as dist;
         """
 
         df = get_df(q, conn)
@@ -95,7 +108,7 @@ class Feature(ABC):
 
     def extract_single_coord(self, coordinate: Tuple[float, float]) -> float:
         """
-        Applies the feature on the gdf, returns the series afther the apply
+        Applies the feature on the gdf, returns the series after the apply
         Args:
             coordinate: (lat, lon) the coordinate to extract the feature on
 

@@ -8,28 +8,28 @@ import torchvision.models as models
 ##    Architechtures    ##
 ##########################
 
-def rgb_pretrained_resnet50(output_dim: int) -> nn.Module:
-    net = models.resnet50(pretrained=True)
-    return _change_last_layer(net, output_dim)
-
-
-def rgb_resnet50(output_dim: int) -> nn.Module:
-    net = models.resnet50(pretrained=False)
-    return _change_last_layer(net, output_dim)
-
-
-def resnet50(n_channels: int, output_dim: int) -> nn.Module:
-    """
-    create a resnet-18 with first and last layers to fit the coord2vec
-    Args:
-        n_channels: number of OSM channels in the input
-        output_dim: dimension of the output - based on all the losses we want
-
-    Returns:
-        A nn.Module of the resnet
-    """
-    resnet = models.resnet50()
-    return _change_last_layer(_change_first_layer(resnet, n_channels), output_dim)
+# def rgb_pretrained_resnet50(output_dim: int) -> nn.Module:
+#     net = models.resnet50(pretrained=True)
+#     return _change_last_layer(net, output_dim)
+#
+#
+# def rgb_resnet50(output_dim: int) -> nn.Module:
+#     net = models.resnet50(pretrained=False)
+#     return _change_last_layer(net, output_dim)
+#
+#
+# def resnet50(n_channels: int, output_dim: int) -> nn.Module:
+#     """
+#     create a resnet-18 with first and last layers to fit the coord2vec
+#     Args:
+#         n_channels: number of OSM channels in the input
+#         output_dim: dimension of the output - based on all the losses we want
+#
+#     Returns:
+#         A nn.Module of the resnet
+#     """
+#     resnet = models.resnet50()
+#     return _change_last_layer(_change_first_layer(resnet, n_channels), output_dim)
 
 
 def resnet18(n_channels: int, output_dim: int) -> nn.Module:
@@ -42,8 +42,9 @@ def resnet18(n_channels: int, output_dim: int) -> nn.Module:
     Returns:
         A nn.Module of the resnet
     """
-    resnet = models.resnet18()
-    return _change_last_layer(_change_first_layer(resnet, n_channels), output_dim)
+    resnet = models.resnet18(num_classes = output_dim)
+    resnet.conv1 = nn.Conv2d(n_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
+    return resnet.float()
 
 
 def multihead_model(architecture: nn.Module, heads: List[nn.Module]):
@@ -51,11 +52,17 @@ def multihead_model(architecture: nn.Module, heads: List[nn.Module]):
         def __init__(self):
             super().__init__()
             self.architecture = architecture
+            self.heads = heads
 
         def forward(self, x):
             x1 = self.architecture(x)
-            outputs = tuple([head(x1) for head in heads])
-            return outputs
+            outputs = tuple([head(x1) for head in self.heads])
+            return x1, outputs
+
+        def to(self, *args, **kwargs):
+            self.architecture = self.architecture.to(*args,**kwargs)
+            self.heads = [head.to(*args,**kwargs) for head in self.heads]
+            return self
 
     return MultiHeadResnet()
 
@@ -64,26 +71,12 @@ def multihead_model(architecture: nn.Module, heads: List[nn.Module]):
 ##        heads         ##
 ##########################
 
-def dual_fc_head(input_dim, n_classes, hidden_dim=128):
+def dual_fc_head(input_dim, hidden_dim=128):
     head = nn.Sequential(
         nn.Linear(input_dim, hidden_dim),
         nn.ReLU(),
-        nn.Linear(hidden_dim, n_classes))
-    return head
-
-
-##########################
-##    util functions    ##
-##########################
-
-def _change_last_layer(net, output_dim):
-    list(net.children())[-1].out_features = output_dim
-    return net
-
-
-def _change_first_layer(net, in_channels):
-    list(net.children())[0].in_channels = in_channels
-    return net
+        nn.Linear(hidden_dim, 1))
+    return head.float()
 
 
 if __name__ == '__main__':

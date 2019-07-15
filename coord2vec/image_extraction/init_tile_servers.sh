@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 p=`pwd`
 cd "${0%/*}/"
 echo `pwd`
@@ -17,25 +18,42 @@ cdir=`pwd`
 #docker run -e THREADS=24 -p 127.0.0.1:8080:80 -v $cdir/data.osm.pbf:/data.osm.pbf \
 #            -v openstreetmap-data-tile:/var/lib/postgresql/10/main -td osm-tile-server import
 
+if docker volume ls | grep -qw osm-data-tile; then
+    echo "Postgres already rendered, if not, remove volume osm-data-tile"
+else
+#    echo blas
+    docker volume rm osm-data-tile
+    docker volume create osm-data-tile
 
-docker volume rm osm-data-tile
-docker volume create osm-data-tile
+    docker run -v $cdir/data.osm.pbf:/data.osm.pbf -v osm-data-tile:/var/lib/postgresql/10/main \
+                    osm-tile-server import &
 
-docker run -v $cdir/data.osm.pbf:/data.osm.pbf -v osm-data-tile:/var/lib/postgresql/10/main \
-                osm-tile-server import &
+    wait
 
-wait
+fi
+
 
 docker run -e THREADS=24 -p 8080:80 -v osm-data-tile:/var/lib/postgresql/10/main \
-                    -d osm-tile-server run project_building_only.mml &
+                    -d osm-tile-server run project_building_only.mml
+echo "starting building tile server"
 
+sleep 15
 
 docker run -e THREADS=24 -p 8081:80 -v osm-data-tile:/var/lib/postgresql/10/main \
-                    -d osm-tile-server run project_road_only.mml &
+                    -d osm-tile-server run project_road_only.mml
+echo "starting road tile server"
+
+sleep 15
+
+docker run -e THREADS=24 -p 8082:80 -v osm-data-tile:/var/lib/postgresql/10/main \
+                    -d osm-tile-server run project_landcover_only.mml
+echo "starting landcover tile server"
+
+sleep 15
 
 wait
 
-
+echo "done building tile servers"
 #docker run -e THREADS=24 -p 8081:80 -v osm-data-tile-road:/var/lib/postgresql/10/main \
 #                    -d osm-tile-server run project_landcover_only.mml
 
