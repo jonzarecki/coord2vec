@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 from coord2vec import config
 from coord2vec.common.multiproc_util import parmap
-from coord2vec.config import CACHE_DIR, SAMPLE_NUM, ENTROPY_THRESHOLD, HALF_TILE_LENGTH
+from coord2vec.config import CACHE_DIR, SAMPLE_NUM, ENTROPY_THRESHOLD, HALF_TILE_LENGTH, tile_server_ports
 from coord2vec.feature_extraction.features_builders import example_features_builder, house_price_builder
 from coord2vec.feature_extraction.osm import OsmPolygonFeature
 from coord2vec.feature_extraction.osm.osm_tag_filters import BUILDING
@@ -31,7 +31,7 @@ def _get_image_entropy(image):
 
 def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coord_range=config.israel_range,
                             sample_num=SAMPLE_NUM, use_existing=True, feature_builder = example_features_builder):
-    s = generate_static_maps(config.tile_server_dns_noport, [8080, 8081, 8082])
+    s = generate_static_maps(config.tile_server_dns_noport, tile_server_ports)
     if not use_existing:
         shutil.rmtree(cache_dir, ignore_errors=True) # remove old directory
     os.makedirs(cache_dir, exist_ok=True)
@@ -51,8 +51,8 @@ def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coor
         with open(f"{cache_dir}/{i}.pkl", 'wb') as f:
             pickle.dump((image, feature_vec), f)
 
-    parmap(foo, range(sample_num))
+    parmap(foo, range(5000, sample_num+ 5000), use_tqdm=True, desc='building_dataset')
 
 
 if __name__ == '__main__':
-    sample_and_save_dataset(CACHE_DIR, feature_builder=house_price_builder, use_existing=False)
+    sample_and_save_dataset(CACHE_DIR, feature_builder=house_price_builder, use_existing=True)

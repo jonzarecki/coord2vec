@@ -9,7 +9,7 @@ from torch.nn.modules.loss import _Loss, L1Loss
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-import pickle
+import datetime
 
 from coord2vec import config
 from coord2vec.config import HALF_TILE_LENGTH, TENSORBOARD_DIR
@@ -39,9 +39,9 @@ class Coord2Vec(BaseEstimator):
             embedding_dim: dimension of the embedding to create
         """
         self.tb_dir = tb_dir
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.embedding_dim = embedding_dim
         self.losses = losses
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     def fit(self, cache_dir: str,
             epochs: int = 10,
@@ -94,7 +94,9 @@ class Coord2Vec(BaseEstimator):
         self.optimizer = optim.Adam(model.parameters())
 
         # create tensorboard
-        writer = SummaryWriter(os.path.join(TENSORBOARD_DIR, self.tb_dir))
+        tb_path = os.path.join(TENSORBOARD_DIR, self.tb_dir) if self.tb_dir == 'test' \
+            else os.path.join(TENSORBOARD_DIR, self.tb_dir, str(datetime.datetime.now()))
+        writer = SummaryWriter(tb_path)
 
         # train the model
         global_step = 0

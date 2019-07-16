@@ -54,3 +54,5 @@ dependencies:
     - tqdm
     - staticmap
     - pathos
+    - torchsummary
+
