@@ -51,8 +51,8 @@ def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coor
         with open(f"{cache_dir}/{i}.pkl", 'wb') as f:
             pickle.dump((image, feature_vec), f)
 
-    parmap(foo, range(5000, sample_num+ 5000), use_tqdm=True, desc='building_dataset')
+    parmap(foo, range(0, sample_num+ 5000), use_tqdm=True, desc='building_dataset')
 
 
 if __name__ == '__main__':
-    sample_and_save_dataset(CACHE_DIR, feature_builder=house_price_builder, use_existing=True)
+    sample_and_save_dataset(CACHE_DIR, feature_builder=house_price_builder, use_existing=False)

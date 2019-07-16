@@ -1,8 +1,6 @@
 from unittest import TestCase
 
-from torch import nn
-
-from coord2vec.config import CACHE_DIR, TEST_CACHE_DIR
+from coord2vec.config import TEST_CACHE_DIR
 from coord2vec.models.baselines import Coord2Vec
 from coord2vec.models.data_loading.create_dataset_script import sample_and_save_dataset
 
