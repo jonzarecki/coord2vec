@@ -33,19 +33,19 @@ else
 fi
 
 
-docker run -e THREADS=24 -p 8080:80 -v osm-data-tile:/var/lib/postgresql/10/main \
+docker run -e THREADS=24 -p 8101:80 -v osm-data-tile:/var/lib/postgresql/10/main \
                     -d osm-tile-server run project_building_only.mml
 echo "starting building tile server"
 
 sleep 15
 
-docker run -e THREADS=24 -p 8081:80 -v osm-data-tile:/var/lib/postgresql/10/main \
+docker run -e THREADS=24 -p 8102:80 -v osm-data-tile:/var/lib/postgresql/10/main \
                     -d osm-tile-server run project_road_only.mml
 echo "starting road tile server"
 
 sleep 15
 
-docker run -e THREADS=24 -p 8082:80 -v osm-data-tile:/var/lib/postgresql/10/main \
+docker run -e THREADS=24 -p 8103:80 -v osm-data-tile:/var/lib/postgresql/10/main \
                     -d osm-tile-server run project_landcover_only.mml
 echo "starting landcover tile server"
 

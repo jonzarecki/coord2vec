@@ -7,7 +7,7 @@ tile_server_ip = "localhost"
 postgis_server_ip = "127.0.0.1"
 
 tile_server_dns_noport = 'http://' + tile_server_ip + ':{p}/tile/{z}/{x}/{y}.png'
-tile_server_ports = [8080, 8081, 8082]
+tile_server_ports = [8101, 8102, 8103]
 postgis_port = 15432
 CACHE_DIR = os.path.join(COORD2VEC_DIR_PATH, "train_cache", "house_price_builder")
 TEST_CACHE_DIR = os.path.join(COORD2VEC_DIR_PATH, "train_cache", "test_dir")

@@ -2,6 +2,7 @@
 
 #conda init bash
 
+
 if conda --version | grep -q "conda" ; then # make sure anaconda is installed
 #    eval "$(conda shell.bash hook)"
 #    conda env update -f environment.yml
@@ -23,5 +24,5 @@ sudo chmod 777 /var/run/docker.sock
 bash ./coord2vec/feature_extraction/osm/initialize_osm_postgres.sh
 bash ./coord2vec/image_extraction/init_tile_servers.sh
 
-
+echo `dig +short myip.opendns.com @resolver1.opendns.com`
 jupyter notebook --ip=0.0.0.0 --port=8200

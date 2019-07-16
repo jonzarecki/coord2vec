@@ -1,6 +1,8 @@
-from typing import List, Tuple
-import pandas as pd
 import itertools
+from typing import List, Tuple, Union
+
+import pandas as pd
+from geopandas import GeoDataFrame
 from shapely import wkt
 
 from coord2vec.feature_extraction.feature import Feature, NEAREST_NEIGHBOUR_all, AREA_OF_poly, NUMBER_OF_all, \
@@ -8,8 +10,6 @@ from coord2vec.feature_extraction.feature import Feature, NEAREST_NEIGHBOUR_all,
 from coord2vec.feature_extraction.osm.osm_line_feature import OsmLineFeature
 from coord2vec.feature_extraction.osm.osm_polygon_feature import OsmPolygonFeature
 from coord2vec.feature_extraction.osm.osm_tag_filters import *
-from geopandas import GeoDataFrame
-from tqdm import tqdm
 
 
 class FeaturesBuilder:
@@ -17,7 +17,7 @@ class FeaturesBuilder:
     A data class for choosing the desired features
     """
 
-    def __init__(self, features: List[Feature]):
+    def __init__(self, features: List[Union[Feature, List[Feature]]]):
         """
         features to be used in this builder
         Args:
@@ -68,8 +68,8 @@ def line_multi_feature(filter, name):
 
 house_price_builder = FeaturesBuilder(
     [poly_multi_feature(BUILDING, 'building'),
-     poly_multi_feature(PARK, 'building'),
-     line_multi_feature(ROAD, 'building')]
+     poly_multi_feature(PARK, 'park'),
+     line_multi_feature(ROAD, 'road')]
 )
 
 example_features_builder = FeaturesBuilder(
