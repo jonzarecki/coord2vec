@@ -1,5 +1,6 @@
 from sklearn.base import BaseEstimator
 import pickle
+import numpy as np
 
 from coord2vec import config
 from coord2vec.feature_extraction.features_builders import example_features_builder
@@ -30,11 +31,9 @@ class Coord2Featrues(BaseEstimator):
 
         #######################################################
 
+    def load_trained_model(self, path):
+        return self
 
     def predict(self, coords):
-        features = []
-        for coord in coords:
-            feature_vec = example_features_builder.extract_coordinate(coord)
-            features.append(feature_vec)
-
-        return features
+        feature_vec = example_features_builder.extract_coordinates(coords)
+        return np.asarray(feature_vec)
