@@ -3,18 +3,17 @@ import pandas as pd
 from coord2vec import config
 from coord2vec.evaluation.tasks import HousePricing
 from coord2vec.models.baselines import *
-
+from coord2vec.feature_extraction.features_builders import example_features_builder
 
 def compare_baselines(task, baselines, **fit_kwargs):
     task_handler = task()
     coords, features, y = task_handler.get_data()
 
     scores = []
-    for baseline in baselines:
+    for model in baselines:
         # get embeddings
-        model = baseline()
-        model.fit(**fit_kwargs)
         X = model.predict(coords)
+        X = pd.DataFrame(X, columns=[f'cord2vec{i}' for i in range(X.shape[1])])
         X = pd.concat([X, features], axis=1)
 
         # get results
@@ -26,7 +25,9 @@ def compare_baselines(task, baselines, **fit_kwargs):
     return scores
 
 if __name__ == '__main__':
-    baselines = [Coord2Vec, Coord2Featrues]
+    coord2vec = Coord2Vec(example_features_builder, n_channels=3)
+    baselines = [coord2vec.load_trained_model('../../../coord2vec/models/saved_models/first_model.pt'),
+                 Coord2Featrues().load_trained_model('')]
     fit_kwargs = {'cache_dir': config.CACHE_DIR}
 
     scores = compare_baselines(HousePricing, baselines, **fit_kwargs)

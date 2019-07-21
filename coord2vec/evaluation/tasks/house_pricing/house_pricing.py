@@ -13,7 +13,7 @@ class HousePricing(TaskHandler):
     def get_data(self) -> Tuple[Any, Any, Any]:
         df = pd.read_csv(os.path.join(os.path.dirname(__file__), r"Housing price in Beijing.csv"),
                          encoding="latin").iloc[:50]
-        df['coord'] = df.apply(lambda row: tuple(row[['Lng', 'Lat']].values), axis=1)
+        df['coord'] = df.apply(lambda row: tuple(row[['Lat', 'Lng']].values), axis=1)
 
         return df['coord'].values, df[['square', 'livingRoom', 'drawingRoom', 'kitchen', \
        'bathRoom', 'floor', 'buildingType', 'constructionTime',\
