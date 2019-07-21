@@ -2,7 +2,7 @@ from __future__ import print_function, division
 
 import pickle
 from pathlib import Path
-from typing import List, Dict
+from typing import List
 import torch
 import numpy as np
 from torch.utils.data import Dataset
@@ -51,4 +51,24 @@ class TileFeaturesDataset(Dataset):
         if self.transform:
             sample = self.transform(sample)
 
-        return torch.tensor(sample['image']).float(), torch.tensor(sample['features'].values.astype(np.float)[0]).float()
+        image_torch = torch.tensor(sample['image']).float()
+        features_torch = torch.tensor(sample['features'].values.astype(np.float)[0]).float()
+
+        return image_torch, features_torch
+
+
+class SingleTileFeaturesDataset(TileFeaturesDataset):
+    def __init__(self, root_dir, feature_index: int = None, transform=None):
+        """
+        Args:
+            root_dir (string): Directory with all the images.
+            feature_index: the index of the feature to be used
+            transform (callable, optional): Optional transform to be applied
+                on a sample.
+        """
+        super().__init__(root_dir, transform)
+        self.feature_index = feature_index
+
+    def __getitem__(self, idx):
+        image_torch, features_torch = super().__getitem__(idx)
+        return image_torch, features_torch[self.feature_index:self.feature_index + 1]

@@ -60,7 +60,7 @@ class Coord2Vec(BaseEstimator):
         self.model = self._build_model(self.n_channels, self.n_features).to(self.device)
         self.optimizer = optim.Adam(self.model.parameters())
 
-    def fit(self, cache_dir: str,
+    def fit(self, dataset: TileFeaturesDataset,
             epochs: int = 10,
             batch_size: int = 10,
             num_workers: int = 4):
@@ -76,7 +76,7 @@ class Coord2Vec(BaseEstimator):
         """
 
         # create data loader
-        data_loader = DataLoader(TileFeaturesDataset(cache_dir), batch_size=batch_size, shuffle=True,
+        data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True,
                                  num_workers=num_workers)
 
         # create losses if it was None
@@ -114,7 +114,7 @@ class Coord2Vec(BaseEstimator):
                                       global_step=global_step)
                 global_step += 1
 
-            self.save_trained_model(config.COORD2VEC_DIR_PATH + "/models/trained_model.pkl")
+            self.save_trained_model(config.COORD2VEC_DIR_PATH + "/models/saved_models/trained_model.pkl")
         return self.model
 
     def load_trained_model(self, path: str):
