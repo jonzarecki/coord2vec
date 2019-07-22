@@ -79,9 +79,6 @@ class Coord2Vec(BaseEstimator):
         data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True,
                                  num_workers=num_workers)
 
-        # create losses if it was None
-        assert len(self.losses) == self.n_features, "Number of losses must be equal to number of features"
-
         # create the model
         criterion = multihead_loss(self.losses).to(self.device)
 

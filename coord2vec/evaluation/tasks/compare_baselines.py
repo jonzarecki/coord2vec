@@ -29,7 +29,9 @@ def compare_baselines(task, baselines, **fit_kwargs):
 if __name__ == '__main__':
     coord2vec = Coord2Vec(example_features_builder, n_channels=3).load_trained_model(
         '../../../coord2vec/models/saved_models/first_model.pt')
-    baselines = [coord2vec, Coord2Featrues().load_trained_model('')]
+    coord2features = Coord2Featrues().load_trained_model('')
+
+    baselines = [coord2vec, coord2features]
     fit_kwargs = {'cache_dir': config.CACHE_DIR}
 
     scores = compare_baselines(HousePricing, baselines, **fit_kwargs)

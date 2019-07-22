@@ -31,6 +31,9 @@ class TestDataCreation(unittest.TestCase):
             im, feats = ds[i]
             self._check_pkl_ok(feats, im)
 
+    @classmethod
+    def tearDownClass(cls) -> None:
+        shutil.rmtree(TEST_CACHE_DIR)
 
 if __name__ == '__main__':
     unittest.main()
