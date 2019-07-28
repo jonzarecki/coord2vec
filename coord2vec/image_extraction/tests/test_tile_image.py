@@ -10,7 +10,7 @@ from coord2vec.image_extraction.tile_utils import build_tile_extent
 class TestTileImage(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.m = StaticMap(IMG_WIDTH, IMG_HEIGHT, url_template=tile_server_dns_noport.replace('{p}', '8080'))
+        cls.m = StaticMap(IMG_WIDTH, IMG_HEIGHT, url_template=tile_server_dns_noport.replace('{p}', '8101'))
         cls.center = [34.7855, 32.1070]
         cls.s = generate_static_maps(tile_server_dns_noport, tile_server_ports)
         cls.ext = build_tile_extent(cls.center, radius_in_meters=50)

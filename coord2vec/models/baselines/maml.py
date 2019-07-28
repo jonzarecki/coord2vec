@@ -1,5 +1,6 @@
 import datetime
 import os
+from collections import OrderedDict
 from typing import List
 
 import torch
@@ -43,40 +44,73 @@ class MAML:
             n_epochs: int = 10,
             batch_size: int = 64,
             num_workers: int = 4,
-            alpha: float = 1e-5,
+            alpha_lr: float = 1e-5,
             beta: float = 1e-5):
+
         # create a DataLoader
-        data_loaders = DataLoader(dataset, batch_size=batch_size, shuffle=True,
-                                  num_workers=num_workers)
+        train_size = int(0.8 * len(dataset))
+        val_size = len(dataset) - train_size
+        train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
+        train_data_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
+                                       num_workers=num_workers)
+        val_data_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True,
+                                     num_workers=num_workers)
 
         # create tensorboard
         tb_path = os.path.join(TENSORBOARD_DIR, self.tb_dir) if self.tb_dir == 'test' \
             else os.path.join(TENSORBOARD_DIR, self.tb_dir, str(datetime.datetime.now()))
         writer = SummaryWriter(tb_path)
 
-        params = self.common_model.parameters()
         for epoch in tqdm(range(n_epochs), desc='Epochs', unit='epoch'):
-            for image_batch, features_batch in data_loaders:
-                meta_state = self.common_model.state_dict()
-                grads_list = []
-                for task_ind in range(self.n_features):
-                    self.common_model.load_state_dict(meta_state)
-                    self.optimizer.zero_grad()
-                    task_model = nn.Sequential(self.common_model, self.head_models[task_ind])
-                    params = task_model.parameters()
 
+            # create a new model using the meta model
+            task_gradients = []
+            for task_ind in range(self.n_features):
+                fast_weights = OrderedDict(self.common_model.named_parameters())
+                task_model = nn.Sequential(self.common_model, self.head_models[task_ind])
+                for image_batch, features_batch in train_data_loader:
                     # forward pass
                     output = task_model(image_batch)
                     loss = self.losses[task_ind](output, features_batch[task_ind:task_ind + 1])
 
                     # backward pass
-                    grads = torch.autograd.grad(loss, task_model.parameters())
-                    new_params = [(param - alpha * grads[i]) for i, param in enumerate(params)]
+                    gradient = torch.autograd.grad(loss, task_model.parameters())
 
-                    # save the  new gradient
-                    new_output = task_model.bla()
-                    params.append(new_params)
+                    # Update weights manually
+                    fast_weights = OrderedDict(
+                        (name, param - alpha_lr * grad)
+                        for ((name, param), grad) in zip(fast_weights.items(), gradient)
+                    )
 
+                # accumulate gradients from all the tasks
+                for image_batch, features_batch in val_data_loader:
+                    output = task_model(image_batch, fast_weights)
+                    loss = self.losses[task_ind](output, features_batch[task_ind:task_ind + 1])
+                    loss.backward(retain_graph=True)
+
+                    gradients = torch.autograd.grad(loss, fast_weights.values())
+                    named_grads = {name: g for ((name, _), g) in zip(fast_weights.items(), gradients)}
+                    task_gradients.append(named_grads)
+
+                # meta step
+                sum_task_gradients = {k: torch.stack([grad[k] for grad in task_gradients]).mean(dim=0)
+                                      for k in task_gradients[0].keys()}
+                hooks = []
+                for name, param in model.named_parameters():
+                    hooks.append(
+                        param.register_hook(replace_grad(sum_task_gradients, name))
+                    )
+
+                model.train()
+                optimiser.zero_grad()
+                # Dummy pass in order to create `loss` variable
+                # Replace dummy gradients with mean task gradients using hooks
+                logits = model(torch.zeros((k_way,) + data_shape).to(device, dtype=torch.double))
+                loss = loss_fn(logits, create_nshot_task_label(k_way, 1).to(device))
+                loss.backward()
+                optimiser.step()
+
+                for h in hooks:
+                    h.remove()
                 # preform the meta learning
                 self.common_model.load_state_dict(meta_state)
-

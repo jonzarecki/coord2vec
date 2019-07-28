@@ -49,7 +49,6 @@ def parmap(f, X, nprocs=multiprocessing.cpu_count(), force_parallel=False, chunk
         p.restart(force=True)
         # can throw if current proc is daemon
         if use_tqdm:
-            print()
             retval_par = tqdm(p.imap(_spawn_fun, X, [f] * len(X), chunk_size=chunk_size), total=len(X), **tqdm_kwargs)
         else:
             retval_par = p.map(_spawn_fun, X, [f]*len(X), chunk_size=chunk_size)

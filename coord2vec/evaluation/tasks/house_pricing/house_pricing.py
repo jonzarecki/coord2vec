@@ -1,5 +1,6 @@
 import os
-from typing import Callable, Tuple, Any
+from typing import Tuple, Any
+
 import pandas as pd
 
 from coord2vec.evaluation.tasks.task_handler import TaskHandler

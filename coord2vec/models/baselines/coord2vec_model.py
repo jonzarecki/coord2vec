@@ -1,26 +1,24 @@
+import datetime
 import os
 from typing import List, Tuple
 
 import torch
 from sklearn.base import BaseEstimator
-from torch import optim
 from torch import nn
+from torch import optim
 from torch.nn.modules.loss import _Loss, L1Loss
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from tqdm import tqdm
-import datetime
+from tqdm.autonotebook import tqdm
 
 from coord2vec import config
 from coord2vec.config import HALF_TILE_LENGTH, TENSORBOARD_DIR
+from coord2vec.feature_extraction.features_builders import FeaturesBuilder
 from coord2vec.image_extraction.tile_image import generate_static_maps, render_multi_channel
 from coord2vec.image_extraction.tile_utils import build_tile_extent
 from coord2vec.models.architectures import resnet18, dual_fc_head, multihead_model
-from coord2vec.models.data_loading.create_dataset_script import sample_and_save_dataset
 from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
-from coord2vec.models.losses import multihead_loss
-from coord2vec.feature_extraction.features_builders import example_features_builder, house_price_builder, \
-    FeaturesBuilder
+from coord2vec.models.losses import MultiheadLoss
 
 IMG_RADIUS_IN_METERS = 50
 
@@ -33,22 +31,31 @@ class Coord2Vec(BaseEstimator):
     def __init__(self, feature_builder: FeaturesBuilder,
                  n_channels: int,
                  losses: List[_Loss] = None,
+                 log_loss: bool = False,
                  embedding_dim: int = 128,
-                 tb_dir: str = 'default'):
+                 tb_dir: str = 'default',
+                 cuda_device: int = 0,
+                 multi_gpu: bool = False):
         """
 
         Args:
             feature_builder: FeatureBuilder to create features with \ features were created with
             n_channels: the number of channels in the input images
             tb_dir: the directory to use in tensorboard
+            log_loss: weather to use the log function on the loss before back propagation
             losses: a list of losses to use. must be same length of the number of features
             embedding_dim: dimension of the embedding to create
         """
 
+        self.log_loss = log_loss
         self.tb_dir = tb_dir
         self.embedding_dim = embedding_dim
         self.n_channels = n_channels
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        if not multi_gpu:
+            self.device = torch.device(f'cuda:{cuda_device}' if torch.cuda.is_available() else 'cpu')
+        else:
+            self.device = torch.device(f'cuda' if torch.cuda.is_available() else 'cpu')
+
         self.feature_builder = feature_builder
         self.n_features = len(feature_builder.features)
 
@@ -57,7 +64,12 @@ class Coord2Vec(BaseEstimator):
         assert len(self.losses) == self.n_features, "Number of losses must be equal to number of features"
 
         # create the model
-        self.model = self._build_model(self.n_channels, self.n_features).to(self.device)
+
+        self.model = self._build_model(self.n_channels, self.n_features)
+        if multi_gpu:
+            self.model = nn.DataParallel(self.model)
+
+        self.model.to(self.device)
         self.optimizer = optim.Adam(self.model.parameters())
 
     def fit(self, dataset: TileFeaturesDataset,
@@ -80,7 +92,7 @@ class Coord2Vec(BaseEstimator):
                                  num_workers=num_workers)
 
         # create the model
-        criterion = multihead_loss(self.losses).to(self.device)
+        criterion = MultiheadLoss(self.losses, use_log=self.log_loss).to(self.device)
 
         # create tensorboard
         tb_path = os.path.join(TENSORBOARD_DIR, self.tb_dir) if self.tb_dir == 'test' \

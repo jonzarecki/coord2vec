@@ -1,19 +1,20 @@
 from typing import List
 
 import torch
-from torch.nn import Parameter
+from torch.nn import Parameter, L1Loss
 from torch.nn.modules.loss import _Loss
 import numpy as np
 
 
-class multihead_loss(_Loss):
+class MultiheadLoss(_Loss):
     """
     multihead loss based on "https://arxiv.org/pdf/1705.07115.pdf"
     """
 
-    def __init__(self, losses: List[_Loss], weights: List[float] = None):
+    def __init__(self, losses: List[_Loss], weights: List[float] = None, use_log=False):
         super().__init__()
 
+        self.use_log = use_log
         self.losses = losses
         self.n_heads = len(losses)
         self.weights = weights if weights is not None else np.ones(len(losses))
@@ -31,6 +32,7 @@ class multihead_loss(_Loss):
         assert (len(target) == self.n_heads)
 
         losses = [self.losses[i](input[i], target[i]) for i in range(self.n_heads)]
-        homosced_losses = [self.weights[i] * torch.exp(-self.log_vars[i]) * losses[i] + self.log_vars[i]
+        log_losses = [torch.log(loss) for loss in losses] if self.use_log else losses
+        homosced_losses = [self.weights[i] * torch.exp(-self.log_vars[i]) * log_losses[i] + self.log_vars[i]
                            for i in range(self.n_heads)]
-        return sum(homosced_losses),losses
+        return sum(homosced_losses), losses
