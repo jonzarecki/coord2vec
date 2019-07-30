@@ -49,7 +49,7 @@ class FeaturesBuilder:
         Returns:
             a pandas dataframe, with columns as features, and rows as the points in gdf
         """
-        wkt_points = [wkt.loads(f'POINT ({coord[0]} {coord[1]})') for coord in coords]
+        wkt_points = [wkt.loads(f'POINT ({coord[1]} {coord[0]})') for coord in coords]
         gdf = GeoDataFrame(pd.DataFrame({'geom': wkt_points}), geometry='geom')
         return self.extract(gdf)
 

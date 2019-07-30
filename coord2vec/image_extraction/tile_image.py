@@ -30,7 +30,7 @@ def render_single_tile(m: StaticMap, ext: list) -> Image:
     extent = ext
 
     # calculate center point of map
-    lon_center, lat_center = (extent[0] + extent[2]) / 2, (extent[1] + extent[3]) / 2
+    lat_center, lon_center = (extent[0] + extent[2]) / 2, (extent[1] + extent[3]) / 2
     m.x_center = _lon_to_x(lon_center, m.zoom)
     m.y_center = _lat_to_y(lat_center, m.zoom)
 
