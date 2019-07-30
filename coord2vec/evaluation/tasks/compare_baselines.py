@@ -3,7 +3,7 @@ import pandas as pd
 from coord2vec import config
 from coord2vec.evaluation.tasks import HousePricing
 from coord2vec.models.baselines import *
-from coord2vec.feature_extraction.features_builders import example_features_builder
+from coord2vec.feature_extraction.features_builders import example_features_builder, house_price_builder
 
 
 def compare_baselines(task, baselines, **fit_kwargs):
@@ -27,8 +27,8 @@ def compare_baselines(task, baselines, **fit_kwargs):
 
 
 if __name__ == '__main__':
-    coord2vec = Coord2Vec(example_features_builder, n_channels=3).load_trained_model(
-        '../../../coord2vec/models/saved_models/first_model.pt')
+    coord2vec = Coord2Vec(house_price_builder, n_channels=3, multi_gpu=False).load_trained_model(
+        '../../../coord2vec/models/saved_models/norm_model.pt')
     coord2features = Coord2Featrues().load_trained_model('')
 
     baselines = [coord2vec, coord2features]
