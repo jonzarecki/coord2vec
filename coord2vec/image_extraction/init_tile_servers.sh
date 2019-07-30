@@ -12,6 +12,8 @@ docker build openstreetmap-tile-server/ -t osm-tile-server
 if [[ ! -f ./data.osm.pbf ]]; then
     echo "WARNING: No import file at /data.osm.pbf, so importing Israel as example..."
     wget https://download.geofabrik.de/asia/israel-and-palestine-latest.osm.pbf -O ./data.osm.pbf
+    #    wget https://download.geofabrik.de/asia/israel-and-palestine-latest.osm.pbf -O ./israel-and-palestine.osm.pbf
+    wget http://download.geofabrik.de/asia/china-latest.osm.pbf -O ./china.osm.pbf
 fi
 
 cdir=`pwd`

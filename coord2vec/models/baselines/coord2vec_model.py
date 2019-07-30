@@ -32,11 +32,12 @@ class Coord2Vec(BaseEstimator):
     def __init__(self, feature_builder: FeaturesBuilder,
                  n_channels: int,
                  losses: List[_Loss] = None,
+                 losses_weights = None,
                  log_loss: bool = False,
                  embedding_dim: int = 128,
                  tb_dir: str = 'default',
                  cuda_device: int = 0,
-                 multi_gpu: bool = False):
+                 multi_gpu: bool = True):
         """
 
         Args:
@@ -48,10 +49,12 @@ class Coord2Vec(BaseEstimator):
             embedding_dim: dimension of the embedding to create
         """
 
+        self.losses_weights = losses_weights
         self.log_loss = log_loss
         self.tb_dir = tb_dir
         self.embedding_dim = embedding_dim
         self.n_channels = n_channels
+        self.multi_gpu = multi_gpu
         if not multi_gpu:
             self.device = torch.device(f'cuda:{cuda_device}' if torch.cuda.is_available() else 'cpu')
         else:
@@ -93,7 +96,7 @@ class Coord2Vec(BaseEstimator):
                                  num_workers=num_workers)
 
         # create the model
-        criterion = MultiheadLoss(self.losses, use_log=self.log_loss).to(self.device)
+        criterion = MultiheadLoss(self.losses, use_log=self.log_loss, weights=self.losses_weights).to(self.device)
 
         # create tensorboard
         tb_path = os.path.join(TENSORBOARD_DIR, self.tb_dir) if self.tb_dir == 'test' \
