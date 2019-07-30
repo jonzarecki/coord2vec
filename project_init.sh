@@ -26,4 +26,4 @@ bash ./coord2vec/image_extraction/init_tile_servers.sh
 
 echo `dig +short myip.opendns.com @resolver1.opendns.com`
 conda activate coord2vec
-jupyter notebook --ip=0.0.0.0 --port=8200
+#jupyter notebook --ip=0.0.0.0 --port=8200
