@@ -1,5 +1,5 @@
 import multiprocessing
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 from pathos.pools import ProcessPool as Pool
 
 i = 0

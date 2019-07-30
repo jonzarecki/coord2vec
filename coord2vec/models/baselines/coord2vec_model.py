@@ -3,6 +3,7 @@ import os
 from typing import List, Tuple
 import matplotlib.pyplot as plt
 import random
+import numpy as np
 import torch
 from sklearn.base import BaseEstimator
 from torch import nn
@@ -18,6 +19,7 @@ from coord2vec.feature_extraction.features_builders import FeaturesBuilder
 from coord2vec.image_extraction.tile_image import generate_static_maps, render_multi_channel
 from coord2vec.image_extraction.tile_utils import build_tile_extent
 from coord2vec.models.architectures import resnet18, dual_fc_head, multihead_model
+from coord2vec.models.baselines.tensorboard_utils import build_example_image_figure
 from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
 from coord2vec.models.losses import MultiheadLoss
 
@@ -32,7 +34,7 @@ class Coord2Vec(BaseEstimator):
     def __init__(self, feature_builder: FeaturesBuilder,
                  n_channels: int,
                  losses: List[_Loss] = None,
-                 losses_weights = None,
+                 losses_weights=None,
                  log_loss: bool = False,
                  embedding_dim: int = 128,
                  tb_dir: str = 'default',
@@ -76,13 +78,15 @@ class Coord2Vec(BaseEstimator):
         self.model.to(self.device)
         self.optimizer = optim.Adam(self.model.parameters())
 
-    def fit(self, dataset: TileFeaturesDataset,
+    def fit(self, train_dataset: TileFeaturesDataset,
+            val_dataset: TileFeaturesDataset = None,
             epochs: int = 10,
             batch_size: int = 10,
             num_workers: int = 4):
         """
         Args:
-            cache_dir: directory path of the data
+            train_dataset: The dataset object for training data
+            val_dataset: The dataset object for validation data, optional
             epochs: number of epochs to train the network
             batch_size: batch size for the network
             num_workers: number of workers for the network
@@ -92,8 +96,13 @@ class Coord2Vec(BaseEstimator):
         """
 
         # create data loader
-        data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True,
-                                 num_workers=num_workers)
+        train_data_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
+                                       num_workers=num_workers)
+        if val_dataset is not None:
+            val_data_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True,
+                                         num_workers=num_workers)
+        else:
+            val_data_loader = None
 
         # create the model
         criterion = MultiheadLoss(self.losses, use_log=self.log_loss, weights=self.losses_weights).to(self.device)
@@ -107,8 +116,10 @@ class Coord2Vec(BaseEstimator):
         global_step = 0
         for epoch in tqdm(range(epochs), desc='Epochs', unit='epoch'):
             self.epoch = epoch
+
+            train_error_squared_sum = 0.
             # Training
-            for images_batch, features_batch in data_loader:
+            for images_batch, features_batch in train_data_loader:
                 images_batch = images_batch.to(self.device)
                 features_batch = features_batch.to(self.device)
                 # split the features into the multi_heads:
@@ -116,6 +127,11 @@ class Coord2Vec(BaseEstimator):
 
                 self.optimizer.zero_grad()
                 output = self.model.forward(images_batch)[1]
+
+                output_tensor = torch.stack(output).squeeze(2).cpu().detach().numpy()
+                error_rate = (output_tensor - features_batch.cpu().numpy().swapaxes(0, 1)) ** 2
+                train_error_squared_sum += error_rate.sum()
+
                 loss, multi_losses = criterion(output, split_features_batch)
                 loss.backward()
                 self.optimizer.step()
@@ -127,30 +143,27 @@ class Coord2Vec(BaseEstimator):
                                       global_step=global_step)
                 global_step += 1
 
-            fig = plt.figure(epoch, figsize=(3, 1.5), dpi=500)
-            r = random.randint(0, len(images_batch) - 1)
+            train_rmse = np.sqrt(train_error_squared_sum) / len(train_dataset)
+            writer.add_scalar('RMSE/train RMSE', train_rmse, global_step=global_step)
 
-            im = images_batch[r].cpu().numpy().swapaxes(0, 1).swapaxes(1, 2).astype('int')
-            batch_output = self.model.forward(images_batch)[1]
+            # Validation
+            if val_dataset is not None:
+                val_error_squared_sum = 0.
+                with torch.no_grad():
+                    for images_batch, features_batch in val_data_loader:
+                        images_batch = images_batch.to(self.device)
+                        features_batch = features_batch.to(self.device)
 
-            plt.axis("off")
-            plt.imshow(im[:, :, 0])
+                        output = self.model.forward(images_batch)[1]
 
-            title_font = {'size': '4', 'color': 'black', 'weight': 'normal',
-                          'verticalalignment': 'bottom', 'wrap': True,
-                          'ha': 'left'}  # Bottom vertical alignment for more space
-            fig.text(0.15, 0.75, f"actual: [{', '.join([str(a) for a in features_batch[r].cpu().numpy()])}]",
-                     **title_font)
-            fig.text(0.15, 0.8, f"predicted: [{', '.join([str(head_out[r].item()) for head_out in batch_output])}]",
-                     **title_font)
+                        output_tensor = torch.stack(output).squeeze(2).cpu().detach().numpy()
+                        error_rate = (output_tensor - features_batch.cpu().numpy().swapaxes(0, 1)) ** 2
+                        val_error_squared_sum += error_rate.sum()
 
-            plt.subplot(1, 3, 2)
-            plt.axis("off")
-            plt.imshow(im[:, :, 1])
+                val_rmse = np.sqrt(val_error_squared_sum) / len(val_dataset)
+                writer.add_scalar('RMSE/validation RMSE', val_rmse, global_step=global_step)
 
-            plt.subplot(1, 3, 3)
-            plt.axis("off")
-            plt.imshow(im[:, :, 2])
+            fig = build_example_image_figure(self.model, features_batch, images_batch, epoch)
 
             writer.add_figure(tag="Image epoch example", figure=fig, global_step=global_step)
 
