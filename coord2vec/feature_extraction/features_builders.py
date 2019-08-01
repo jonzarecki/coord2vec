@@ -54,16 +54,26 @@ class FeaturesBuilder:
         return self.extract(gdf)
 
 
-def poly_multi_feature(filter, name):
-    return [OsmPolygonFeature(filter, name=f'nearest_{name}', apply_type=NEAREST_NEIGHBOUR_all),
-            OsmPolygonFeature(filter, name=f'area_of_{name}_100m', apply_type=AREA_OF_poly, max_radius_meter=50),
-            OsmPolygonFeature(filter, name=f'number_of_{name}_100m', apply_type=NUMBER_OF_all, max_radius_meter=50)]
+def poly_multi_feature(filter, name, radii: List[int] = [50]):
+    features = []
+    for radius in radii:
+        features += [OsmPolygonFeature(filter, name=f'nearest_{name}', apply_type=NEAREST_NEIGHBOUR_all),
+                     OsmPolygonFeature(filter, name=f'area_of_{name}_{radius}m', apply_type=AREA_OF_poly,
+                                       max_radius_meter=radius),
+                     OsmPolygonFeature(filter, name=f'number_of_{name}_{radius}m', apply_type=NUMBER_OF_all,
+                                       max_radius_meter=radius)]
+    return features
 
 
-def line_multi_feature(filter, name):
-    return [OsmLineFeature(filter, name=f'nearest_{name}', apply_type=NEAREST_NEIGHBOUR_all),
-            OsmLineFeature(filter, name=f'length_of_{name}_100m', apply_type=LENGTH_OF_line, max_radius_meter=50),
-            OsmLineFeature(filter, name=f'number_of_{name}_100m', apply_type=NUMBER_OF_all, max_radius_meter=50)]
+def line_multi_feature(filter, name, radii: List[int] = [50]):
+    features = []
+    for radius in radii:
+        features += [OsmLineFeature(filter, name=f'dist_2_nearest_{name}', apply_type=NEAREST_NEIGHBOUR_all),
+                     OsmLineFeature(filter, name=f'length_of_{name}_{radius}m', apply_type=LENGTH_OF_line,
+                                    max_radius_meter=radius),
+                     OsmLineFeature(filter, name=f'number_of_{name}_{radius}m', apply_type=NUMBER_OF_all,
+                                    max_radius_meter=radius)]
+    return features
 
 
 house_price_builder = FeaturesBuilder(

@@ -23,8 +23,6 @@ from coord2vec.models.baselines.tensorboard_utils import build_example_image_fig
 from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
 from coord2vec.models.losses import MultiheadLoss
 
-IMG_RADIUS_IN_METERS = 50
-
 
 class Coord2Vec(BaseEstimator):
     """

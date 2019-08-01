@@ -3,7 +3,7 @@ from unittest import TestCase
 from geopandas import GeoDataFrame
 from shapely import wkt
 
-from coord2vec.feature_extraction.features_builders import example_features_builder
+from coord2vec.feature_extraction.features_builders import example_features_builder, house_price_builder
 import pandas as pd
 
 
@@ -22,6 +22,6 @@ class TestFeaturesBuilder(TestCase):
         self.assertEqual(results.shape[1], len(example_features_builder.features))
 
     def test_extract_coordinates(self):
-        results = example_features_builder.extract_coordinates([(34.8576548, 32.1869038)])
+        results = house_price_builder.extract_coordinates([(34.8576548, 32.1869038)])
         self.assertEqual(results.shape[0], 1)
-        self.assertEqual(results.shape[1], len(example_features_builder.features))
+        self.assertEqual(results.shape[1], len(house_price_builder.features))
