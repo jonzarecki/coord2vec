@@ -1,8 +1,6 @@
 import datetime
 import os
 from typing import List, Tuple
-import matplotlib.pyplot as plt
-import random
 import numpy as np
 import torch
 from sklearn.base import BaseEstimator
@@ -19,7 +17,7 @@ from coord2vec.feature_extraction.features_builders import FeaturesBuilder
 from coord2vec.image_extraction.tile_image import generate_static_maps, render_multi_channel
 from coord2vec.image_extraction.tile_utils import build_tile_extent
 from coord2vec.models.architectures import resnet18, dual_fc_head, multihead_model
-from coord2vec.models.baselines.tensorboard_utils import build_example_image_figure
+from coord2vec.models.baselines.tensorboard_utils import build_example_image_figure, TrainExample, create_summary_writer
 from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
 from coord2vec.models.losses import MultiheadLoss
 
@@ -106,16 +104,24 @@ class Coord2Vec(BaseEstimator):
         criterion = MultiheadLoss(self.losses, use_log=self.log_loss, weights=self.losses_weights).to(self.device)
 
         # create tensorboard
-        tb_path = os.path.join(TENSORBOARD_DIR, self.tb_dir) if self.tb_dir == 'test' \
-            else os.path.join(TENSORBOARD_DIR, self.tb_dir, str(datetime.datetime.now()))
-        writer = SummaryWriter(tb_path)
+        writer = create_summary_writer(self.model, train_data_loader, log_dir=TENSORBOARD_DIR, expr_name=self.tb_dir)
+
+        trainer = create_supervised_trainer(model, optimizer, F.nll_loss, device=device)
+        evaluator = create_supervised_evaluator(model,
+                                                metrics={'accuracy': Accuracy(),
+                                                         'nll': Loss(F.nll_loss)},
+                                                device=device)
 
         # train the model
         global_step = 0
         for epoch in tqdm(range(epochs), desc='Epochs', unit='epoch'):
             self.epoch = epoch
 
-            train_error_squared_sum = 0.
+            plusplus_ex, plusminus_ex = [None] * self.n_features, [None] * self.n_features
+            minusminus_ex, minusplus_ex = [None] * self.n_features, [None] * self.n_features
+
+            train_error_squared_sum = np.zeros(self.n_features)
+
             # Training
             for images_batch, features_batch in train_data_loader:
                 images_batch = images_batch.to(self.device)
@@ -127,8 +133,12 @@ class Coord2Vec(BaseEstimator):
                 output = self.model.forward(images_batch)[1]
 
                 output_tensor = torch.stack(output).squeeze(2).cpu().detach().numpy()
-                error_rate = (output_tensor - features_batch.cpu().numpy().swapaxes(0, 1)) ** 2
-                train_error_squared_sum += error_rate.sum()
+                features_tensor = features_batch.cpu().numpy().swapaxes(0, 1)
+                feat_diff = output_tensor - features_tensor
+                feat_sum = output_tensor + features_tensor
+
+                error_rate = feat_diff ** 2
+                train_error_squared_sum += error_rate.sum(axis=1)
 
                 loss, multi_losses = criterion(output, split_features_batch)
                 loss.backward()
@@ -136,17 +146,29 @@ class Coord2Vec(BaseEstimator):
 
                 # tensorboard
                 writer.add_scalar('Loss', loss, global_step=global_step)
-                for i in range(self.n_features):
-                    writer.add_scalar(f'Multiple Losses/{self.feature_builder.features[i].name}', multi_losses[i],
+                for j in range(self.n_features):
+                    writer.add_scalar(f'Multiple Losses/{self.feature_builder.features[j].name}', multi_losses[j],
                                       global_step=global_step)
+
+                    for i in range(len(images_batch)):
+                        itm_diff, itm_sum = feat_diff[j][i].item(), feat_sum[j][i].item()
+                        itm_pred, itm_actual = output_tensor[j][i].item(), features_tensor[j][i].item()
+                        ex = TrainExample(images_batch[i], predicted=itm_pred, actual=itm_actual, sum=itm_sum,
+                                          diff=itm_diff)
+                        if minusminus_ex[j] is None or minusminus_ex[j].sum > itm_sum:
+                            minusminus_ex[j] = ex
+                        elif plusminus_ex[j] is None or plusminus_ex[j].diff < itm_diff:
+                            plusminus_ex[j] = ex
+                        elif minusplus_ex[j] is None or minusplus_ex[j].diff > itm_diff:
+                            minusplus_ex[j] = ex
+                        elif plusplus_ex[j] is None or plusplus_ex[j].sum < itm_sum:
+                            plusplus_ex[j] = ex
+
                 global_step += 1
 
-            train_rmse = np.sqrt(train_error_squared_sum) / len(train_dataset)
-            writer.add_scalar('RMSE/train RMSE', train_rmse, global_step=global_step)
-
-            # Validation
+            # Validation RMSE
             if val_dataset is not None:
-                val_error_squared_sum = 0.
+                val_error_squared_sum = np.zeros(self.n_features)
                 with torch.no_grad():
                     for images_batch, features_batch in val_data_loader:
                         images_batch = images_batch.to(self.device)
@@ -156,14 +178,33 @@ class Coord2Vec(BaseEstimator):
 
                         output_tensor = torch.stack(output).squeeze(2).cpu().detach().numpy()
                         error_rate = (output_tensor - features_batch.cpu().numpy().swapaxes(0, 1)) ** 2
-                        val_error_squared_sum += error_rate.sum()
+                        val_error_squared_sum += error_rate.sum(axis=1)
 
-                val_rmse = np.sqrt(val_error_squared_sum) / len(val_dataset)
-                writer.add_scalar('RMSE/validation RMSE', val_rmse, global_step=global_step)
+                total_val_rmse = np.sqrt(val_error_squared_sum / len(val_dataset))
+            else:
+                total_val_rmse = None
 
-            fig = build_example_image_figure(self.model, features_batch, images_batch, epoch)
+            # tensorboard
+            total_train_rmse = np.sqrt(train_error_squared_sum / len(train_dataset))
+            for j in range(self.n_features):
+                writer.add_figure(tag=f"{self.feature_builder.features[j].name}/plusplus",
+                                  figure=build_example_image_figure(plusplus_ex[j]), global_step=global_step)
 
-            writer.add_figure(tag="Image epoch example", figure=fig, global_step=global_step)
+                writer.add_figure(tag=f"{self.feature_builder.features[j].name}/plusminus",
+                                  figure=build_example_image_figure(plusminus_ex[j]), global_step=global_step)
+
+                writer.add_figure(tag=f"{self.feature_builder.features[j].name}/minusminus",
+                                  figure=build_example_image_figure(minusminus_ex[j]), global_step=global_step)
+
+                writer.add_figure(tag=f"{self.feature_builder.features[j].name}/minusplus",
+                                  figure=build_example_image_figure(minusplus_ex[j]), global_step=global_step)
+
+                writer.add_scalar(f'{self.feature_builder.features[j].name} RMSE/train RMSE', total_train_rmse[j],
+                                  global_step=global_step)
+
+                if total_val_rmse is not None:
+                    writer.add_scalar(f'{self.feature_builder.features[j].name} RMSE/validation RMSE', total_val_rmse[j],
+                                      global_step=global_step)
 
             self.save_trained_model(config.COORD2VEC_DIR_PATH + "/models/saved_models/trained_model.pkl")
         return self.model
