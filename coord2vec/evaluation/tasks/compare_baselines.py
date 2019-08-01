@@ -23,18 +23,19 @@ def compare_baselines(task, baselines, **fit_kwargs):
         baseline_scores = task_handler.scores()
 
         scores.append(baseline_scores)
-        # print(baseline_scores)
+        print(baseline_scores)
 
     return scores
 
 
 if __name__ == '__main__':
+    # create all the models
     coord2vec = Coord2Vec(house_price_builder, n_channels=3, multi_gpu=False).load_trained_model(
         '../../../coord2vec/models/saved_models/norm_model.pt')
     coord2features = Coord2Features(house_price_builder).load_trained_model('')
     empty_model = EmptyModel()
 
-    baselines = [empty_model, coord2features, coord2vec]
+    baselines = [coord2features, coord2vec, empty_model]
     fit_kwargs = {'cache_dir': config.CACHE_DIR}
 
     scores = compare_baselines(HousePricing, baselines, **fit_kwargs)
