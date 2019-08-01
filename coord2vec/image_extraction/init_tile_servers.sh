@@ -14,6 +14,7 @@ if [[ ! -f ./data.osm.pbf ]]; then
     wget https://download.geofabrik.de/asia/israel-and-palestine-latest.osm.pbf -O ./data.osm.pbf
     #    wget https://download.geofabrik.de/asia/israel-and-palestine-latest.osm.pbf -O ./israel-and-palestine.osm.pbf
     wget http://download.geofabrik.de/asia/china-latest.osm.pbf -O ./china.osm.pbf
+    wget http://download.geofabrik.de/north-america/us/washington-latest.osm.pbf -O ./washington.osm.pbf
 fi
 
 cdir=`pwd`
@@ -27,7 +28,7 @@ else
     docker volume rm osm-data-tile
     docker volume create osm-data-tile
 
-    docker run -v $cdir/data.osm.pbf:/data.osm.pbf -v osm-data-tile:/var/lib/postgresql/10/main \
+    docker run -v $cdir/washington.osm.pbf:/data.osm.pbf -v osm-data-tile:/var/lib/postgresql/10/main \
                     osm-tile-server import &
 
     wait

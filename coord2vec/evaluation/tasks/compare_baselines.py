@@ -3,7 +3,7 @@ import pandas as pd
 from coord2vec import config
 from coord2vec.evaluation.tasks import HousePricing
 from coord2vec.models.baselines import *
-from coord2vec.feature_extraction.features_builders import example_features_builder, house_price_builder
+from coord2vec.feature_extraction.features_builders import house_price_builder
 from coord2vec.models.baselines.empty_model import EmptyModel
 
 
