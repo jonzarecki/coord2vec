@@ -20,6 +20,7 @@ dependencies:
 - pytorch=1.1.0
 - torchvision
 - cudatoolkit
+- ignite  # from the pytorch channel
 
 # Spatial packages
 #- rasterstats
