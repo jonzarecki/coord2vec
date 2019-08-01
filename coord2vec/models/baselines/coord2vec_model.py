@@ -106,11 +106,11 @@ class Coord2Vec(BaseEstimator):
         # create tensorboard
         writer = create_summary_writer(self.model, train_data_loader, log_dir=TENSORBOARD_DIR, expr_name=self.tb_dir)
 
-        trainer = create_supervised_trainer(model, optimizer, F.nll_loss, device=device)
-        evaluator = create_supervised_evaluator(model,
-                                                metrics={'accuracy': Accuracy(),
-                                                         'nll': Loss(F.nll_loss)},
-                                                device=device)
+        # trainer = create_supervised_trainer(model, optimizer, F.nll_loss, device=device)
+        # evaluator = create_supervised_evaluator(model,
+        #                                         metrics={'accuracy': Accuracy(),
+        #                                                  'nll': Loss(F.nll_loss)},
+        #                                         device=device)
 
         # train the model
         global_step = 0
