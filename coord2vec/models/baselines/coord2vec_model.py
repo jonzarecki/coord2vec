@@ -1,5 +1,6 @@
 import datetime
 import os
+import random
 from typing import List, Tuple
 import numpy as np
 import torch
@@ -20,6 +21,12 @@ from coord2vec.models.architectures import resnet18, dual_fc_head, multihead_mod
 from coord2vec.models.baselines.tensorboard_utils import build_example_image_figure, TrainExample, create_summary_writer
 from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
 from coord2vec.models.losses import MultiheadLoss
+
+def check_manual_seed(args):
+    seed = args.seed or random.randint(1, 10000)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
 
 class Coord2Vec(BaseEstimator):
@@ -141,6 +148,9 @@ class Coord2Vec(BaseEstimator):
                 train_error_squared_sum += error_rate.sum(axis=1)
 
                 loss, multi_losses = criterion(output, split_features_batch)
+                # mixed precision training
+                # with amp.scale_loss(loss, optimizer) as scaled_loss:
+                #     scaled_loss.backward()
                 loss.backward()
                 self.optimizer.step()
 
@@ -228,6 +238,13 @@ class Coord2Vec(BaseEstimator):
         self.model = self.model.to(self.device)
         return self
 
+    def _model_to(self):
+        self.model = self.model.to(self.device)
+        # # from apex import amp
+        if self.amp:
+            model, optimizer = amp.initialize(model.to('cuda'), optimizer, opt_level="O1")
+
+
     def save_trained_model(self, path: str):
         """
         save a trained model
@@ -245,7 +262,13 @@ class Coord2Vec(BaseEstimator):
             'losses': self.losses,
         }, path)
 
+        # do we want to use it ? from Ignite
+        # checkpoint_handler = ModelCheckpoint(args.checkpoint_model_dir, 'checkpoint',
+        #                                  save_interval=args.checkpoint_interval,
+        #                                  n_saved=10, require_empty=False, create_dir=True)
+
         self.model = self.model.to(self.device)
+
 
     def predict(self, coords: List[Tuple[float, float]]):
         """
