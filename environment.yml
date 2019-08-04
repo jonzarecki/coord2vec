@@ -55,5 +55,5 @@ dependencies:
     - staticmap
     - pathos
     - torchsummary
-    - tb-nightly
+    - tb-nightly  # for tensorboard
 
