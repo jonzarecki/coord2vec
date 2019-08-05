@@ -1,3 +1,4 @@
+import os
 from typing import Tuple, List
 
 from sklearn.base import BaseEstimator
@@ -42,15 +43,17 @@ class Coord2Features(BaseEstimator):
 
     def predict(self, coords: List[Tuple[float, float]]):
         # create the features
+        cache_dir = os.path.join(TEST_CACHE_DIR, 'seatle_prices')
+
         def get_features(i):
             feature_vec = self.feature_builder.extract_coordinates([coords[i]])
-            with open(f"{TEST_CACHE_DIR}/{i}.pkl", 'wb') as f:
+            with open(f"{cache_dir}/{i}.pkl", 'wb') as f:
                 pickle.dump(feature_vec, f)
 
         parmap(get_features, range(len(coords)), use_tqdm=True, desc='building_dataset')
 
         # read the features and return them
-        pkl_paths = get_files_from_path(TEST_CACHE_DIR)
+        pkl_paths = get_files_from_path(cache_dir)
         features = []
         for pkl_path in pkl_paths:
             with open(pkl_path, 'rb') as f:

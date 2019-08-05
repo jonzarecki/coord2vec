@@ -24,6 +24,7 @@ from coord2vec.models.baselines.tensorboard_utils import build_example_image_fig
 from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
 from coord2vec.models.losses import MultiheadLoss
 
+
 def check_manual_seed(args):
     seed = args.seed or random.randint(1, 10000)
     random.seed(seed)
@@ -88,7 +89,8 @@ class Coord2Vec(BaseEstimator):
             val_dataset: TileFeaturesDataset = None,
             epochs: int = 10,
             batch_size: int = 10,
-            num_workers: int = 4):
+            num_workers: int = 4,
+            evaluate_every: int = 20):
         """
         Args:
             train_dataset: The dataset object for training data
@@ -173,38 +175,40 @@ class Coord2Vec(BaseEstimator):
                     elif plusplus_ex[j] is None or plusplus_ex[j].sum < itm_sum:
                         engine.state.plusplus_ex[j] = ex
 
-        @trainer.on(Events.EPOCH_COMPLETED)
+        @trainer.on(Events.ITERATION_COMPLETED)
         def log_training_results(engine):
             global_step = engine.state.iteration
             # evaluator.run(train_data_loader)
-            metrics = engine.state.metrics  # already attached to the trainer engine to save
-            # can add more metrics here
-            add_rmse_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="train")
+            if global_step % evaluate_every == 0:
+                metrics = engine.state.metrics  # already attached to the trainer engine to save
+                # can add more metrics here
+                add_rmse_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="train")
 
-            # plot min-max examples
-            plusplus_ex, plusminus_ex = engine.state.plusplus_ex, engine.state.plusminus_ex
-            minusminus_ex, minusplus_ex = engine.state.minusminus_ex, engine.state.minusplus_ex
+                # plot min-max examples
+                plusplus_ex, plusminus_ex = engine.state.plusplus_ex, engine.state.plusminus_ex
+                minusminus_ex, minusplus_ex = engine.state.minusminus_ex, engine.state.minusplus_ex
 
-            for j in range(self.n_features):
-                writer.add_figure(tag=f"{self.feature_names[j]}/plusplus",
-                                  figure=build_example_image_figure(plusplus_ex[j]), global_step=global_step)
+                for j in range(self.n_features):
+                    writer.add_figure(tag=f"{self.feature_names[j]}/plusplus",
+                                      figure=build_example_image_figure(plusplus_ex[j]), global_step=global_step)
 
-                writer.add_figure(tag=f"{self.feature_names[j]}/plusminus",
-                                  figure=build_example_image_figure(plusminus_ex[j]), global_step=global_step)
+                    writer.add_figure(tag=f"{self.feature_names[j]}/plusminus",
+                                      figure=build_example_image_figure(plusminus_ex[j]), global_step=global_step)
 
-                writer.add_figure(tag=f"{self.feature_names[j]}/minusminus",
-                                  figure=build_example_image_figure(minusminus_ex[j]), global_step=global_step)
+                    writer.add_figure(tag=f"{self.feature_names[j]}/minusminus",
+                                      figure=build_example_image_figure(minusminus_ex[j]), global_step=global_step)
 
-                writer.add_figure(tag=f"{self.feature_names[j]}/minusplus",
-                                  figure=build_example_image_figure(minusplus_ex[j]), global_step=global_step)
+                    writer.add_figure(tag=f"{self.feature_names[j]}/minusplus",
+                                      figure=build_example_image_figure(minusplus_ex[j]), global_step=global_step)
 
-        @trainer.on(Events.EPOCH_COMPLETED)
+        @trainer.on(Events.ITERATION_COMPLETED)
         def log_validation_results(engine):
             global_step = engine.state.iteration
-            evaluator.run(val_data_loader)
-            metrics = evaluator.state.metrics
-            # can add more metrics here
-            add_rmse_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="validation")
+            if global_step % evaluate_every == 0:
+                evaluator.run(val_data_loader)
+                metrics = evaluator.state.metrics
+                # can add more metrics here
+                add_rmse_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="validation")
 
         trainer.run(train_data_loader, max_epochs=epochs)
 
@@ -221,7 +225,6 @@ class Coord2Vec(BaseEstimator):
             the trained model in 'path'
         """
         checkpoint = torch.load(path)
-        self.epoch = checkpoint['epoch']
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.embedding_dim = checkpoint['embedding_dim']
@@ -246,7 +249,6 @@ class Coord2Vec(BaseEstimator):
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
         torch.save({
-            'epoch': self.epoch,
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
             'embedding_dim': self.embedding_dim,
@@ -259,7 +261,6 @@ class Coord2Vec(BaseEstimator):
         #                                  n_saved=10, require_empty=False, create_dir=True)
 
         self.model = self.model.to(self.device)
-
 
     def predict(self, coords: List[Tuple[float, float]]):
         """
