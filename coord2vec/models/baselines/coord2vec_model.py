@@ -90,7 +90,7 @@ class Coord2Vec(BaseEstimator):
             epochs: int = 10,
             batch_size: int = 10,
             num_workers: int = 4,
-            evaluate_every: int = 20):
+            evluate_every: int = 20):
         """
         Args:
             train_dataset: The dataset object for training data
@@ -175,36 +175,35 @@ class Coord2Vec(BaseEstimator):
                     elif plusplus_ex[j] is None or plusplus_ex[j].sum < itm_sum:
                         engine.state.plusplus_ex[j] = ex
 
-        @trainer.on(Events.ITERATION_COMPLETED)
+        @trainer.on(Events.EPOCH_COMPLETED)
         def log_training_results(engine):
             global_step = engine.state.iteration
             # evaluator.run(train_data_loader)
-            if global_step % evaluate_every == 0:
-                metrics = engine.state.metrics  # already attached to the trainer engine to save
-                # can add more metrics here
-                add_rmse_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="train")
+            metrics = engine.state.metrics  # already attached to the trainer engine to save
+            # can add more metrics here
+            add_rmse_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="train")
 
-                # plot min-max examples
-                plusplus_ex, plusminus_ex = engine.state.plusplus_ex, engine.state.plusminus_ex
-                minusminus_ex, minusplus_ex = engine.state.minusminus_ex, engine.state.minusplus_ex
+            # plot min-max examples
+            plusplus_ex, plusminus_ex = engine.state.plusplus_ex, engine.state.plusminus_ex
+            minusminus_ex, minusplus_ex = engine.state.minusminus_ex, engine.state.minusplus_ex
 
-                for j in range(self.n_features):
-                    writer.add_figure(tag=f"{self.feature_names[j]}/plusplus",
-                                      figure=build_example_image_figure(plusplus_ex[j]), global_step=global_step)
+            for j in range(self.n_features):
+                writer.add_figure(tag=f"{self.feature_names[j]}/plusplus",
+                                  figure=build_example_image_figure(plusplus_ex[j]), global_step=global_step)
 
-                    writer.add_figure(tag=f"{self.feature_names[j]}/plusminus",
-                                      figure=build_example_image_figure(plusminus_ex[j]), global_step=global_step)
+                writer.add_figure(tag=f"{self.feature_names[j]}/plusminus",
+                                  figure=build_example_image_figure(plusminus_ex[j]), global_step=global_step)
 
-                    writer.add_figure(tag=f"{self.feature_names[j]}/minusminus",
-                                      figure=build_example_image_figure(minusminus_ex[j]), global_step=global_step)
+                writer.add_figure(tag=f"{self.feature_names[j]}/minusminus",
+                                  figure=build_example_image_figure(minusminus_ex[j]), global_step=global_step)
 
-                    writer.add_figure(tag=f"{self.feature_names[j]}/minusplus",
-                                      figure=build_example_image_figure(minusplus_ex[j]), global_step=global_step)
+                writer.add_figure(tag=f"{self.feature_names[j]}/minusplus",
+                                  figure=build_example_image_figure(minusplus_ex[j]), global_step=global_step)
 
         @trainer.on(Events.ITERATION_COMPLETED)
         def log_validation_results(engine):
             global_step = engine.state.iteration
-            if global_step % evaluate_every == 0:
+            if global_step % evluate_every == 0:
                 evaluator.run(val_data_loader)
                 metrics = evaluator.state.metrics
                 # can add more metrics here
