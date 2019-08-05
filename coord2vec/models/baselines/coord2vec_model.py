@@ -158,7 +158,6 @@ class Coord2Vec(BaseEstimator):
             for j in range(self.n_features):
                 writer.add_scalar(f'Multiple Losses/{self.feature_names[j]}', multi_losses[j],
                                   global_step=engine.state.iteration)
-
                 for i in range(len(images_batch)):
                     itm_diff, itm_sum = feat_diff[j][i].item(), feat_sum[j][i].item()
                     itm_pred, itm_actual = y_pred_tensor[j][i].item(), y_tensor[j][i].item()
@@ -197,6 +196,14 @@ class Coord2Vec(BaseEstimator):
 
                 writer.add_figure(tag=f"{self.feature_names[j]}/minusplus",
                                   figure=build_example_image_figure(minusplus_ex[j]), global_step=global_step)
+
+        @trainer.on(Events.EPOCH_COMPLETED)
+        def visualize_embeddings(engine):
+            global_step = engine.state.iteration
+            # evaluator.run(train_data_loader)
+            metrics = engine.state.metrics  # already attached to the trainer engine to save
+            # can add more metrics here
+            images_batch, features_batch = engine.state.batch
 
         @trainer.on(Events.EPOCH_COMPLETED)
         def log_validation_results(engine):
