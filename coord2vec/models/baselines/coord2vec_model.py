@@ -1,16 +1,17 @@
-import datetime
 import os
 import random
 from typing import List, Tuple
-import numpy as np
 import torch
+from ignite.contrib.handlers import ProgressBar
 from sklearn.base import BaseEstimator
 from torch import nn
 from torch import optim
 from torch.nn.modules.loss import _Loss, L1Loss
 from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
-from tqdm.autonotebook import tqdm
+
+from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
+
+from coord2vec.common.mtl.metrics.rmse import RootMeanSquaredError
 
 from coord2vec import config
 from coord2vec.config import HALF_TILE_LENGTH, TENSORBOARD_DIR
@@ -18,7 +19,8 @@ from coord2vec.feature_extraction.features_builders import FeaturesBuilder
 from coord2vec.image_extraction.tile_image import generate_static_maps, render_multi_channel
 from coord2vec.image_extraction.tile_utils import build_tile_extent
 from coord2vec.models.architectures import resnet18, dual_fc_head, multihead_model
-from coord2vec.models.baselines.tensorboard_utils import build_example_image_figure, TrainExample, create_summary_writer
+from coord2vec.models.baselines.tensorboard_utils import build_example_image_figure, TrainExample, \
+    create_summary_writer, add_rmse_to_tensorboard
 from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
 from coord2vec.models.losses import MultiheadLoss
 
@@ -67,6 +69,7 @@ class Coord2Vec(BaseEstimator):
 
         self.feature_builder = feature_builder
         self.n_features = len(feature_builder.features)
+        self.feature_names = [feature_builder.features[i].name for i in range(self.n_features)]
 
         # create L1 losses if not supplied
         self.losses = [L1Loss() for i in range(self.n_features)] if losses is None else losses
@@ -113,110 +116,99 @@ class Coord2Vec(BaseEstimator):
         # create tensorboard
         writer = create_summary_writer(self.model, train_data_loader, log_dir=TENSORBOARD_DIR, expr_name=self.tb_dir)
 
-        trainer = create_supervised_trainer(model, optimizer, F.nll_loss, device=device)
-        evaluator = create_supervised_evaluator(model,
-                                                metrics={'accuracy': Accuracy(),
-                                                         'nll': Loss(F.nll_loss)},
-                                                device=device)
+        def multihead_loss_func(y_pred, y):
+            return criterion(y_pred[1], torch.split(y, 1, dim=1))[0]
 
-        # train the model
-        global_step = 0
-        for epoch in tqdm(range(epochs), desc='Epochs', unit='epoch'):
-            self.epoch = epoch
+        def multihead_output_transform(x, y, y_pred, *args):
+            output = y_pred[1]
+            y_pred_tensor = torch.stack(output).squeeze(2)
+            y_tensor = y.transpose(0, 1)
 
-            plusplus_ex, plusminus_ex = [None] * self.n_features, [None] * self.n_features
-            minusminus_ex, minusplus_ex = [None] * self.n_features, [None] * self.n_features
+            loss, multi_losses = criterion(output, torch.split(y, 1, dim=1))
+            return loss, multi_losses, y_pred_tensor, y_tensor
 
-            train_error_squared_sum = np.zeros(self.n_features)
+        metrics = {'rmse': RootMeanSquaredError()}
+        trainer = create_supervised_trainer(self.model, self.optimizer, multihead_loss_func, device=self.device,
+                                            output_transform=multihead_output_transform)
+        for name, metric in metrics.items():  # Calculate metrics also on trainer
+            metric.attach(trainer, name)
 
-            # Training
-            for images_batch, features_batch in train_data_loader:
-                images_batch = images_batch.to(self.device)
-                features_batch = features_batch.to(self.device)
-                # split the features into the multi_heads:
-                split_features_batch = torch.split(features_batch, 1, dim=1)
+        evaluator = create_supervised_evaluator(self.model,
+                                                metrics=metrics,
+                                                device=self.device,
+                                                output_transform=multihead_output_transform)
+        ProgressBar(persist=True, bar_format="").attach(trainer)
 
-                self.optimizer.zero_grad()
-                output = self.model.forward(images_batch)[1]
+        @trainer.on(Events.EPOCH_STARTED)
+        def init_state_params(engine):
+            engine.state.plusplus_ex, engine.state.plusminus_ex = [None] * self.n_features, [None] * self.n_features
+            engine.state.minusminus_ex, engine.state.minusplus_ex = [None] * self.n_features, [None] * self.n_features
 
-                output_tensor = torch.stack(output).squeeze(2).cpu().detach().numpy()
-                features_tensor = features_batch.cpu().numpy().swapaxes(0, 1)
-                feat_diff = output_tensor - features_tensor
-                feat_sum = output_tensor + features_tensor
+        @trainer.on(Events.ITERATION_COMPLETED)
+        def log_training_loss(engine):
+            loss, multi_losses, y_pred_tensor, y_tensor = engine.state.output
+            images_batch, features_batch = engine.state.batch
+            plusplus_ex, plusminus_ex = engine.state.plusplus_ex, engine.state.plusminus_ex
+            minusminus_ex, minusplus_ex = engine.state.minusminus_ex, engine.state.minusplus_ex
 
-                error_rate = feat_diff ** 2
-                train_error_squared_sum += error_rate.sum(axis=1)
+            writer.add_scalar('Loss', loss, global_step=engine.state.iteration)
 
-                loss, multi_losses = criterion(output, split_features_batch)
-                # mixed precision training
-                # with amp.scale_loss(loss, optimizer) as scaled_loss:
-                #     scaled_loss.backward()
-                loss.backward()
-                self.optimizer.step()
-
-                # tensorboard
-                writer.add_scalar('Loss', loss, global_step=global_step)
-                for j in range(self.n_features):
-                    writer.add_scalar(f'Multiple Losses/{self.feature_builder.features[j].name}', multi_losses[j],
-                                      global_step=global_step)
-
-                    for i in range(len(images_batch)):
-                        itm_diff, itm_sum = feat_diff[j][i].item(), feat_sum[j][i].item()
-                        itm_pred, itm_actual = output_tensor[j][i].item(), features_tensor[j][i].item()
-                        ex = TrainExample(images_batch[i], predicted=itm_pred, actual=itm_actual, sum=itm_sum,
-                                          diff=itm_diff)
-                        if minusminus_ex[j] is None or minusminus_ex[j].sum > itm_sum:
-                            minusminus_ex[j] = ex
-                        elif plusminus_ex[j] is None or plusminus_ex[j].diff < itm_diff:
-                            plusminus_ex[j] = ex
-                        elif minusplus_ex[j] is None or minusplus_ex[j].diff > itm_diff:
-                            minusplus_ex[j] = ex
-                        elif plusplus_ex[j] is None or plusplus_ex[j].sum < itm_sum:
-                            plusplus_ex[j] = ex
-
-                global_step += 1
-
-            # Validation RMSE
-            if val_dataset is not None:
-                val_error_squared_sum = np.zeros(self.n_features)
-                with torch.no_grad():
-                    for images_batch, features_batch in val_data_loader:
-                        images_batch = images_batch.to(self.device)
-                        features_batch = features_batch.to(self.device)
-
-                        output = self.model.forward(images_batch)[1]
-
-                        output_tensor = torch.stack(output).squeeze(2).cpu().detach().numpy()
-                        error_rate = (output_tensor - features_batch.cpu().numpy().swapaxes(0, 1)) ** 2
-                        val_error_squared_sum += error_rate.sum(axis=1)
-
-                total_val_rmse = np.sqrt(val_error_squared_sum / len(val_dataset))
-            else:
-                total_val_rmse = None
-
-            # tensorboard
-            total_train_rmse = np.sqrt(train_error_squared_sum / len(train_dataset))
+            feat_diff = y_pred_tensor - y_tensor
+            feat_sum = y_pred_tensor + y_tensor
             for j in range(self.n_features):
-                writer.add_figure(tag=f"{self.feature_builder.features[j].name}/plusplus",
+                writer.add_scalar(f'Multiple Losses/{self.feature_names[j]}', multi_losses[j],
+                                  global_step=engine.state.iteration)
+
+                for i in range(len(images_batch)):
+                    itm_diff, itm_sum = feat_diff[j][i].item(), feat_sum[j][i].item()
+                    itm_pred, itm_actual = y_pred_tensor[j][i].item(), y_tensor[j][i].item()
+                    ex = TrainExample(images_batch[i], predicted=itm_pred, actual=itm_actual, sum=itm_sum,
+                                      diff=itm_diff)
+                    if minusminus_ex[j] is None or minusminus_ex[j].sum > itm_sum:
+                        engine.state.minusminus_ex[j] = ex
+                    elif plusminus_ex[j] is None or plusminus_ex[j].diff < itm_diff:
+                        engine.state.plusminus_ex[j] = ex
+                    elif minusplus_ex[j] is None or minusplus_ex[j].diff > itm_diff:
+                        engine.state.minusplus_ex[j] = ex
+                    elif plusplus_ex[j] is None or plusplus_ex[j].sum < itm_sum:
+                        engine.state.plusplus_ex[j] = ex
+
+        @trainer.on(Events.EPOCH_COMPLETED)
+        def log_training_results(engine):
+            global_step = engine.state.iteration
+            # evaluator.run(train_data_loader)
+            metrics = engine.state.metrics  # already attached to the trainer engine to save
+            # can add more metrics here
+            add_rmse_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="train")
+
+            # plot min-max examples
+            plusplus_ex, plusminus_ex = engine.state.plusplus_ex, engine.state.plusminus_ex
+            minusminus_ex, minusplus_ex = engine.state.minusminus_ex, engine.state.minusplus_ex
+
+            for j in range(self.n_features):
+                writer.add_figure(tag=f"{self.feature_names[j]}/plusplus",
                                   figure=build_example_image_figure(plusplus_ex[j]), global_step=global_step)
 
-                writer.add_figure(tag=f"{self.feature_builder.features[j].name}/plusminus",
+                writer.add_figure(tag=f"{self.feature_names[j]}/plusminus",
                                   figure=build_example_image_figure(plusminus_ex[j]), global_step=global_step)
 
-                writer.add_figure(tag=f"{self.feature_builder.features[j].name}/minusminus",
+                writer.add_figure(tag=f"{self.feature_names[j]}/minusminus",
                                   figure=build_example_image_figure(minusminus_ex[j]), global_step=global_step)
 
-                writer.add_figure(tag=f"{self.feature_builder.features[j].name}/minusplus",
+                writer.add_figure(tag=f"{self.feature_names[j]}/minusplus",
                                   figure=build_example_image_figure(minusplus_ex[j]), global_step=global_step)
 
-                writer.add_scalar(f'{self.feature_builder.features[j].name} RMSE/train RMSE', total_train_rmse[j],
-                                  global_step=global_step)
+        @trainer.on(Events.EPOCH_COMPLETED)
+        def log_validation_results(engine):
+            global_step = engine.state.iteration
+            evaluator.run(val_data_loader)
+            metrics = evaluator.state.metrics
+            # can add more metrics here
+            add_rmse_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="validation")
 
-                if total_val_rmse is not None:
-                    writer.add_scalar(f'{self.feature_builder.features[j].name} RMSE/validation RMSE', total_val_rmse[j],
-                                      global_step=global_step)
+        trainer.run(train_data_loader, max_epochs=epochs)
 
-            self.save_trained_model(config.COORD2VEC_DIR_PATH + "/models/saved_models/trained_model.pkl")
+        self.save_trained_model(config.COORD2VEC_DIR_PATH + "/models/saved_models/trained_model.pkl")
         return self.model
 
     def load_trained_model(self, path: str):
@@ -243,7 +235,6 @@ class Coord2Vec(BaseEstimator):
         # # from apex import amp
         if self.amp:
             model, optimizer = amp.initialize(model.to('cuda'), optimizer, opt_level="O1")
-
 
     def save_trained_model(self, path: str):
         """
