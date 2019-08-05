@@ -22,7 +22,7 @@ def build_example_image_figure(ex: TrainExample):
     im = ex.image.cpu().numpy().swapaxes(0, 1).swapaxes(1, 2).astype('int')
     plt.axis("off")
     plt.imshow(im[:, :, 0])
-    title_font = {'size': '4', 'color': 'black', 'weight': 'normal',
+    title_font = {'size': '3', 'color': 'black', 'weight': 'normal',
                   'verticalalignment': 'bottom', 'wrap': True,
                   'ha': 'left'}  # Bottom vertical alignment for more space
     fig.text(0.15, 0.75, f"actual: {ex.actual}", **title_font)

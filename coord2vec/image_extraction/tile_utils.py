@@ -25,3 +25,9 @@ def sample_coordinate_in_range(min_lat: float, min_lon: float, max_lat: float, m
     lon = np.random.uniform(min_lon, max_lon)
 
     return lat, lon
+
+def sample_grid_in_range(min_lat: float, min_lon: float, max_lat: float, max_lon: float, step: float = 0.01):
+    x = np.arange(min_lon, max_lon, step=step)
+    y = np.arange(min_lat, max_lat, step=step)
+    coords = np.stack(np.meshgrid(x, y), -1)
+    return coords
