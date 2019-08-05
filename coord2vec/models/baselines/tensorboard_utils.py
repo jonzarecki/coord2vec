@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from attr import dataclass
 from torch.utils.tensorboard import SummaryWriter
+from typing import List
 
 
 @dataclass
@@ -39,11 +40,17 @@ def create_summary_writer(model, data_loader, log_dir, expr_name) -> SummaryWrit
     tb_path = os.path.join(log_dir, expr_name) if expr_name == 'test' \
         else os.path.join(log_dir, expr_name, str(datetime.datetime.now()))
 
-    writer = SummaryWriter(logdir=tb_path)
-    data_loader_iter = iter(data_loader)
-    x, y = next(data_loader_iter)
-    try:
-        writer.add_graph(model, x)
-    except Exception as e:
-        print("Failed to save model graph: {}".format(e))
+    writer = SummaryWriter(tb_path)
+    # data_loader_iter = iter(data_loader)
+    # x, y = next(data_loader_iter)
+    # try:
+    #     writer.add_graph(model, x)
+    # except Exception as e:
+    #     print("Failed to save model graph: {}".format(e))
     return writer
+
+
+def add_rmse_to_tensorboard(metrics: dict, writer: SummaryWriter, feature_names: List[str], global_step: int, log_str="train"):
+    avg_rmse = metrics['rmse']
+    for i, feat_name in enumerate(feature_names):
+        writer.add_scalar(f'{feat_name} RMSE/{log_str} RMSE', avg_rmse[i], global_step=global_step)
