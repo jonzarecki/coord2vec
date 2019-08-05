@@ -21,12 +21,13 @@ def build_example_image_figure(ex: TrainExample):
     fig = plt.figure(figsize=(3, 1.5), dpi=500)
     im = ex.image.cpu().numpy().swapaxes(0, 1).swapaxes(1, 2).astype('int')
     plt.axis("off")
-    plt.imshow(im[:, :, 0])
     title_font = {'size': '3', 'color': 'black', 'weight': 'normal',
                   'verticalalignment': 'bottom', 'wrap': True,
                   'ha': 'left'}  # Bottom vertical alignment for more space
     fig.text(0.15, 0.75, f"actual: {ex.actual}", **title_font)
     fig.text(0.15, 0.8, f"predicted: {ex.predicted}", **title_font)
+    plt.subplot(1, 3, 1)
+    plt.imshow(im[:, :, 0])
     plt.subplot(1, 3, 2)
     plt.axis("off")
     plt.imshow(im[:, :, 1])
@@ -41,10 +42,10 @@ def create_summary_writer(model, data_loader, log_dir, expr_name) -> SummaryWrit
         else os.path.join(log_dir, expr_name, str(datetime.datetime.now()))
 
     writer = SummaryWriter(tb_path)
-    # data_loader_iter = iter(data_loader)
-    # x, y = next(data_loader_iter)
+    data_loader_iter = iter(data_loader)
+    x, y = next(data_loader_iter)
     # try:
-    #     writer.add_graph(model, x)
+    writer.add_graph(model, y)
     # except Exception as e:
     #     print("Failed to save model graph: {}".format(e))
     return writer
@@ -54,3 +55,7 @@ def add_rmse_to_tensorboard(metrics: dict, writer: SummaryWriter, feature_names:
     avg_rmse = metrics['rmse']
     for i, feat_name in enumerate(feature_names):
         writer.add_scalar(f'{feat_name} RMSE/{log_str} RMSE', avg_rmse[i], global_step=global_step)
+
+
+# def add_embedding_visualization(writer: SummaryWriter):
+#     writer.add_embedding(torch.randn(100, 5), metadata=meta, label_img=label_img)
