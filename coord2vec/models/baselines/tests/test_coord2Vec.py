@@ -19,7 +19,7 @@ class TestCoord2Vec(TestCase):
 
     def test_fit_predict(self):
         # test fit
-        sample_and_save_dataset(TEST_CACHE_DIR, sample_num=7, use_existing=False)
+        sample_and_save_dataset(TEST_CACHE_DIR, sample_num=7, use_existing=True)
         train_dataset = TileFeaturesDataset(TEST_CACHE_DIR)
         val_dataset = TileFeaturesDataset(TEST_CACHE_DIR)
 

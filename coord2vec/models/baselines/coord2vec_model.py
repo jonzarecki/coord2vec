@@ -15,12 +15,13 @@ from coord2vec.common.mtl.metrics.rmse import RootMeanSquaredError
 
 from coord2vec import config
 from coord2vec.config import HALF_TILE_LENGTH, TENSORBOARD_DIR
+from coord2vec.evaluation.intristic_metrics.reconstruction import DistanceCorrelation
 from coord2vec.feature_extraction.features_builders import FeaturesBuilder
 from coord2vec.image_extraction.tile_image import generate_static_maps, render_multi_channel
 from coord2vec.image_extraction.tile_utils import build_tile_extent
 from coord2vec.models.architectures import resnet18, dual_fc_head, multihead_model
 from coord2vec.models.baselines.tensorboard_utils import build_example_image_figure, TrainExample, \
-    create_summary_writer, add_rmse_to_tensorboard
+    create_summary_writer, add_metrics_to_tensorboard
 from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
 from coord2vec.models.losses import MultiheadLoss
 
@@ -122,14 +123,15 @@ class Coord2Vec(BaseEstimator):
             return criterion(y_pred[1], torch.split(y, 1, dim=1))[0]
 
         def multihead_output_transform(x, y, y_pred, *args):
-            output = y_pred[1]
+            embedding, output = y_pred
             y_pred_tensor = torch.stack(output).squeeze(2)
             y_tensor = y.transpose(0, 1)
 
-            loss, multi_losses = criterion(output, torch.split(y, 1, dim=1))
-            return loss, multi_losses, y_pred_tensor, y_tensor
+            with torch.no_grad():
+                loss, multi_losses = criterion(output, torch.split(y, 1, dim=1))
+            return embedding, loss, multi_losses, y_pred_tensor, y_tensor
 
-        metrics = {'rmse': RootMeanSquaredError()}
+        metrics = {'rmse': RootMeanSquaredError(), 'corr': DistanceCorrelation()}
         trainer = create_supervised_trainer(self.model, self.optimizer, multihead_loss_func, device=self.device,
                                             output_transform=multihead_output_transform)
         for name, metric in metrics.items():  # Calculate metrics also on trainer
@@ -148,12 +150,12 @@ class Coord2Vec(BaseEstimator):
 
         @trainer.on(Events.ITERATION_COMPLETED)
         def log_training_loss(engine):
-            loss, multi_losses, y_pred_tensor, y_tensor = engine.state.output
+            embedding, loss, multi_losses, y_pred_tensor, y_tensor = engine.state.output
             images_batch, features_batch = engine.state.batch
             plusplus_ex, plusminus_ex = engine.state.plusplus_ex, engine.state.plusminus_ex
             minusminus_ex, minusplus_ex = engine.state.minusminus_ex, engine.state.minusplus_ex
 
-            writer.add_scalar('Loss', loss, global_step=engine.state.iteration)
+            writer.add_scalar('General/Train Loss', loss, global_step=engine.state.iteration)
 
             feat_diff = y_pred_tensor - y_tensor
             feat_sum = y_pred_tensor + y_tensor
@@ -180,7 +182,7 @@ class Coord2Vec(BaseEstimator):
             # evaluator.run(train_data_loader)
             metrics = engine.state.metrics  # already attached to the trainer engine to save
             # can add more metrics here
-            add_rmse_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="train")
+            add_metrics_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="train")
 
             # plot min-max examples
             plusplus_ex, plusminus_ex = engine.state.plusplus_ex, engine.state.plusminus_ex
@@ -214,7 +216,7 @@ class Coord2Vec(BaseEstimator):
                 evaluator.run(val_data_loader)
                 metrics = evaluator.state.metrics
                 # can add more metrics here
-                add_rmse_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="validation")
+                add_metrics_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="validation")
 
         trainer.run(train_data_loader, max_epochs=epochs)
 

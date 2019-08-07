@@ -17,7 +17,7 @@ class RootMeanSquaredError(Metric):
 
     #TODO: test
     def update(self, output):
-        loss, multi_losses, y_pred_tensor, y_tensor = output
+        embedding, loss, multi_losses, y_pred_tensor, y_tensor = output
         # y_pred_tuples = y_pred_multi[1]
         # y_pred_tensor = torch.stack(y_pred_tuples).squeeze(2)
         # features_tensor = y_tensor.transpose(0, 1)

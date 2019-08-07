@@ -55,9 +55,9 @@ def multihead_model(architecture: nn.Module, heads: List[nn.Module]):
             self.heads = nn.ModuleList(heads)
 
         def forward(self, x):
-            x1 = self.architecture(x)
-            outputs = tuple([head(x1) for head in self.heads])
-            return x1, outputs
+            embedding = self.architecture(x)
+            outputs = tuple([head(embedding) for head in self.heads])
+            return embedding, outputs
 
     return MultiHeadResnet()
 

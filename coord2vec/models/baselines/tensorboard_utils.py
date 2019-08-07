@@ -42,20 +42,23 @@ def create_summary_writer(model, data_loader, log_dir, expr_name) -> SummaryWrit
         else os.path.join(log_dir, expr_name, str(datetime.datetime.now()))
 
     writer = SummaryWriter(tb_path)
-    data_loader_iter = iter(data_loader)
-    x, y = next(data_loader_iter)
+    # data_loader_iter = iter(data_loader)
+    # x, y = next(data_loader_iter)
     # try:
-    writer.add_graph(model, y)
+    #     writer.add_graph(model, y)
     # except Exception as e:
     #     print("Failed to save model graph: {}".format(e))
     return writer
 
 
-def add_rmse_to_tensorboard(metrics: dict, writer: SummaryWriter, feature_names: List[str], global_step: int, log_str="train"):
+def add_metrics_to_tensorboard(metrics: dict, writer: SummaryWriter, feature_names: List[str], global_step: int,
+                               log_str="train"):
     avg_rmse = metrics['rmse']
     for i, feat_name in enumerate(feature_names):
         writer.add_scalar(f'{feat_name} RMSE/{log_str} RMSE', avg_rmse[i], global_step=global_step)
 
+    # add the distance correlation metrics
+    writer.add_scalar('General/Validation Distance Correlation', metrics['corr'], global_step=global_step)
 
 # def add_embedding_visualization(writer: SummaryWriter):
 #     writer.add_embedding(torch.randn(100, 5), metadata=meta, label_img=label_img)
