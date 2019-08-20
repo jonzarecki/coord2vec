@@ -1,10 +1,10 @@
-import math
 import torch
 from ignite.exceptions import NotComputableError
-from ignite.metrics import Metric
+
+from coord2vec.common.mtl.metrics.mtl_metric import MtlMetric
 
 
-class RootMeanSquaredError(Metric):
+class RootMeanSquaredError(MtlMetric):
     """
     Calculates the root mean squared error for multi-head outputs
 
@@ -14,18 +14,13 @@ class RootMeanSquaredError(Metric):
         self._sum_of_squared_errors = None
         self._num_examples = 0
 
-
-    #TODO: test
-    def update(self, output):
-        embedding, loss, multi_losses, y_pred_tensor, y_tensor = output
-        # y_pred_tuples = y_pred_multi[1]
-        # y_pred_tensor = torch.stack(y_pred_tuples).squeeze(2)
-        # features_tensor = y_tensor.transpose(0, 1)
+    # TODO: test
+    def update_mtl(self, data, embedding, loss, multi_losses, y_pred_tensor, y_tensor):
         squared_errors = torch.pow(y_pred_tensor - y_tensor.view_as(y_pred_tensor), 2)
         if self._sum_of_squared_errors is None:
-            self._sum_of_squared_errors = torch.sum(squared_errors, 1)
+            self._sum_of_squared_errors = torch.sum(squared_errors, 0)
         else:
-            self._sum_of_squared_errors += torch.sum(squared_errors, 1)
+            self._sum_of_squared_errors += torch.sum(squared_errors, 0)
         self._num_examples += y_tensor.shape[1]
 
     def compute(self):

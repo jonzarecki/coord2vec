@@ -60,5 +60,9 @@ def add_metrics_to_tensorboard(metrics: dict, writer: SummaryWriter, feature_nam
     # add the distance correlation metrics
     writer.add_scalar('General/Validation Distance Correlation', metrics['corr'], global_step=global_step)
 
-# def add_embedding_visualization(writer: SummaryWriter):
-#     writer.add_embedding(torch.randn(100, 5), metadata=meta, label_img=label_img)
+
+def add_embedding_visualization(writer: SummaryWriter, metrics, global_step):
+    all_embeddings, all_targets, all_image_data = metrics['embedding_data']
+    import pdb
+    pdb.set_trace()
+    writer.add_embedding(all_embeddings, metadata=all_targets, label_img=all_image_data, global_step=global_step)

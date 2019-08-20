@@ -11,17 +11,17 @@ from torch.utils.data import DataLoader
 
 from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
 
-from coord2vec.common.mtl.metrics.rmse import RootMeanSquaredError
+from coord2vec.common.mtl.metrics import EmbeddingData, DistanceCorrelation, RootMeanSquaredError
+
 
 from coord2vec import config
 from coord2vec.config import HALF_TILE_LENGTH, TENSORBOARD_DIR
-from coord2vec.evaluation.intristic_metrics.reconstruction import DistanceCorrelation
 from coord2vec.feature_extraction.features_builders import FeaturesBuilder
 from coord2vec.image_extraction.tile_image import generate_static_maps, render_multi_channel
 from coord2vec.image_extraction.tile_utils import build_tile_extent
 from coord2vec.models.architectures import resnet18, dual_fc_head, multihead_model
 from coord2vec.models.baselines.tensorboard_utils import build_example_image_figure, TrainExample, \
-    create_summary_writer, add_metrics_to_tensorboard
+    create_summary_writer, add_metrics_to_tensorboard, add_embedding_visualization
 from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
 from coord2vec.models.losses import MultiheadLoss
 
@@ -124,21 +124,23 @@ class Coord2Vec(BaseEstimator):
 
         def multihead_output_transform(x, y, y_pred, *args):
             embedding, output = y_pred
-            y_pred_tensor = torch.stack(output).squeeze(2)
-            y_tensor = y.transpose(0, 1)
-
+            y_pred_tensor = torch.stack(output).squeeze(2).transpose(0, 1)
+            y_tensor = y
+            data = x
             with torch.no_grad():
                 loss, multi_losses = criterion(output, torch.split(y, 1, dim=1))
-            return embedding, loss, multi_losses, y_pred_tensor, y_tensor
+            return data, embedding, loss, multi_losses, y_pred_tensor, y_tensor
 
-        metrics = {'rmse': RootMeanSquaredError(), 'corr': DistanceCorrelation()}
+        eval_metrics = {'rmse': RootMeanSquaredError(), 'corr': DistanceCorrelation(),
+                        'embedding_data': EmbeddingData()}
+        train_metrics = {'rmse': RootMeanSquaredError(), 'corr': DistanceCorrelation()}
         trainer = create_supervised_trainer(self.model, self.optimizer, multihead_loss_func, device=self.device,
                                             output_transform=multihead_output_transform)
-        for name, metric in metrics.items():  # Calculate metrics also on trainer
+        for name, metric in train_metrics.items():  # Calculate metrics also on trainer
             metric.attach(trainer, name)
 
         evaluator = create_supervised_evaluator(self.model,
-                                                metrics=metrics,
+                                                metrics=eval_metrics,
                                                 device=self.device,
                                                 output_transform=multihead_output_transform)
         ProgressBar(persist=True, bar_format="").attach(trainer)
@@ -150,7 +152,7 @@ class Coord2Vec(BaseEstimator):
 
         @trainer.on(Events.ITERATION_COMPLETED)
         def log_training_loss(engine):
-            embedding, loss, multi_losses, y_pred_tensor, y_tensor = engine.state.output
+            _, embedding, loss, multi_losses, y_pred_tensor, y_tensor = engine.state.output
             images_batch, features_batch = engine.state.batch
             plusplus_ex, plusminus_ex = engine.state.plusplus_ex, engine.state.plusminus_ex
             minusminus_ex, minusplus_ex = engine.state.minusminus_ex, engine.state.minusplus_ex
@@ -163,8 +165,8 @@ class Coord2Vec(BaseEstimator):
                 writer.add_scalar(f'Multiple Losses/{self.feature_names[j]}', multi_losses[j],
                                   global_step=engine.state.iteration)
                 for i in range(len(images_batch)):
-                    itm_diff, itm_sum = feat_diff[j][i].item(), feat_sum[j][i].item()
-                    itm_pred, itm_actual = y_pred_tensor[j][i].item(), y_tensor[j][i].item()
+                    itm_diff, itm_sum = feat_diff[i][j].item(), feat_sum[i][j].item()
+                    itm_pred, itm_actual = y_pred_tensor[i][j].item(), y_tensor[i][j].item()
                     ex = TrainExample(images_batch[i], predicted=itm_pred, actual=itm_actual, sum=itm_sum,
                                       diff=itm_diff)
                     if minusminus_ex[j] is None or minusminus_ex[j].sum > itm_sum:
@@ -179,7 +181,6 @@ class Coord2Vec(BaseEstimator):
         @trainer.on(Events.EPOCH_COMPLETED)
         def log_training_results(engine):
             global_step = engine.state.iteration
-            # evaluator.run(train_data_loader)
             metrics = engine.state.metrics  # already attached to the trainer engine to save
             # can add more metrics here
             add_metrics_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="train")
@@ -204,10 +205,10 @@ class Coord2Vec(BaseEstimator):
         @trainer.on(Events.EPOCH_COMPLETED)
         def visualize_embeddings(engine):
             global_step = engine.state.iteration
-            # evaluator.run(train_data_loader)
-            metrics = engine.state.metrics  # already attached to the trainer engine to save
-            # can add more metrics here
-            images_batch, features_batch = engine.state.batch
+            evaluator.run(val_data_loader)
+            metrics = evaluator.state.metrics
+
+            add_embedding_visualization(writer, metrics, global_step)
 
         @trainer.on(Events.ITERATION_COMPLETED)
         def log_validation_results(engine):
@@ -244,8 +245,8 @@ class Coord2Vec(BaseEstimator):
     def _model_to(self):
         self.model = self.model.to(self.device)
         # # from apex import amp
-        if self.amp:
-            model, optimizer = amp.initialize(model.to('cuda'), optimizer, opt_level="O1")
+        # if self.amp:
+        #     model, optimizer = amp.initialize(model.to('cuda'), optimizer, opt_level="O1")
 
     def save_trained_model(self, path: str):
         """
