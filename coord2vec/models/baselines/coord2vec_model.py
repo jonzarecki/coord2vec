@@ -20,8 +20,8 @@ from coord2vec.feature_extraction.features_builders import FeaturesBuilder
 from coord2vec.image_extraction.tile_image import generate_static_maps, render_multi_channel
 from coord2vec.image_extraction.tile_utils import build_tile_extent
 from coord2vec.models.architectures import resnet18, dual_fc_head, multihead_model
-from coord2vec.models.baselines.tensorboard_utils import build_example_image_figure, TrainExample, \
-    create_summary_writer, add_metrics_to_tensorboard, add_embedding_visualization
+from coord2vec.models.baselines.tensorboard_utils import TrainExample, \
+    create_summary_writer, add_metrics_to_tensorboard, add_embedding_visualization, build_example_image_figure
 from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
 from coord2vec.models.losses import MultiheadLoss
 
@@ -202,14 +202,6 @@ class Coord2Vec(BaseEstimator):
                 writer.add_figure(tag=f"{self.feature_names[j]}/minusplus",
                                   figure=build_example_image_figure(minusplus_ex[j]), global_step=global_step)
 
-        @trainer.on(Events.EPOCH_COMPLETED)
-        def visualize_embeddings(engine):
-            global_step = engine.state.iteration
-            evaluator.run(val_data_loader)
-            metrics = evaluator.state.metrics
-
-            add_embedding_visualization(writer, metrics, global_step)
-
         @trainer.on(Events.ITERATION_COMPLETED)
         def log_validation_results(engine):
             global_step = engine.state.iteration
@@ -218,6 +210,7 @@ class Coord2Vec(BaseEstimator):
                 metrics = evaluator.state.metrics
                 # can add more metrics here
                 add_metrics_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="validation")
+                add_embedding_visualization(writer, metrics, global_step)
 
         trainer.run(train_data_loader, max_epochs=epochs)
 

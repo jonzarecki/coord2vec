@@ -1,6 +1,5 @@
 import datetime
 import os
-import random
 import numpy as np
 import matplotlib.pyplot as plt
 from attr import dataclass
@@ -62,7 +61,6 @@ def add_metrics_to_tensorboard(metrics: dict, writer: SummaryWriter, feature_nam
 
 
 def add_embedding_visualization(writer: SummaryWriter, metrics, global_step):
-    all_embeddings, all_targets, all_image_data = metrics['embedding_data']
-    import pdb
-    pdb.set_trace()
-    writer.add_embedding(all_embeddings, metadata=all_targets, label_img=all_image_data, global_step=global_step)
+    all_embeddings, all_image_data, all_targets = metrics['embedding_data']
+    writer.add_embedding(all_embeddings, metadata=all_targets, label_img=all_image_data,
+                         global_step=global_step, tag="coord2vec")

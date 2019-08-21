@@ -17,30 +17,23 @@ class EmbeddingData(MtlMetric):
         self.all_image_data = None
 
     def update_mtl(self, data, embedding, loss, multi_losses, y_pred_tensor, y_tensor):
-        # y_pred_tuples = y_pred_multi[1]
-        # y_pred_tensor = torch.stack(y_pred_tuples).squeeze(2)
-        # features_tensor = y_tensor.transpose(0, 1)
+        # tensorboard cannot eat too much data, fails for large sprite
+        if self.all_embeddings is not None and self.all_embeddings.shape[0] > 1000:
+            return
+
         embeddings = embedding.cpu()
-        targets = y_tensor.cpu()
-        image_data = data.cpu()
-        # import pdb
-        # pdb.set_trace()
-        # print("hello")
+        targets = [str(l) for l in y_tensor.tolist()]
+        image_data = data.cpu() / 255  # expects images in float
         if self.all_embeddings is None:
             self.all_embeddings = embeddings
             self.all_targets = targets
             self.all_image_data = image_data
         else:
-            try:
-                self.all_embeddings = torch.cat([embeddings, self.all_embeddings], 0)
-                self.all_targets = torch.cat([targets, self.all_targets], 0)
-                self.all_image_data = torch.cat([image_data, self.all_image_data], 0)
-            except:
-                import pdb
-                pdb.set_trace()
-                print("except")
+            self.all_embeddings = torch.cat([embeddings, self.all_embeddings], 0)
+            self.all_targets = self.all_targets + targets
+            self.all_image_data = torch.cat([image_data, self.all_image_data], 0)
 
     def compute(self):
         if self.all_embeddings is None:
             raise NotComputableError('EmbeddingInfo must have at least one example before it can be computed.')
-        return self.all_image_data.cpu().numpy(), self.all_embeddings.cpu().numpy(), self.all_targets.cpu().numpy()
+        return self.all_embeddings.cpu(), self.all_image_data.cpu(), self.all_targets
