@@ -18,10 +18,12 @@ class TestOsmFeatures(unittest.TestCase):
         near_levinshtein_house = wkt.loads('POINT (34.8576548 32.1869038)')
         hatlalim_rd_raanana = wkt.loads('POINT (34.8583825 32.1874658)')
         nowhere = wkt.loads('POINT (10.0 10.0)')
+        seattle = wkt.loads('POINT (47.595915 -122.310114)')
 
         cls.gdf = GeoDataFrame(pd.DataFrame({'geom': [near_levinshtein_house, hatlalim_rd_raanana]}), geometry='geom')
         cls.hatlalim_gdf = GeoDataFrame(pd.DataFrame({'geom': [hatlalim_rd_raanana]}), geometry='geom')
         cls.nowhere_gdf = GeoDataFrame(pd.DataFrame({'geom': [nowhere]}), geometry='geom')
+        cls.seattle_gdf= GeoDataFrame(pd.DataFrame({'geom': [seattle]}), geometry='geom')
 
         # check if Israel osm docker is up
         cls.israel_osm = cls.is_israel_up()
@@ -101,6 +103,12 @@ class TestOsmFeatures(unittest.TestCase):
         res = building_area_feat.extract(self.beijing_gdf)
         self.assertGreater(res.iloc[0], 0)
 
+    ########## seattle test cases ##########
+    def test_seattle_building_area(self):
+        # TODO: check why some objects return NULL when applied with ST_Area
+        hospital_area_feat = OsmPolygonFeature(BUILDING, 'area_of', max_radius_meter=2 * 1000)
+        res = hospital_area_feat.extract(self.seattle_gdf)
+        self.assertGreater(res.iloc[0], 0)
 
 # @patch('coord2vec.feature_extraction.osm.OsmLineFeature.extract', return_value='pumpkins')
 # @patch.multiple(Feature, __abstractmethods__=set())

@@ -41,19 +41,20 @@ class Coord2Vec(BaseEstimator):
     def __init__(self, feature_builder: FeaturesBuilder,
                  n_channels: int,
                  losses: List[_Loss] = None,
-                 losses_weights=None,
+                 losses_weights: List[float] = None,
                  log_loss: bool = False,
                  embedding_dim: int = 128,
                  tb_dir: str = 'default',
                  cuda_device: int = 0,
-                 multi_gpu: bool = True):
+                 multi_gpu: bool = True,
+                 lr: float = 1e-4):
         """
 
         Args:
             feature_builder: FeatureBuilder to create features with \ features were created with
             n_channels: the number of channels in the input images
             tb_dir: the directory to use in tensorboard
-            log_loss: weather to use the log function on the loss before back propagation
+            log_loss: whether to use the log function on the loss before back propagation
             losses: a list of losses to use. must be same length of the number of features
             embedding_dim: dimension of the embedding to create
         """
@@ -84,14 +85,14 @@ class Coord2Vec(BaseEstimator):
             self.model = nn.DataParallel(self.model)
 
         self.model.to(self.device)
-        self.optimizer = optim.Adam(self.model.parameters())
+        self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
 
     def fit(self, train_dataset: TileFeaturesDataset,
             val_dataset: TileFeaturesDataset = None,
             epochs: int = 10,
             batch_size: int = 10,
             num_workers: int = 4,
-            evluate_every: int = 20):
+            evaluate_every: int = 5):
         """
         Args:
             train_dataset: The dataset object for training data
@@ -157,7 +158,7 @@ class Coord2Vec(BaseEstimator):
 
             writer.add_scalar('General/Train Loss', loss, global_step=engine.state.iteration)
 
-            feat_diff = y_pred_tensor - y_tensor
+            feat_diff = (y_pred_tensor - y_tensor)  # / y_tensor + 1
             feat_sum = y_pred_tensor + y_tensor
             for j in range(self.n_features):
                 writer.add_scalar(f'Multiple Losses/{self.feature_names[j]}', multi_losses[j],
@@ -189,6 +190,8 @@ class Coord2Vec(BaseEstimator):
             minusminus_ex, minusplus_ex = engine.state.minusminus_ex, engine.state.minusplus_ex
 
             for j in range(self.n_features):
+                if plusplus_ex[j] is None:
+                    continue
                 writer.add_figure(tag=f"{self.feature_names[j]}/plusplus",
                                   figure=build_example_image_figure(plusplus_ex[j]), global_step=global_step)
 
@@ -212,7 +215,7 @@ class Coord2Vec(BaseEstimator):
         @trainer.on(Events.ITERATION_COMPLETED)
         def log_validation_results(engine):
             global_step = engine.state.iteration
-            if global_step % evluate_every == 0:
+            if global_step % evaluate_every == 0:
                 evaluator.run(val_data_loader)
                 metrics = evaluator.state.metrics
                 # can add more metrics here

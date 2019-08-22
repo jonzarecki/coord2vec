@@ -36,3 +36,9 @@ class MultiheadLoss(_Loss):
         homosced_losses = [self.weights[i] * torch.exp(-self.log_vars[i]) * log_losses[i] + self.log_vars[i]
                            for i in range(self.n_heads)]
         return sum(homosced_losses), losses
+
+
+class ScaledLoss(_Loss):
+    def forward(self, input, target):
+        loss = torch.abs(torch.log((input + 1) / (target + 1)))
+        return loss.sum()
