@@ -141,7 +141,11 @@ class Coord2Vec(BaseEstimator):
                                                 metrics=metrics,
                                                 device=self.device,
                                                 output_transform=multihead_output_transform)
-        ProgressBar(persist=True, bar_format="").attach(trainer)
+
+        pbar = ProgressBar()
+        # RunningAverage(output_transform=lambda x: x).attach(trainer, 'loss')
+        # pbar.attach(trainer, ['loss'])
+        pbar.attach(trainer)
 
         @trainer.on(Events.EPOCH_STARTED)
         def init_state_params(engine):
