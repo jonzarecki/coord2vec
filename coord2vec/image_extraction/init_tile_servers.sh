@@ -28,7 +28,7 @@ else
     docker volume rm osm-data-tile
     docker volume create osm-data-tile
 
-    docker run -v $cdir/washington.osm.pbf:/data.osm.pbf -v osm-data-tile:/var/lib/postgresql/10/main \
+    docker run -v $cdir/data.osm.pbf:/data.osm.pbf -v osm-data-tile:/var/lib/postgresql/10/main \
                     osm-tile-server import &
 
     wait

@@ -70,6 +70,25 @@ class Feature(ABC):
 
         return df['cnt'].iloc[0]
 
+    @staticmethod
+    def intersect_circle_query(base_query:str, geo:BaseGeometry, max_radius_meter:float) -> str:
+        """
+
+        Args:
+            base_query:
+            geo:
+            max_radius_meter:
+
+        Returns:
+
+        """
+        query = f"""
+                select ST_Intersection(t.geom, ST_Buffer({geo2sql(geo)}, {max_radius_meter})) as geom
+                from ({base_query}) t
+                """
+        query = base_query
+        return query
+
     @abstractmethod
     def get_postgis_connection(self) -> connection:
         """
@@ -91,7 +110,7 @@ class Feature(ABC):
 
     def extract(self, gdf: GeoDataFrame) -> pd.Series:
         """
-        Applies the feature on the gdf, returns the series afther the apply
+        Applies the feature on the gdf, returns the series after the apply
         Args:
             gdf: The gdf we want to apply the feature on
 
