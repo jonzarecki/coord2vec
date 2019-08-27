@@ -21,16 +21,19 @@ AREA_OF_poly = 'area_of'
 LENGTH_OF_line = 'length_of'
 
 
-def geo2sql(geo: BaseGeometry) -> str:
+def geo2sql(geo: BaseGeometry, to_geography: bool = False) -> str:
     """
     Transforms $geo to the correct srid geometry sql statement
     Args:
         geo: The geometry we want to transform
+        to_geography: whether to transform geo into a geometry or geography object
 
     Returns:
         The query as a str
     """
-    return f"ST_GeomFromText('{wkt.dumps(geo)}', 4326)"
+    sql = f"ST_GeomFromText('{wkt.dumps(geo)}', 4326)"
+    sql = f"geography({sql})" if to_geography else sql
+    return sql
 
 
 class Feature(ABC):
@@ -71,22 +74,21 @@ class Feature(ABC):
         return df['cnt'].iloc[0]
 
     @staticmethod
-    def intersect_circle_query(base_query:str, geo:BaseGeometry, max_radius_meter:float) -> str:
+    def intersect_circle_query(base_query: str, geo: BaseGeometry, max_radius_meter: float) -> str:
         """
-
+        Transform a normal base_query into a query after only elements within the radius from geo remain
         Args:
-            base_query:
-            geo:
-            max_radius_meter:
+            base_query: the postgres base query to get geo elements
+            geo: the geometry object
+            max_radius_meter: the radius of the circle to intersect with
 
         Returns:
-
+            a Postgres query the return only the data on max radius from geo
         """
         query = f"""
-                select ST_Intersection(t.geom, ST_Buffer({geo2sql(geo)}, {max_radius_meter})) as geom
+                select ST_Intersection(t.geom, ST_Buffer({geo2sql(geo, to_geography=True)}, {max_radius_meter})) as geom
                 from ({base_query}) t
                 """
-        query = base_query
         return query
 
     @abstractmethod

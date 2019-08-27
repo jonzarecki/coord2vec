@@ -35,7 +35,6 @@ class PolygonMixin(Feature):
                     SUM(COALESCE (ST_Area(t.geom, true), 0.)) 
                 ELSE 0. END as total_area
             FROM ({Feature.intersect_circle_query(base_query, geo, max_radius_meter)}) t
-            WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter}, true);
                 """
 
         df = get_df(q, conn)

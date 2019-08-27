@@ -23,7 +23,7 @@ class TestOsmFeatures(unittest.TestCase):
         cls.gdf = GeoDataFrame(pd.DataFrame({'geom': [near_levinshtein_house, hatlalim_rd_raanana]}), geometry='geom')
         cls.hatlalim_gdf = GeoDataFrame(pd.DataFrame({'geom': [hatlalim_rd_raanana]}), geometry='geom')
         cls.nowhere_gdf = GeoDataFrame(pd.DataFrame({'geom': [nowhere]}), geometry='geom')
-        cls.seattle_gdf= GeoDataFrame(pd.DataFrame({'geom': [seattle]}), geometry='geom')
+        cls.seattle_gdf = GeoDataFrame(pd.DataFrame({'geom': [seattle]}), geometry='geom')
 
         # check if Israel osm docker is up
         cls.israel_osm = cls.is_israel_up()
@@ -52,6 +52,17 @@ class TestOsmFeatures(unittest.TestCase):
         res = hospital_area_feat.extract(self.gdf)
         # NOT VERIFIED YET
         self.assertAlmostEqual(res.iloc[0], 30257, delta=1)  # area is pretty large
+
+    def test_max_radius_intersection_works(self):
+        if not self.israel_osm:
+            return
+        hospital_area_feat_big = OsmPolygonFeature(HOSPITAL, 'area_of', max_radius_meter=120)
+        big_radius_area = hospital_area_feat_big.extract(self.gdf)
+
+        hospital_area_feat_small = OsmPolygonFeature(HOSPITAL, 'area_of', max_radius_meter=100)
+        small_radius_area = hospital_area_feat_small.extract(self.gdf)
+        # NOT VERIFIED YET
+        self.assertGreater(big_radius_area.iloc[0], small_radius_area.iloc[0])
 
     def test_bet_lewinstein_is_the_only_hospital_for_radius_2km(self):
         if not self.israel_osm:
@@ -99,16 +110,12 @@ class TestOsmFeatures(unittest.TestCase):
 
     ## Beijing tests
     def test_beijing_buildings_area(self):
+        if self.israel_som:
+            return
         building_area_feat = OsmPolygonFeature(BUILDING, 'area_of', max_radius_meter=2 * 1000)
         res = building_area_feat.extract(self.beijing_gdf)
         self.assertGreater(res.iloc[0], 0)
 
-    ########## seattle test cases ##########
-    def test_seattle_building_area(self):
-        # TODO: check why some objects return NULL when applied with ST_Area
-        hospital_area_feat = OsmPolygonFeature(BUILDING, 'area_of', max_radius_meter=2 * 1000)
-        res = hospital_area_feat.extract(self.seattle_gdf)
-        self.assertGreater(res.iloc[0], 0)
 
 # @patch('coord2vec.feature_extraction.osm.OsmLineFeature.extract', return_value='pumpkins')
 # @patch.multiple(Feature, __abstractmethods__=set())
