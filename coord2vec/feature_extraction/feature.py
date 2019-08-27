@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Tuple
+from typing import Tuple, Callable
 
 import pandas as pd
 from geopandas import GeoDataFrame
@@ -47,11 +47,11 @@ class Feature(ABC):
         self.apply_type = apply_type
 
     @staticmethod
-    def apply_nearest_neighbour(base_query: str, geo: BaseGeometry, conn: connection, **kwargs) -> float:
+    def apply_nearest_neighbour(base_query: str, geo: BaseGeometry, conn: connection, max_radius_meter, **kwargs) -> float:
         q = f"""
         SELECT COALESCE (
            (SELECT ST_DistanceSpheroid(t.geom, {geo2sql(geo)}, 'SPHEROID["WGS 84",6378137,298.257223563]') as dist
-            FROM ({base_query}) t
+            FROM ({Feature._intersect_circle_query(base_query, geo, max_radius_meter)}) t
             ORDER BY dist ASC
             LIMIT 1), 
         FLOAT '+infinity') as dist;
@@ -65,7 +65,7 @@ class Feature(ABC):
     def apply_number_of(base_query: str, geo: BaseGeometry, conn: connection, max_radius_meter: float, **kwargs) -> int:
         q = f"""
         SELECT count(*) as cnt
-            FROM ({base_query}) t
+            FROM ({Feature._intersect_circle_query(base_query, geo, max_radius_meter)}) t
             WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter}, true);
         """
 
@@ -74,7 +74,7 @@ class Feature(ABC):
         return df['cnt'].iloc[0]
 
     @staticmethod
-    def intersect_circle_query(base_query: str, geo: BaseGeometry, max_radius_meter: float) -> str:
+    def _intersect_circle_query(base_query: str, geo: BaseGeometry, max_radius_meter: float) -> str:
         """
         Transform a normal base_query into a query after only elements within the radius from geo remain
         Args:
@@ -86,8 +86,11 @@ class Feature(ABC):
             a Postgres query the return only the data on max radius from geo
         """
         query = f"""
-                select ST_Intersection(t.geom, ST_Buffer({geo2sql(geo, to_geography=True)}, {max_radius_meter})) as geom
-                from ({base_query}) t
+                select t.geom 
+                from(
+                    select ST_Intersection(t.geom, geometry(ST_Buffer({geo2sql(geo, to_geography=True)}, {max_radius_meter}))) as geom
+                    from ({base_query}) t) t
+                where ST_IsEmpty(geom) = FALSE
                 """
         return query
 

@@ -34,7 +34,7 @@ class LineMixin(Feature):
                 CASE WHEN COUNT(*) > 0 THEN 
                     SUM(ST_Length(t.geom, true)) 
                 ELSE 0. END as total_length
-            FROM ({base_query}) t
+            FROM ({Feature._intersect_circle_query(base_query, geo, max_radius_meter)}) t
             WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter}, true);
             """
 

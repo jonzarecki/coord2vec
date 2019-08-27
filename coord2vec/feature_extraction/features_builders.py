@@ -57,7 +57,8 @@ class FeaturesBuilder:
 def poly_multi_feature(filter, name, radii: List[int] = [50]):
     features = []
     for radius in radii:
-        features += [OsmPolygonFeature(filter, name=f'nearest_{name}', apply_type=NEAREST_NEIGHBOUR_all),
+        features += [OsmPolygonFeature(filter, name=f'nearest_{name}_{radius}m', apply_type=NEAREST_NEIGHBOUR_all,
+                                       max_radius_meter=radius),
                      OsmPolygonFeature(filter, name=f'area_of_{name}_{radius}m', apply_type=AREA_OF_poly,
                                        max_radius_meter=radius),
                      OsmPolygonFeature(filter, name=f'number_of_{name}_{radius}m', apply_type=NUMBER_OF_all,
@@ -68,7 +69,8 @@ def poly_multi_feature(filter, name, radii: List[int] = [50]):
 def line_multi_feature(filter, name, radii: List[int] = [50]):
     features = []
     for radius in radii:
-        features += [OsmLineFeature(filter, name=f'dist_2_nearest_{name}', apply_type=NEAREST_NEIGHBOUR_all),
+        features += [OsmLineFeature(filter, name=f'dist_2_nearest_{name}{radius}m', apply_type=NEAREST_NEIGHBOUR_all,
+                                    max_radius_meter=radius),
                      OsmLineFeature(filter, name=f'length_of_{name}_{radius}m', apply_type=LENGTH_OF_line,
                                     max_radius_meter=radius),
                      OsmLineFeature(filter, name=f'number_of_{name}_{radius}m', apply_type=NUMBER_OF_all,
