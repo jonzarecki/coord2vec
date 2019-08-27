@@ -1,7 +1,7 @@
 from unittest import TestCase
 import numpy as np
 
-from coord2vec.evaluation.intristic_metrics.reconstruction import reconstruction_correlation
+from coord2vec.evaluation.intristic_metrics import reconstruction_correlation
 
 
 class TestReconstruction_correlation(TestCase):

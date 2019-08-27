@@ -1,11 +1,11 @@
-import numpy as np
 import torch
-from sklearn.metrics import pairwise_distances
 from scipy.stats import pearsonr
-from ignite.metrics import Metric
+from sklearn.metrics import pairwise_distances
+
+from coord2vec.common.mtl.metrics.mtl_metric import MtlMetric
 
 
-class DistanceCorrelation(Metric):
+class DistanceCorrelation(MtlMetric):
     """
         Calculates the root mean squared error for multi-head outputs
 
@@ -16,10 +16,7 @@ class DistanceCorrelation(Metric):
         self.full_embedding = None
         self.full_features = None
 
-    # TODO: test
-    def update(self, output):
-        embedding, loss, multi_losses, y_pred_tensor, y_tensor = output
-        y_tensor = y_tensor.transpose(0, 1)
+    def update_mtl(self, data, embedding, loss, multi_losses, y_pred_tensor, y_tensor):
         if self.full_embedding is None:
             self.full_embedding = embedding
             self.full_features = y_tensor
