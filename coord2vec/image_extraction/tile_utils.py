@@ -4,6 +4,8 @@ from PIL import Image
 import geopy
 import geopy.distance
 import numpy as np
+from shapely.geometry import Polygon, Point
+from auto_tqdm import tqdm
 
 
 def is_tile_empty(im: Image) -> bool:
@@ -26,8 +28,36 @@ def sample_coordinate_in_range(min_lat: float, min_lon: float, max_lat: float, m
 
     return lat, lon
 
-def sample_grid_in_range(min_lat: float, min_lon: float, max_lat: float, max_lon: float, step: float = 0.01):
+def sample_coordinate_in_poly(poly: Polygon, seed=None) -> Tuple[float, float]:
+    np.random.seed(seed)
+    coord = sample_coordinate_in_range(*poly.bounds)
+    while not Point(coord).within(poly):
+        coord = sample_coordinate_in_range(*poly.bounds)
+
+    return coord[::-1]
+
+def sample_grid_in_range(min_lat: float, min_lon: float, max_lat: float, max_lon: float, step: float = 0.01) -> np.array:
     x = np.arange(min_lon, max_lon, step=step)
     y = np.arange(min_lat, max_lat, step=step)
     coords = np.stack(np.meshgrid(x, y), -1)
     return coords
+
+def sample_grid_in_poly(poly: Polygon, step: float = 0.01) -> List[Tuple]:
+    coords = sample_grid_in_range(*poly.bounds, step=step).reshape(-1, 2)
+    in_poly = [Point(coord[::-1]).within(poly) for coord in coords]
+    return coords[in_poly]
+
+
+def sample_coordinates_in_poly(poly: Polygon, num_samples=1, seed=None) -> List[Tuple]:
+    np.random.seed(seed)
+    coords = [sample_coordinate_in_poly(poly) for _ in tqdm(range(num_samples))]
+
+    return coords
+
+def poly_outer_intersection(poly: Polygon, delete_polys: List[Polygon]) -> Polygon:
+    for delete_poly in delete_polys:
+        if poly.intersects(delete_poly) == True:
+            # If they intersect, create a new polygon that is
+            # essentially pol minus the intersection
+            poly = poly.symmetric_difference(delete_poly).difference(delete_poly)
+    return poly
