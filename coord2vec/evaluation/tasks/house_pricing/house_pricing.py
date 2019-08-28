@@ -12,7 +12,7 @@ class HousePricing(TaskHandler):
     https://www.kaggle.com/harlfoxem/housesalesprediction#kc_house_data.csv
     """
 
-    def get_data(self) -> Tuple[Any, Any, Any]:
+    def get_data(self) -> Tuple[Tuple[float, float], pd.DataFrame, Any]:
         # df = pd.read_csv(os.path.join(os.path.dirname(__file__), r"Housing price in Beijing.csv"),
         #                  encoding="latin").iloc[:10]
         # df['coord'] = df.apply(lambda row: tuple(row[['Lat', 'Lng']].values), axis=1)
@@ -23,7 +23,7 @@ class HousePricing(TaskHandler):
         # 'fiveYearsProperty', 'subway', 'district', 'communityAverage']], df['price'].values
 
         df = pd.read_csv(os.path.join(os.path.dirname(__file__), r"kc_house_data.csv"),
-                         encoding="latin").iloc[:20]#.iloc[:10]
+                         encoding="latin").iloc[:10]
         df['coord'] = df.apply(lambda row: tuple(row[['lat', 'long']].values), axis=1)
         coords = df['coord'].values
         features = df[['bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'waterfront', 'view',

@@ -29,5 +29,6 @@ class TestTileImage(unittest.TestCase):
 
         self.assertTrue(np.array_equal(np.array(image_single.convert('L')), image_multi[0, :, :]))
 
+
 if __name__ == '__main__':
     unittest.main()
