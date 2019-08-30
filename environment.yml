@@ -56,4 +56,4 @@ dependencies:
     - pathos
     - torchsummary
     - tb-nightly  # for tensorboard
-
+    - openrouteservice
