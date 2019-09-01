@@ -48,6 +48,9 @@ dependencies:
 - jupyter
 - nb_conda
 
+# Web app / visualization
+- flask
+
 - pip:
     - nbclean
     - imageio
