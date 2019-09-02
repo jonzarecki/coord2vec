@@ -22,6 +22,7 @@ fi
 # start osm servers
 sudo chmod 777 /var/run/docker.sock
 bash ./coord2vec/feature_extraction/osm/initialize_osm_postgres.sh
+bash ./coord2vec/feature_extraction/ors/initialize_ors.sh
 bash ./coord2vec/image_extraction/init_tile_servers.sh
 
 echo `dig +short myip.opendns.com @resolver1.opendns.com`
