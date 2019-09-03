@@ -12,8 +12,8 @@ app = Flask(__name__)
 class MyTestCase(unittest.TestCase):
     def test_something(self):
         l = (34.482724, 31.492354)
-        map = visualize_predictions(np.array([(l[0]+i*0.005, l[1]+i*0.005) for i in range(500)]),
-                              np.random.random((500,)) - 0.5)
+        map = visualize_predictions(np.array([(l[0]+i*0.005, l[1]+j*0.005) for i in range(50) for j in range(50)]),
+                              np.random.random((50*50,)) - 0.5)
 
         @app.route('/')
         def index():
