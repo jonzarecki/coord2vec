@@ -1,5 +1,6 @@
 from typing import List
 
+import torch
 import torch.nn as nn
 import torchvision.models as models
 
@@ -42,12 +43,12 @@ def resnet18(n_channels: int, output_dim: int) -> nn.Module:
     Returns:
         A nn.Module of the resnet
     """
-    resnet = models.resnet18(num_classes = output_dim)
+    resnet = models.resnet18(num_classes=output_dim)
     resnet.conv1 = nn.Conv2d(n_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
     return resnet.float()
 
 
-def multihead_model(architecture: nn.Module, heads: List[nn.Module]):
+def multihead_model(architecture: nn.Module, heads: List[nn.Module]) -> nn.Module:
     class MultiHeadResnet(nn.Module):
         def __init__(self):
             super().__init__()
@@ -66,12 +67,20 @@ def multihead_model(architecture: nn.Module, heads: List[nn.Module]):
 ##        heads         ##
 ##########################
 
-def dual_fc_head(input_dim, hidden_dim=128):
+def dual_fc_head(input_dim, hidden_dim=128) -> nn.Module:
     head = nn.Sequential(
         nn.Linear(input_dim, hidden_dim),
         nn.ReLU(),
-        nn.Linear(hidden_dim, 1))
+        nn.Linear(hidden_dim, 1),
+        # ExponentModule()
+    )
+
     return head.float()
+
+
+class ExponentModule(nn.Module):
+    def forward(self, input):
+        return torch.exp(input)
 
 
 if __name__ == '__main__':

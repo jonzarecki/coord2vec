@@ -29,15 +29,17 @@ def get_files_from_path(pathstring) -> List[str]:
 class TileFeaturesDataset(Dataset):
     """Tile Features Dataset """
 
-    def __init__(self, root_dir, transform=None):
+    def __init__(self, root_dir, transform=None, inf2value: float = 1e3):
         """
         Args:
             root_dir (string): Directory with all the images.
             transform (callable, optional): Optional transform to be applied
                 on a sample.
+            inf2value : number to replace all the inf's with
         """
         self.pkl_paths = get_files_from_path(root_dir)
         self.transform = transform
+        self.inf2value = inf2value
 
     def __len__(self):
         return len(self.pkl_paths)
@@ -46,6 +48,7 @@ class TileFeaturesDataset(Dataset):
         with open(self.pkl_paths[idx], 'rb') as f:
             image_arr, features = pickle.load(f)
 
+        features[features == float('inf')] = self.inf2value
         sample = {'image': image_arr, 'features': features}
 
         if self.transform:

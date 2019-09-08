@@ -39,18 +39,22 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
                  log_loss: bool = False,
                  embedding_dim: int = 128,
                  tb_dir: str = 'default',
-                 cuda_device: int = 0,
                  multi_gpu: bool = True,
+                 cuda_device: int = 0,
                  lr: float = 1e-4):
         """
 
         Args:
             feature_builder: FeatureBuilder to create features with \ features were created with
             n_channels: the number of channels in the input images
-            tb_dir: the directory to use in tensorboard
-            log_loss: whether to use the log function on the loss before back propagation
             losses: a list of losses to use. must be same length of the number of features
+            losses_weights: weights to give the different losses. if None then equals weights of 1
+            log_loss: whether to use the log function on the loss before back propagation
             embedding_dim: dimension of the embedding to create
+            tb_dir: the directory to use in tensorboard
+            multi_gpu: whether to use more than one GPU or not
+            cuda_device: if multi_gpu==False, choose the GPU to work on
+            lr: learning rate for the Adam optimizer
         """
 
         self.losses_weights = losses_weights
@@ -73,7 +77,6 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
         assert len(self.losses) == self.n_features, "Number of losses must be equal to number of features"
 
         # create the model
-
         self.model = self._build_model(self.n_channels, self.n_features)
         if multi_gpu:
             self.model = nn.DataParallel(self.model)
@@ -94,6 +97,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
             epochs: number of epochs to train the network
             batch_size: batch size for the network
             num_workers: number of workers for the network
+            evaluate_every: every how many batches to run evaluation
 
         Returns:
             a trained pytorch model
@@ -122,6 +126,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
             y_pred_tensor = torch.stack(output).squeeze(2).transpose(0, 1)
             y_tensor = y
             data = x
+            # print("y: ", y,"\ny_pred: ", y_pred[1])
             with torch.no_grad():
                 loss, multi_losses = criterion(output, torch.split(y, 1, dim=1))
             return data, embedding, loss, multi_losses, y_pred_tensor, y_tensor
@@ -294,9 +299,3 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
         heads = [dual_fc_head(self.embedding_dim) for i in range(n_heads)]
         model = multihead_model(model, heads)
         return model
-
-
-if __name__ == '__main__':
-    losses = [nn.L1Loss() for i in range(12)]
-    coord2vec = Coord2Vec(losses=losses, embedding_dim=128)
-    coord2vec.fit(f"../../train_cache")
