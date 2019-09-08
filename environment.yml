@@ -15,6 +15,7 @@ dependencies:
 - scikit-learn
 - scikit-image
 - h2o  # install via conda install -c h2oai h2o
+- pytest
 
 # Deep Learning
 - pytorch=1.1.0
@@ -52,6 +53,7 @@ dependencies:
     - nbclean
     - imageio
     - tqdm
+    - auto-tqdm
     - staticmap
     - pathos
     - torchsummary

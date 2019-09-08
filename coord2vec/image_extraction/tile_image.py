@@ -18,14 +18,15 @@ def render_single_tile(m: StaticMap, ext: list) -> Image:
     Returns:
         The returned RGB image as an PIL.Image
     """
+    # lon, lat (but it's OK)
     ex_poly = [[ext[0], ext[1]],
                [ext[0], ext[3]],
-               [ext[2], ext[1]],
-               [ext[2], ext[3]]]
-    polygon = Polygon(ex_poly, 'white', 'white', True)
+               [ext[2], ext[3]],
+               [ext[2], ext[1]]]
+    polygon = Polygon(ex_poly, 'blue', 'black', True)
     m.add_polygon(polygon)
     m.zoom = m._calculate_zoom()
-
+    # m.add_marker()
     # get extent of all lines
     extent = ext
 
@@ -35,9 +36,9 @@ def render_single_tile(m: StaticMap, ext: list) -> Image:
     m.y_center = _lat_to_y(lat_center, m.zoom)
 
     image = Image.new('RGB', (m.width, m.height), m.background_color)
-
+    return m.render(m.zoom)
     m._draw_base_layer(image)
-    m.polygons.remove(polygon)
+    # m.polygons.remove(polygon)
     m._draw_features(image)
     return image
 

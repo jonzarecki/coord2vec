@@ -2,6 +2,7 @@ import os
 
 COORD2VEC_DIR_PATH = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.dirname(COORD2VEC_DIR_PATH)
+USER_ROOT_DIR = os.path.dirname(os.path.dirname(PROJECT_ROOT))
 
 tile_server_ip = "localhost"
 postgis_server_ip = "127.0.0.1"
@@ -11,7 +12,7 @@ tile_server_ports = [8101, 8102, 8103]
 h20_port = 8198
 postgis_port = 15432
 
-CACHE_DIR = os.path.join(PROJECT_ROOT, "data", "house_price_builder")
+CACHE_DIR = os.path.join("/mnt", "cache_data", "house_price_builder")
 # CACHE_DIR = '../coord2vec_data/house_price_builder'
 TRAIN_CACHE_DIR = os.path.join(CACHE_DIR, 'train')
 VAL_CACHE_DIR = os.path.join(CACHE_DIR, 'validation')

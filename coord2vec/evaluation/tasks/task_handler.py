@@ -21,10 +21,10 @@ class TaskHandler(ABC):
         """
         get the data for the task
         Returns:
-            (coords, additional_features, y)
-            coords: List of tuples like (Lat, Long) if size n_samples
-            additional_features: a pandas dataframe of shape [n_samples, n_features]
-            y: labels of length n_samples
+            float like (coords, additional_features, y)
+                coords: List of tuples like (Lat, Long) if size n_samples
+                additional_features: a pandas dataframe of shape [n_samples, n_features]
+                y: labels of length n_samples
         """
         pass
 

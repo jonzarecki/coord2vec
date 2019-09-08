@@ -6,7 +6,7 @@ echo `pwd`
 
 docker stop $(docker ps -aq --filter ancestor=osm-tile-server) && docker rm $(docker ps -aq --filter ancestor=osm-tile-server)
 sudo chmod 777 openstreetmap-tile-server/run.sh
-docker build openstreetmap-tile-server/ -t osm-tile-server
+docker build --no-cache openstreetmap-tile-server/ -t osm-tile-server
 
 # Download Israel as sample if no data is provided
 if [[ ! -f ./data.osm.pbf ]]; then
@@ -36,19 +36,19 @@ else
 fi
 
 
-docker run -e THREADS=24 -p 8101:80 -v osm-data-tile:/var/lib/postgresql/10/main \
+docker run -e THREADS=24 -p 8101:80 --rm -v osm-data-tile:/var/lib/postgresql/10/main \
                     -d osm-tile-server run project_building_only.mml
 echo "starting building tile server"
 
 sleep 15
 
-docker run -e THREADS=24 -p 8102:80 -v osm-data-tile:/var/lib/postgresql/10/main \
+docker run -e THREADS=24 -p 8102:80 --rm -v osm-data-tile:/var/lib/postgresql/10/main \
                     -d osm-tile-server run project_road_only.mml
 echo "starting road tile server"
 
 sleep 15
 
-docker run -e THREADS=24 -p 8103:80 -v osm-data-tile:/var/lib/postgresql/10/main \
+docker run -e THREADS=24 -p 8103:80 --rm -v osm-data-tile:/var/lib/postgresql/10/main \
                     -d osm-tile-server run project_landcover_only.mml
 echo "starting landcover tile server"
 
