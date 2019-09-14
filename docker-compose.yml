@@ -1,0 +1,66 @@
+version: '3' # Docker-compose yml version for docker compose builder
+services:
+  osm-postgis-server:  # also builds the postgres data in "osm-data"
+    image: osm-postgis-server:0.1
+    command: ["import"]
+    container_name: osm-postgis-server
+    environment: # env variables
+      - THREADS=24
+    ports: # Ports we wish to expose source:target
+      - 15432:5432
+    volumes: # Which Bind mounts or Volumes to mount source:target
+      - type: volume
+        source: osm-data
+        target: /var/lib/postgresql/10/main
+      - type: bind
+        source: $cdir/data.osm.pbf
+        target: /data.osm.pbf
+
+
+  # after rendering the postgis in osm-postgis-server we can start the tile servers
+  osm-tile-building:
+    image: osm-tile-server:0.1
+    command: run project_building_only.mml
+    container_name: osm-tile-building
+    depends_on:
+      - osm-postgis-server
+    environment: # env variables
+      - THREADS=24
+    ports: # Ports we wish to expose source:target
+      - 8101:80
+    volumes: # Which Bind mounts or Volumes to mount source:target
+      - type: volume
+        source: osm-data
+        target: /var/lib/postgresql/10/main
+  osm-tile-road:
+    image: osm-tile-server:0.1
+    command: run project_road_only.mml
+    container_name: osm-tile-road
+    depends_on:
+      - osm-postgis-server
+    environment: # env variables
+      - THREADS=24
+    ports: # Ports we wish to expose source:target
+      - 8102:80
+    volumes: # Which Bind mounts or Volumes to mount source:target
+      - type: volume
+        source: osm-data
+        target: /var/lib/postgresql/10/main
+  osm-tile-landcover:
+    image: osm-tile-server:0.1
+    command: run project_landcover_only.mml
+    container_name: osm-tile-landcover
+    depends_on:
+      - osm-postgis-server
+    environment: # env variables
+      - THREADS=24
+    ports: # Ports we wish to expose source:target
+      - 8103:80
+    volumes: # Which Bind mounts or Volumes to mount source:target
+      - type: volume
+        source: osm-data
+        target: /var/lib/postgresql/10/main
+
+volumes:
+  osm-data:
+    name: osm-data
