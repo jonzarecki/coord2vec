@@ -1,15 +1,12 @@
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, TransformerMixin
 import numpy as np
 
-class EmptyModel(BaseEstimator):
+class EmptyModel(BaseEstimator, TransformerMixin):
     """
     Just an empty model to be used as a baseline
     """
     def fit(self):
-        self.feature_builder = ['empty_feature']
-
-    def load_trained_model(self, path):
         return self
 
-    def predict(self, coords):
+    def transform(self, coords):
         return np.zeros((len(coords), 1))

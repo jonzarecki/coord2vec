@@ -32,7 +32,7 @@ class PolygonMixin(Feature):
         q = f"""
             SELECT 
                 CASE WHEN COUNT(*) > 0 THEN 
-                    SUM(COALESCE (ST_Area(t.geom, true), 0.)) 
+                    SUM(COALESCE (ST_Area(t.geom, TRUE), 0.)) / 10.764
                 ELSE 0. END as total_area
             FROM ({Feature._intersect_circle_query(base_query, geo, max_radius_meter)}) t
                 """

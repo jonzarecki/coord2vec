@@ -56,8 +56,7 @@ def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coor
 
 
 if __name__ == '__main__':
-    print("new")
-    # sample_and_save_dataset(TRAIN_CACHE_DIR, sample_num=TRAIN_SAMPLE_NUM, feature_builder=house_price_builder,
-    #                         use_existing=False)
+    sample_and_save_dataset(TRAIN_CACHE_DIR, sample_num=TRAIN_SAMPLE_NUM, feature_builder=house_price_builder,
+                            use_existing=False)
     sample_and_save_dataset(VAL_CACHE_DIR, sample_num=VAL_SAMPLE_NUM, feature_builder=house_price_builder,
                             use_existing=False)

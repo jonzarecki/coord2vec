@@ -3,7 +3,7 @@ import random
 from typing import List, Tuple
 import torch
 from ignite.contrib.handlers import ProgressBar
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, TransformerMixin
 from torch import nn
 from torch import optim
 from torch.nn.modules.loss import _Loss, L1Loss
@@ -26,14 +26,8 @@ from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDatas
 from coord2vec.models.losses import MultiheadLoss
 
 
-def check_manual_seed(args):
-    seed = args.seed or random.randint(1, 10000)
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
 
-
-class Coord2Vec(BaseEstimator):
+class Coord2Vec(BaseEstimator, TransformerMixin):
     """
     Wrapper for the coord2vec algorithm
     """
@@ -271,11 +265,11 @@ class Coord2Vec(BaseEstimator):
 
         self.model = self.model.to(self.device)
 
-    def predict(self, coords: List[Tuple[float, float]]):
+    def transform(self, coords: List[Tuple[float, float]]) -> torch.tensor:
         """
         get the embedding of coordinates
         Args:
-            coords: a list of tuple like (34.123123,32.23423) to predict on
+            coords: a list of tuple like (lat, long) to predict on
 
         Returns:
             A tensor of shape [n_coords, embedding_dim]
@@ -292,7 +286,7 @@ class Coord2Vec(BaseEstimator):
         images = torch.tensor(images).float().to(self.device)
 
         # predict the embedding
-        embeddings = self.model(images)[0]
+        embeddings, output = self.model(images)
         return embeddings.to('cpu')
 
     def _build_model(self, n_channels, n_heads):

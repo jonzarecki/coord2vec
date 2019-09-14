@@ -54,7 +54,7 @@ class FeaturesBuilder:
         return self.extract(gdf)
 
 
-def poly_multi_feature(filter, name, radii: List[int] = [50]):
+def poly_multi_feature(filter, name, radii: List[int] = [50]) -> List[Feature]:
     features = []
     for radius in radii:
         features += [OsmPolygonFeature(filter, name=f'nearest_{name}_{radius}m', apply_type=NEAREST_NEIGHBOUR_all,
@@ -66,7 +66,7 @@ def poly_multi_feature(filter, name, radii: List[int] = [50]):
     return features
 
 
-def line_multi_feature(filter, name, radii: List[int] = [50]):
+def line_multi_feature(filter, name, radii: List[int] = [50]) -> List[Feature]:
     features = []
     for radius in radii:
         features += [OsmLineFeature(filter, name=f'dist_2_nearest_{name}{radius}m', apply_type=NEAREST_NEIGHBOUR_all,

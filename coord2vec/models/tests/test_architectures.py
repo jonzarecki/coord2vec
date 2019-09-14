@@ -33,4 +33,5 @@ class TestArchitectures(TestCase):
         assert (isinstance(model, nn.Module))
 
         data = torch.ones(5, n_channels, 224, 224)
-        model.forward(data)
+        embedding, output = model.forward(data)
+        self.assertEqual(len(output), 2)

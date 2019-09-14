@@ -51,7 +51,7 @@ class TestOsmFeatures(unittest.TestCase):
         hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'area_of', max_radius_meter=2 * 1000)
         res = hospital_area_feat.extract(self.gdf)
         # NOT VERIFIED YET
-        self.assertAlmostEqual(res.iloc[0], 30257, delta=1)  # area is pretty large
+        self.assertAlmostEqual(res.iloc[0], 2811, delta=1)  # area is pretty large
 
     def test_max_radius_intersection_works(self):
         if not self.israel_osm:
