@@ -26,7 +26,7 @@ class MultiheadLoss(_Loss):
         """
         Returns: A tuple of these objects:
             * a Scalar of the weighted loss
-            * a list of the seperated the losses' scalars
+            * a list of the separated losses' scalars
         """
         assert (len(input) == self.n_heads)
         assert (len(target) == self.n_heads)

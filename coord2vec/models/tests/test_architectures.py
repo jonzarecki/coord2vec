@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from unittest import TestCase
 
-from coord2vec.models.architectures import resnet18, multihead_model, dual_fc_head
+from coord2vec.models.architectures import resnet18, multihead_model, dual_fc_head, simple_cnn
 
 
 class TestArchitectures(TestCase):
@@ -18,6 +18,12 @@ class TestArchitectures(TestCase):
     #     model = resnet50(10, 10)
     #     assert (isinstance(model, nn.Module))
 
+    def test_simpleCNN(self):
+        images = torch.ones(10, 3, 224, 224)
+        cnn = simple_cnn(3, 128)
+        output = cnn.forward(images)
+        self.assertTupleEqual(output.shape, (10, 128))
+
     def test_resnet18(self):
         model = resnet18(10, 10)
         assert (isinstance(model, nn.Module))
@@ -25,7 +31,8 @@ class TestArchitectures(TestCase):
     def test_multihead_model(self):
         n_channels = 10
         z_dim = 128
-        model = resnet18(10, z_dim)
+        model = resnet18(n_channels, z_dim)
+
         head1 = dual_fc_head(z_dim)
         head2 = dual_fc_head(z_dim)
 

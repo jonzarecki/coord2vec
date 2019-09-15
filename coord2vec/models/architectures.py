@@ -31,6 +31,28 @@ import torchvision.models as models
 #     """
 #     resnet = models.resnet50()
 #     return _change_last_layer(_change_first_layer(resnet, n_channels), output_dim)
+class Flatten(nn.Module):
+    def forward(self, x):
+        x = x.view(x.size()[0], -1)
+        return x
+
+def simple_cnn(n_channels: int, output_dim: int) -> nn.Module:
+    simple_cnn = nn.Sequential(
+        nn.Conv2d(n_channels, 32, kernel_size=(3, 3)),
+        nn.ReLU(),
+        nn.MaxPool2d(kernel_size=(2, 2)),
+
+        nn.Conv2d(32, 64, kernel_size=(3, 3)),
+        nn.ReLU(),
+        nn.MaxPool2d(kernel_size=(2, 2)),
+
+        nn.Dropout2d(p=0.0),
+        Flatten(),
+        nn.Linear(54 * 54 * 64, 256),
+        nn.Dropout(p=0.0),
+        nn.Linear(256, output_dim)
+    )
+    return simple_cnn
 
 
 def resnet18(n_channels: int, output_dim: int) -> nn.Module:

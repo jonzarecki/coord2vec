@@ -17,7 +17,7 @@ CACHE_DIR = os.path.join("/mnt", "cache_data", "house_price_builder")
 TRAIN_CACHE_DIR = os.path.join(CACHE_DIR, 'train')
 VAL_CACHE_DIR = os.path.join(CACHE_DIR, 'validation')
 
-TEST_CACHE_DIR = os.path.join(COORD2VEC_DIR_PATH, "train_cache", "test_dir")
+TEST_CACHE_DIR = os.path.join(CACHE_DIR, "test_dir")
 TENSORBOARD_DIR = os.path.join(PROJECT_ROOT, "tensorboard_runs")
 
 VAL_SAMPLE_NUM = 5_000

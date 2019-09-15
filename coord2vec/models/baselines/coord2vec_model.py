@@ -13,18 +13,16 @@ from ignite.engine import Events, create_supervised_trainer, create_supervised_e
 
 from coord2vec.common.mtl.metrics import EmbeddingData, DistanceCorrelation, RootMeanSquaredError
 
-
 from coord2vec import config
 from coord2vec.config import HALF_TILE_LENGTH, TENSORBOARD_DIR
 from coord2vec.feature_extraction.features_builders import FeaturesBuilder
 from coord2vec.image_extraction.tile_image import generate_static_maps, render_multi_channel
 from coord2vec.image_extraction.tile_utils import build_tile_extent
-from coord2vec.models.architectures import resnet18, dual_fc_head, multihead_model
+from coord2vec.models.architectures import resnet18, dual_fc_head, multihead_model, simple_cnn
 from coord2vec.models.baselines.tensorboard_utils import TrainExample, \
     create_summary_writer, add_metrics_to_tensorboard, add_embedding_visualization, build_example_image_figure
 from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
 from coord2vec.models.losses import MultiheadLoss
-
 
 
 class Coord2Vec(BaseEstimator, TransformerMixin):
@@ -126,9 +124,12 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
             y_pred_tensor = torch.stack(output).squeeze(2).transpose(0, 1)
             y_tensor = y
             data = x
-            # print("y: ", y,"\ny_pred: ", y_pred[1])
+            # print("\n\nY_pred: ", y_pred[1][0])
+            # print("Y_true: ", y[0])
             with torch.no_grad():
                 loss, multi_losses = criterion(output, torch.split(y, 1, dim=1))
+            # print("LOSS: ", loss)
+            # print("Multi LOSS: ", multi_losses[0])
             return data, embedding, loss, multi_losses, y_pred_tensor, y_tensor
 
         eval_metrics = {'rmse': RootMeanSquaredError(), 'corr': DistanceCorrelation(),
@@ -295,7 +296,8 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
         return embeddings.to('cpu')
 
     def _build_model(self, n_channels, n_heads):
-        model = resnet18(n_channels, self.embedding_dim)
+        # model = resnet18(n_channels, self.embedding_dim)
+        model = simple_cnn(n_channels, self.embedding_dim)
         heads = [dual_fc_head(self.embedding_dim) for i in range(n_heads)]
         model = multihead_model(model, heads)
         return model
