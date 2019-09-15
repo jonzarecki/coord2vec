@@ -5,7 +5,7 @@ cd "${0%/*}/"
 echo `pwd`
 
 docker stop $(docker ps -aq --filter ancestor=osm-postgis-server) && docker rm $(docker ps -aq --filter ancestor=osm-postgis-server)
-docker volume rm rsm-postgis-data
+docker volume rm osm-postgis-data
 docker volume create osm-postgis-data
 sudo chmod 777 osm-postgis-server/run.sh
 
