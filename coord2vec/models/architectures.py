@@ -89,13 +89,14 @@ def multihead_model(architecture: nn.Module, heads: List[nn.Module]) -> nn.Modul
 ##        heads         ##
 ##########################
 
-def dual_fc_head(input_dim, hidden_dim=128) -> nn.Module:
+def dual_fc_head(input_dim, hidden_dim=128, add_exponent=False) -> nn.Module:
     head = nn.Sequential(
         nn.Linear(input_dim, hidden_dim),
         nn.ReLU(),
         nn.Linear(hidden_dim, 1),
-        # ExponentModule()
     )
+    if add_exponent:
+        head.add_module("exponent", ExponentModule())
 
     return head.float()
 

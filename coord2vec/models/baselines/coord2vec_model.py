@@ -35,6 +35,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
                  losses: List[_Loss] = None,
                  losses_weights: List[float] = None,
                  log_loss: bool = False,
+                 exponent_heads:bool=False,
                  embedding_dim: int = 128,
                  tb_dir: str = 'default',
                  multi_gpu: bool = True,
@@ -57,6 +58,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
 
         self.losses_weights = losses_weights
         self.log_loss = log_loss
+        self.exponent_head = exponent_heads
         self.tb_dir = tb_dir
         self.embedding_dim = embedding_dim
         self.n_channels = n_channels
@@ -298,6 +300,6 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
     def _build_model(self, n_channels, n_heads):
         # model = resnet18(n_channels, self.embedding_dim)
         model = simple_cnn(n_channels, self.embedding_dim)
-        heads = [dual_fc_head(self.embedding_dim) for i in range(n_heads)]
+        heads = [dual_fc_head(self.embedding_dim, add_exponent=self.exponent_head) for i in range(n_heads)]
         model = multihead_model(model, heads)
         return model
