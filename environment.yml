@@ -51,6 +51,8 @@ dependencies:
 
 # Web app / visualization
 - flask
+- bokeh
+- holoviews
 
 - pip:
     - nbclean
@@ -62,3 +64,4 @@ dependencies:
     - torchsummary
     - tb-nightly  # for tensorboard
     - openrouteservice
+    - xlrd  # missing from docker
