@@ -35,8 +35,8 @@ def geo2sql(geo: BaseGeometry, to_geography: bool = False) -> str:
     sql = f"geography({sql})" if to_geography else sql
     return sql
 
-
-class Feature(ABC):
+#TODO: postgres feature. Does not work for ORS for example
+class PostgresFeature(ABC):
     def __init__(self, apply_type: str, name: str = 'anonymos_feature', **kwargs):
         #  Classes that add apply functions should add them to the dictionary
         self.name = name
@@ -51,7 +51,7 @@ class Feature(ABC):
         q = f"""
         SELECT COALESCE (
            (SELECT ST_DistanceSpheroid(t.geom, {geo2sql(geo)}, 'SPHEROID["WGS 84",6378137,298.257223563]') as dist
-            FROM ({Feature._intersect_circle_query(base_query, geo, max_radius_meter)}) t
+            FROM ({PostgresFeature._intersect_circle_query(base_query, geo, max_radius_meter)}) t
             ORDER BY dist ASC
             LIMIT 1), 
         FLOAT '+infinity') as dist;
@@ -65,7 +65,7 @@ class Feature(ABC):
     def apply_number_of(base_query: str, geo: BaseGeometry, conn: connection, max_radius_meter: float, **kwargs) -> int:
         q = f"""
         SELECT count(*) as cnt
-            FROM ({Feature._intersect_circle_query(base_query, geo, max_radius_meter)}) t
+            FROM ({PostgresFeature._intersect_circle_query(base_query, geo, max_radius_meter)}) t
             WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter}, true);
         """
 

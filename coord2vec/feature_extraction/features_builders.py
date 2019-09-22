@@ -5,7 +5,7 @@ import pandas as pd
 from geopandas import GeoDataFrame
 from shapely import wkt
 
-from coord2vec.feature_extraction.feature import Feature, NEAREST_NEIGHBOUR_all, AREA_OF_poly, NUMBER_OF_all, \
+from coord2vec.feature_extraction.postgres_feature import PostgresFeature, NEAREST_NEIGHBOUR_all, AREA_OF_poly, NUMBER_OF_all, \
     LENGTH_OF_line
 from coord2vec.feature_extraction.osm.osm_line_feature import OsmLineFeature
 from coord2vec.feature_extraction.osm.osm_polygon_feature import OsmPolygonFeature
@@ -17,7 +17,7 @@ class FeaturesBuilder:
     A data class for choosing the desired features
     """
 
-    def __init__(self, features: List[Union[Feature, List[Feature]]]):
+    def __init__(self, features: List[Union[PostgresFeature, List[PostgresFeature]]]):
         """
         features to be used in this builder
         Args:
@@ -54,7 +54,7 @@ class FeaturesBuilder:
         return self.extract(gdf)
 
 
-def poly_multi_feature(filter, name, radii: List[int] = [50]) -> List[Feature]:
+def poly_multi_feature(filter, name, radii: List[int] = [50]) -> List[PostgresFeature]:
     features = []
     for radius in radii:
         features += [OsmPolygonFeature(filter, name=f'nearest_{name}_{radius}_m', apply_type=NEAREST_NEIGHBOUR_all,
@@ -66,7 +66,7 @@ def poly_multi_feature(filter, name, radii: List[int] = [50]) -> List[Feature]:
     return features
 
 
-def line_multi_feature(filter, name, radii: List[int] = [50]) -> List[Feature]:
+def line_multi_feature(filter, name, radii: List[int] = [50]) -> List[PostgresFeature]:
     features = []
     for radius in radii:
         features += [OsmLineFeature(filter, name=f'dist_2_nearest_{name}_{radius}m', apply_type=NEAREST_NEIGHBOUR_all,

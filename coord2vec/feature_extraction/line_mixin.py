@@ -3,10 +3,10 @@ from functools import partial
 from shapely.geometry.base import BaseGeometry
 
 from coord2vec.common.db.postgres import connection, get_df
-from coord2vec.feature_extraction.feature import Feature, geo2sql, LENGTH_OF_line
+from coord2vec.feature_extraction.postgres_feature import PostgresFeature, geo2sql, LENGTH_OF_line
 
 
-class LineMixin(Feature):
+class LineMixin(PostgresFeature):
     def __init__(self, apply_type: str, **kwargs):
         super().__init__(apply_type, **kwargs)
 
@@ -34,7 +34,7 @@ class LineMixin(Feature):
                 CASE WHEN COUNT(*) > 0 THEN 
                     SUM(ST_Length(t.geom, true)) 
                 ELSE 0. END as total_length
-            FROM ({Feature._intersect_circle_query(base_query, geo, max_radius_meter)}) t
+            FROM ({PostgresFeature._intersect_circle_query(base_query, geo, max_radius_meter)}) t
             WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter}, true);
             """
 

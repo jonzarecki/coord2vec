@@ -1,8 +1,8 @@
 from coord2vec.common.db.postgres import connect_to_db, connection
-from coord2vec.feature_extraction.feature import Feature
+from coord2vec.feature_extraction.postgres_feature import PostgresFeature
 
 
-class OsmFeature(Feature):
+class OsmFeature(PostgresFeature):
     """
     This class filters objects from the osm postgres db.
     It filters different tags to build the different features

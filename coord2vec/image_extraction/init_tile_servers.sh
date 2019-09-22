@@ -52,6 +52,9 @@ docker run -e THREADS=24 -p 8103:80 --rm -v osm-data-tile:/var/lib/postgresql/10
                     -d osm-tile-server run project_landcover_only.mml
 echo "starting landcover tile server"
 
+docker run -e THREADS=24 -p 8104:80 -v osm-data-tile:/var/lib/postgresql/10/main \
+                    -d osm-tile-server run project.mml
+
 sleep 15
 
 wait

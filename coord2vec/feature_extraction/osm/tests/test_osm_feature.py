@@ -5,7 +5,7 @@ from geopandas import GeoDataFrame
 from shapely import wkt
 from unittest.mock import patch
 
-from coord2vec.feature_extraction.feature import Feature
+from coord2vec.feature_extraction.postgres_feature import PostgresFeature
 from coord2vec.feature_extraction.osm import OsmLineFeature
 from coord2vec.feature_extraction.osm.osm_polygon_feature import OsmPolygonFeature
 from coord2vec.feature_extraction.osm.osm_tag_filters import HOSPITAL, RESIDENTIAL_ROAD, BUILDING

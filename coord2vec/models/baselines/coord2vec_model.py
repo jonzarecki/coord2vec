@@ -8,7 +8,7 @@ from torch import nn
 from torch import optim
 from torch.nn.modules.loss import _Loss, L1Loss
 from torch.utils.data import DataLoader
-
+from ignite.metrics import Metric
 from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
 
 from coord2vec.common.mtl.metrics import EmbeddingData, DistanceCorrelation, RootMeanSquaredError
