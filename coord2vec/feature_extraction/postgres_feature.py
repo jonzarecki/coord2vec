@@ -11,6 +11,8 @@ from shapely.geometry.base import BaseGeometry
 from coord2vec.common.db.postgres import get_df, connect_to_db, connection
 
 # general feature types
+from coord2vec.feature_extraction.feature import Feature
+
 NEAREST_NEIGHBOUR_all = 'nearest_neighbour'
 NUMBER_OF_all = 'number_of'
 
@@ -35,11 +37,11 @@ def geo2sql(geo: BaseGeometry, to_geography: bool = False) -> str:
     sql = f"geography({sql})" if to_geography else sql
     return sql
 
-#TODO: postgres feature. Does not work for ORS for example
-class PostgresFeature(ABC):
+
+class PostgresFeature(Feature):
     def __init__(self, apply_type: str, name: str = 'anonymos_feature', **kwargs):
         #  Classes that add apply functions should add them to the dictionary
-        self.name = name
+        super().__init__(name, **kwargs)
         self.apply_functions = {
             NEAREST_NEIGHBOUR_all: partial(self.apply_nearest_neighbour, **kwargs),
             NUMBER_OF_all: partial(self.apply_number_of, **kwargs)
@@ -129,18 +131,3 @@ class PostgresFeature(ABC):
         res = gdf.geometry.apply(lambda x: func(base_query=self._build_postgres_query(), geo=x, conn=conn))
         conn.close()
         return res
-
-    def extract_single_coord(self, coordinate: Tuple[float, float]) -> float:
-        """
-        Applies the feature on the gdf, returns the series after the apply
-        Args:
-            coordinate: (lat, lon) the coordinate to extract the feature on
-
-        Returns:
-            The return value
-        """
-        # TODO: test
-        assert self.apply_type in self.apply_functions, "apply_type does not match a function"
-        p = wkt.loads(f'POINT ({coordinate[1]} {coordinate[0]})')
-        gdf = GeoDataFrame(pd.DataFrame({'geom': [p]}), geometry='geom')
-        return self.extract(gdf).iloc[0]
