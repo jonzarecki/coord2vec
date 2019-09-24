@@ -9,7 +9,7 @@ from shapely import wkt
 from shapely.geometry import Point
 from shapely.geometry.base import BaseGeometry
 
-from coord2vec.common.db.postgres import get_df, connect_to_db, connection, get_sqlalchemy_engine, save_gdf_to_postgres
+from coord2vec.common.db.postgres import get_df, connect_to_db, connection, get_sqlalchemy_engine, save_gdf_to_temp_table_postgres
 
 # general feature types
 from coord2vec.feature_extraction.feature import Feature
@@ -130,7 +130,7 @@ class PostgresFeature(Feature):
         """
         assert self.apply_type in self.apply_functions, "apply_type does not match a function"
         eng = get_sqlalchemy_engine()
-        tbl_name = save_gdf_to_postgres(gdf, eng)
+        tbl_name = save_gdf_to_temp_table_postgres(gdf, eng)
 
         res = self.extract_with_tblname(tbl_name)
 

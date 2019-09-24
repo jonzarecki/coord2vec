@@ -18,7 +18,7 @@ def interpolate_scores(coords: np.array, scores: np.array, coord_range: tuple, s
     Returns:
         z: np.array - 2D array of the values in the entire grid of coord_range
     """
-    min_lat, min_lon, max_lat, max_lon = coord_range
+    min_lon, min_lat, max_lon, max_lat = coord_range
 
     x = np.arange(min_lon, max_lon, step=step)
     y = np.arange(min_lat, max_lat, step=step)

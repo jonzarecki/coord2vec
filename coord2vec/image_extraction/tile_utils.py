@@ -13,7 +13,7 @@ def is_tile_empty(im: Image) -> bool:
 
 
 def build_tile_extent(center: Tuple[float, float], radius_in_meters: float) -> list:
-    start = geopy.Point(*center)
+    start = geopy.Point(center)
     d = geopy.distance.geodesic(kilometers=radius_in_meters / 1000)
     ext_points = list(map(lambda bearing: d.destination(point=start, bearing=bearing), [0, 90, 180, 270]))
     # return [ext_points[0].latitude, ext_points[3].longitude,
@@ -22,13 +22,14 @@ def build_tile_extent(center: Tuple[float, float], radius_in_meters: float) -> l
             ext_points[2].latitude, ext_points[1].longitude, ext_points[0].latitude]
     # return [topleft.latitude, topleft.longitude, bottomright.latitude, bottomright.longitude]
 
-def sample_coordinate_in_range(min_lat: float, min_lon: float, max_lat: float, max_lon: float, seed=None) -> Tuple[
+def sample_coordinate_in_range(min_lon: float, min_lat: float, max_lon: float, max_lat: float, seed=None) -> Tuple[
     float, float]:
-    np.random.seed(seed)
-    lat = np.random.uniform(min_lat, max_lat)
+    if seed is not None:
+        np.random.seed(seed)
     lon = np.random.uniform(min_lon, max_lon)
+    lat = np.random.uniform(min_lat, max_lat)
 
-    return lat, lon
+    return lon, lat
 
 def sample_coordinate_in_poly(poly: Polygon, seed=None) -> Tuple[float, float]:
     np.random.seed(seed)
@@ -36,9 +37,9 @@ def sample_coordinate_in_poly(poly: Polygon, seed=None) -> Tuple[float, float]:
     while not Point(coord).within(poly):
         coord = sample_coordinate_in_range(*poly.bounds)
 
-    return coord[::-1]
+    return coord
 
-def sample_grid_in_range(min_lat: float, min_lon: float, max_lat: float, max_lon: float, step: float = 0.01) -> np.array:
+def sample_grid_in_range(min_lon: float, min_lat: float, max_lon: float, max_lat: float, step: float = 0.01) -> np.array:
     x = np.arange(min_lon, max_lon, step=step)
     y = np.arange(min_lat, max_lat, step=step)
     coords = np.stack(np.meshgrid(x, y), -1)
@@ -46,8 +47,7 @@ def sample_grid_in_range(min_lat: float, min_lon: float, max_lat: float, max_lon
 
 def sample_grid_in_poly(poly: Polygon, step: float = 0.01) -> List[Tuple]:
     coords = sample_grid_in_range(*poly.bounds, step=step).reshape(-1, 2)
-    in_poly = [Point(coord[::-1]).within(poly) for coord in coords]
-    return coords[in_poly]
+    return [coord for coord in coords if Point(coord).within(poly)]
 
 
 def sample_coordinates_in_poly(poly: Polygon, num_samples=1, seed=None) -> List[Tuple]:

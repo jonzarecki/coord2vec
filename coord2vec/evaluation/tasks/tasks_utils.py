@@ -49,12 +49,12 @@ def coords2dataset(true_coords: List, full_poly: Polygon, step=0.01) -> Tuple[np
     return polys2dataset(true_polys, full_poly, step)
 
 
-def coord2rect(lat: float, lon: float, w: float, h: float) -> Polygon:
+def coord2rect(lon: float, lat: float, w: float, h: float) -> Polygon:
     """
     Transform a coordinate into a Polygon in a shape of a rectangular
     Args:
-        lat: of the coordinate
         lon: of the coordinate
+        lat: of the coordinate
         w: width of the rectangular
         h: height of the rectangular
 
@@ -65,4 +65,4 @@ def coord2rect(lat: float, lon: float, w: float, h: float) -> Polygon:
     max_lat = float(lat) + float(w) / 2.0
     min_lon = float(lon) - float(h) / 2.0
     max_lon = float(lon) + float(h) / 2.0
-    return Polygon([[min_lat, min_lon], [min_lat, max_lon], [max_lat, max_lon], [max_lat, min_lon]])
+    return Polygon([[min_lon, min_lat], [max_lon, min_lat], [max_lon, max_lat], [min_lon, max_lat]])

@@ -45,7 +45,7 @@ def get_df(query: str, conn: connection, dispose_conn=False) -> pd.DataFrame:
     return res
 
 
-def save_gdf_to_postgres(gdf: GeoDataFrame, eng: sa.engine.Engine) -> str:
+def save_gdf_to_temp_table_postgres(gdf: GeoDataFrame, eng: sa.engine.Engine) -> str:
     gdf = gdf.copy(deep=True)
     gdf['geom'] = gdf['geometry'].apply(lambda x: WKTElement(x.wkt, srid=4326))
     # drop the geometry column as it is now duplicative

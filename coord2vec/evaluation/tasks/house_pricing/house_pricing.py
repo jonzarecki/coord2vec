@@ -24,7 +24,7 @@ class HousePricing(TaskHandler):
 
         df = pd.read_csv(os.path.join(os.path.dirname(__file__), r"kc_house_data.csv"),
                          encoding="latin").iloc[:10]
-        df['coord'] = df.apply(lambda row: tuple(row[['lat', 'long']].values), axis=1)
+        df['coord'] = df.apply(lambda row: tuple(row[['long', 'lat']].values), axis=1)
         coords = df['coord'].values
         features = df[['bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'waterfront', 'view',
                        'condition', 'grade', 'sqft_above', 'sqft_basement', 'yr_built', 'yr_renovated', 'zipcode']]

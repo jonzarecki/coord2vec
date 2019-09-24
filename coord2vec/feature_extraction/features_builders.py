@@ -3,13 +3,13 @@ from typing import List, Tuple, Union
 
 import pandas as pd
 from geopandas import GeoDataFrame
-from shapely import wkt
+from shapely.geometry import Point
 
-from coord2vec.feature_extraction.postgres_feature import PostgresFeature, NEAREST_NEIGHBOUR_all, AREA_OF_poly, NUMBER_OF_all, \
-    LENGTH_OF_line
 from coord2vec.feature_extraction.osm.osm_line_feature import OsmLineFeature
 from coord2vec.feature_extraction.osm.osm_polygon_feature import OsmPolygonFeature
 from coord2vec.feature_extraction.osm.osm_tag_filters import *
+from coord2vec.feature_extraction.postgres_feature import PostgresFeature, NEAREST_NEIGHBOUR_all, AREA_OF_poly, \
+    NUMBER_OF_all, LENGTH_OF_line
 
 
 class FeaturesBuilder:
@@ -49,7 +49,7 @@ class FeaturesBuilder:
         Returns:
             a pandas dataframe, with columns as features, and rows as the points in gdf
         """
-        wkt_points = [wkt.loads(f'POINT ({coord[1]} {coord[0]})') for coord in coords]
+        wkt_points = [Point(coord) for coord in coords]
         gdf = GeoDataFrame(pd.DataFrame({'geom': wkt_points}), geometry='geom')
         return self.extract(gdf)
 

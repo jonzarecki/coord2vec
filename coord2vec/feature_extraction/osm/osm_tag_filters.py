@@ -1,6 +1,11 @@
 
 # Built from http://download.geofabrik.de/osm-data-in-gis-formats-free.pdf
 
+OSM_LINE_TABLE = "planet_osm_line"
+OSM_POINT_TABLE = "planet_osm_point"
+OSM_POLYGON_TABLE = "planet_osm_polygon"
+
+
 # Points
 
 
