@@ -1,6 +1,7 @@
-from abc import ABC, abstractmethod
+import datetime
+from abc import abstractmethod
 from functools import partial
-from typing import Tuple, Callable
+from typing import Tuple, Callable, List
 
 import pandas as pd
 from geopandas import GeoDataFrame
@@ -8,7 +9,7 @@ from shapely import wkt
 from shapely.geometry import Point
 from shapely.geometry.base import BaseGeometry
 
-from coord2vec.common.db.postgres import get_df, connect_to_db, connection
+from coord2vec.common.db.postgres import get_df, connect_to_db, connection, get_sqlalchemy_engine, save_gdf_to_postgres
 
 # general feature types
 from coord2vec.feature_extraction.feature import Feature
@@ -49,51 +50,54 @@ class PostgresFeature(Feature):
         self.apply_type = apply_type
 
     @staticmethod
-    def apply_nearest_neighbour(base_query: str, geo: BaseGeometry, conn: connection, max_radius_meter, **kwargs) -> float:
+    def apply_nearest_neighbour(base_query: str, q_geoms: str, conn: connection, max_radius_meter, **kwargs) -> pd.DataFrame:
         q = f"""
+        with filtered_osm_geoms as ({PostgresFeature._intersect_circle_query(base_query, q_geoms, max_radius_meter)})
+        
         SELECT COALESCE (
-           (SELECT ST_DistanceSpheroid(t.geom, {geo2sql(geo)}, 'SPHEROID["WGS 84",6378137,298.257223563]') as dist
-            FROM ({PostgresFeature._intersect_circle_query(base_query, geo, max_radius_meter)}) t
+           (SELECT ST_Distance(f.q_geom, f.t_geom) as dist
             ORDER BY dist ASC
             LIMIT 1), 
-        FLOAT '+infinity') as dist;
+        {max_radius_meter}) as dist FROM filtered_osm_geoms f;
         """
 
         df = get_df(q, conn)
 
-        return df['dist'].iloc[0]
+        return df
 
     @staticmethod
-    def apply_number_of(base_query: str, geo: BaseGeometry, conn: connection, max_radius_meter: float, **kwargs) -> int:
+    def apply_number_of(base_query: str, q_geoms: str, conn: connection, max_radius_meter: float, **kwargs) -> pd.DataFrame:
         q = f"""
+        with filtered_osm_geoms as ({PostgresFeature._intersect_circle_query(base_query, q_geoms, max_radius_meter)})
+        
         SELECT count(*) as cnt
-            FROM ({PostgresFeature._intersect_circle_query(base_query, geo, max_radius_meter)}) t
-            WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter}, true);
+            FROM filtered_osm_geoms;
         """
 
         df = get_df(q, conn)
 
-        return df['cnt'].iloc[0]
+        return df
 
     @staticmethod
-    def _intersect_circle_query(base_query: str, geo: BaseGeometry, max_radius_meter: float) -> str:
+    def _intersect_circle_query(base_query: str, q_geoms: str, max_radius_meter: float) -> str:
         """
         Transform a normal base_query into a query after only elements within the radius from geo remain
         Args:
             base_query: the postgres base query to get geo elements
-            geo: the geometry object
+            q_geoms: table name holding the queries geometries
             max_radius_meter: the radius of the circle to intersect with
 
         Returns:
             a Postgres query the return only the data on max radius from geo
         """
         query = f"""
-                select t.geom 
-                from(
-                    select ST_Intersection(t.geom, geometry(ST_Buffer({geo2sql(geo, to_geography=True)}, {max_radius_meter}))) as geom
-                    from ({base_query}) t) t
-                where ST_IsEmpty(geom) = FALSE
-                """
+        select 
+            {q_geoms}.geom as q_geom,
+            ST_Intersection(t.geom, ST_Buffer({q_geoms}.geom, {max_radius_meter})) as t_geom
+            from {q_geoms} 
+                JOIN ({base_query}) t 
+                ON ST_DWithin(t.geom, {q_geoms}.geom, {max_radius_meter}, true)
+        """
         return query
 
     @abstractmethod
@@ -115,7 +119,7 @@ class PostgresFeature(Feature):
         """
         pass
 
-    def extract(self, gdf: GeoDataFrame) -> pd.Series:
+    def extract(self, gdf: GeoDataFrame) -> pd.DataFrame:
         """
         Applies the feature on the gdf, returns the series after the apply
         Args:
@@ -125,9 +129,28 @@ class PostgresFeature(Feature):
             The return values as a Series
         """
         assert self.apply_type in self.apply_functions, "apply_type does not match a function"
+        eng = get_sqlalchemy_engine()
+        tbl_name = save_gdf_to_postgres(gdf, eng)
 
+        res = self.extract_with_tblname(tbl_name)
+
+        eng.execute(f"DROP TABLE {tbl_name}")
+        eng.dispose()
+        return res
+
+    def extract_with_tblname(self, tbl_name: str) -> pd.DataFrame:
+        """
+        Applies the feature on the geoms in the table, returns the series after the apply
+        Args:
+            tbl_name: The table name holding queried geometries
+
+        Returns:
+            The return values as a Series
+        """
+        assert self.apply_type in self.apply_functions, "apply_type does not match a function"
         func = self.apply_functions[self.apply_type]
         conn = connect_to_db()
-        res = gdf.geometry.apply(lambda x: func(base_query=self._build_postgres_query(), geo=x, conn=conn))
+        res = func(base_query=self._build_postgres_query(), q_geoms=tbl_name, conn=conn)
         conn.close()
+
         return res

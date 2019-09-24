@@ -27,6 +27,7 @@ dependencies:
 #- rasterstats
 - geopy
 #- cartopy
+- geoalchemy2
 - geopandas
 #- rasterio
 #- contextily

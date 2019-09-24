@@ -1,9 +1,8 @@
+import pandas as pd
 from functools import partial
 
-from shapely.geometry.base import BaseGeometry
-
 from coord2vec.common.db.postgres import connection, get_df
-from coord2vec.feature_extraction.postgres_feature import PostgresFeature, geo2sql, LENGTH_OF_line
+from coord2vec.feature_extraction.postgres_feature import PostgresFeature, LENGTH_OF_line
 
 
 class LineMixin(PostgresFeature):
@@ -17,12 +16,12 @@ class LineMixin(PostgresFeature):
         self.apply_functions.update(line_func)
 
     @staticmethod
-    def apply_total_length(base_query: str, geo: BaseGeometry, conn: connection, max_radius_meter: float, **kwargs) -> float:
+    def apply_total_length(base_query: str, q_geoms: str, conn: connection, max_radius_meter: float, **kwargs) -> pd.DataFrame:
         """
         Retrieves the total length of the line geometries within $max_radius_meter
         Args:
             base_query: The base query to retrieve the objects, returns geometries in 'geom'
-            geo: The geometry object
+            q_geoms: table name holding the queries geometries
             conn: The connection to the DB
             max_radius_meter: The maximum radius to fetch the geometries
 
@@ -30,14 +29,15 @@ class LineMixin(PostgresFeature):
             The total length as float
         """
         q = f"""
+            with filtered_osm_geoms as ({PostgresFeature._intersect_circle_query(base_query, q_geoms, max_radius_meter)})
+
             SELECT 
                 CASE WHEN COUNT(*) > 0 THEN 
-                    SUM(ST_Length(t.geom, true)) 
+                    SUM(ST_Length(f.t_geom, true)) 
                 ELSE 0. END as total_length
-            FROM ({PostgresFeature._intersect_circle_query(base_query, geo, max_radius_meter)}) t
-            WHERE ST_DWithin(t.geom, {geo2sql(geo)}, {max_radius_meter}, true);
+            FROM filtered_osm_geoms f;
             """
 
         df = get_df(q, conn)
 
-        return df['total_length'].iloc[0]
+        return df
