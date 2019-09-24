@@ -1,5 +1,7 @@
 #!/bin/bash
 
+sudo rm /done
+
 if [ "$1" = "import" ]; then
     # Initialize PostgreSQL
     service postgresql start
@@ -18,6 +20,9 @@ if [ "$1" = "import" ]; then
 
     # Import data
     sudo -u renderer osm2pgsql -d gis --create --slim -G --hstore --multi-geometry --tag-transform-script /home/renderer/src/openstreetmap-carto/openstreetmap-carto.lua -C 2048 --number-processes ${THREADS:-4} -S /home/renderer/src/openstreetmap-carto/openstreetmap-carto.style /data.osm.pbf
+
+
+    sudo touch /done
 
     exit 0
 fi
@@ -42,6 +47,7 @@ if [ "$1" = "run" ]; then
 #    sudo -u renderer carto /home/renderer/src/openstreetmap-carto/"$2" > /home/renderer/"$2"/mapnik.xml
 
     sed -i -E "s/num_threads=[0-9]+/num_threads=${THREADS:-4}/g" /home/renderer/"$2"/renderd.conf
+    sudo touch /done
 
     # Run
     sudo -u renderer renderd -f -c /home/renderer/"$2"/renderd.conf

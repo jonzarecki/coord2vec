@@ -97,13 +97,15 @@ RUN sed -i -e 's/localhost/*/g' /etc/postgresql/10/main/postgresql.conf
 RUN sed -i -e 's/#listen_addresses/listen_addresses/g' /etc/postgresql/10/main/postgresql.conf
 #COPY postgresql.conf /etc/postgresql/10/main/postgresql.conf
 
-
-
 USER renderer
 
 # Start running
 USER root
 RUN apt-get install -y sudo
 COPY run.sh /
+
+
+HEALTHCHECK CMD bash -c "[ -f /done]" || exit 1
+
 ENTRYPOINT ["/run.sh"]
 CMD []

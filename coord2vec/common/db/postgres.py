@@ -8,6 +8,7 @@ import sqlalchemy as sa
 from geopandas import GeoDataFrame
 from psycopg2._psycopg import connection
 from sqlalchemy import create_engine
+from geoalchemy2 import Geometry, WKTElement
 
 from coord2vec import config
 
@@ -47,14 +48,14 @@ def get_df(query: str, conn: connection, dispose_conn=False) -> pd.DataFrame:
 
 def save_gdf_to_temp_table_postgres(gdf: GeoDataFrame, eng: sa.engine.Engine) -> str:
     gdf = gdf.copy(deep=True)
-    gdf['geom'] = gdf['geometry'].apply(lambda x: WKTElement(x.wkt, srid=4326))
+    gdf['geom'] = gdf.geometry.apply(lambda x: WKTElement(x.wkt, srid=4326))
     # drop the geometry column as it is now duplicative
-    gdf.drop('geometry', 1, inplace=True)
+    # gdf.drop('geometry', 1, inplace=True)
 
     # Use 'dtype' to specify column's type
     # For the geom column, we will use GeoAlchemy's type 'Geometry'
     tbl_name = f"t{datetime.datetime.now().strftime('%H%M%S%f')}"
     gdf.to_sql(tbl_name, eng, if_exists='replace', index=False,
                         dtype={'geom': Geometry('POINT', srid=4326)})
-    eng.execute("create index q_geoms_geom_idx on q_geoms using gist (geom);")
+    eng.execute(f"create index {tbl_name}_geom_idx on {tbl_name} using gist (geom);")
     return tbl_name

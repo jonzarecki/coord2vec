@@ -1,5 +1,5 @@
 #!/bin/sh
-
+sudo rm /done
 
 if [ "$1" = "import" ]; then
     # Initialize PostgreSQL
@@ -21,7 +21,8 @@ if [ "$1" = "import" ]; then
     sudo -u renderer osm2pgsql -d gis -l --create -C 3072 -G --hstore --multi-geometry --tag-transform-script /home/renderer/src/openstreetmap-carto/openstreetmap-carto.lua --number-processes 16 -S /home/renderer/src/openstreetmap-carto/openstreetmap-carto.style /data.osm.pbf
     service postgresql start
 
-    echo 'done'
+    sudo touch /done
+    echo 'done new'
     tail -f /dev/null  # keeps the docker running after it's finished
 fi
 

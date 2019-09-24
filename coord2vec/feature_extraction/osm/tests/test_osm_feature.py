@@ -36,7 +36,7 @@ class TestOsmFeatures(unittest.TestCase):
     def is_israel_up(cls):
         hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'number_of', max_radius_meter=2 * 1000)
         res = hospital_area_feat.extract(cls.gdf)
-        return res.iloc[0] > 0
+        return res.iloc[0]['cnt'] > 0  # TODO: temp, set normal way to get feature names
 
     def test_beit_lewinstein_hospital_nearest_in_raanana(self):
         if not self.israel_osm:

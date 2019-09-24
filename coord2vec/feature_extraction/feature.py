@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Tuple, List
 
 import pandas as pd
 from geopandas import GeoDataFrame
 from shapely import wkt
+from shapely.geometry import Point
 
 
 class Feature(ABC):
@@ -12,7 +13,7 @@ class Feature(ABC):
         self.name = name
 
     @abstractmethod
-    def extract(self, gdf: GeoDataFrame) -> pd.Series:
+    def extract(self, gdf: GeoDataFrame) -> pd.DataFrame:
         """
         Applies the feature on the gdf, returns the series after the apply
         Args:
@@ -32,7 +33,17 @@ class Feature(ABC):
         Returns:
             The return value
         """
-        # TODO: test
-        p = wkt.loads(f'POINT ({coordinate[1]} {coordinate[0]})')
-        gdf = GeoDataFrame(pd.DataFrame({'geom': [p]}), geometry='geom')
-        return self.extract(gdf).iloc[0]
+        return self.extract_coordinates([coordinate]).iloc[0]
+
+    def extract_coordinates(self, coords: List[Tuple[float, float]]) -> pd.DataFrame:
+        """
+        extract the desired features on desired points
+        Args:
+            coords: list of coordinates
+
+        Returns:
+            a pandas dataframe, with columns as features, and rows as the points in gdf
+        """
+        wkt_points = [Point(coord) for coord in coords]
+        gdf = GeoDataFrame(pd.DataFrame({'geom': wkt_points}), geometry='geom')
+        return self.extract(gdf)

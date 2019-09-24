@@ -6,7 +6,7 @@ echo `pwd`
 
 docker stop $(docker ps -aq --filter ancestor=osm-tile-server) && docker rm $(docker ps -aq --filter ancestor=osm-tile-server)
 sudo chmod 777 openstreetmap-tile-server/run.sh
-docker build openstreetmap-tile-server/ -t osm-tile-server
+docker build openstreetmap-tile-server/ -t osm-tile-server:0.1
 
 # Download Israel as sample if no data is provided
 if [[ ! -f ./data.osm.pbf ]]; then
@@ -28,8 +28,8 @@ else
     docker volume rm osm-data-tile
     docker volume create osm-data-tile
 
-    docker run -v $cdir/data.osm.pbf:/data.osm.pbf -v osm-data-tile:/var/lib/postgresql/10/main \
-                    osm-tile-server import &
+    docker run -v data.osm.pbf:/data.osm.pbf -v osm-data-tile:/var/lib/postgresql/10/main \
+                   -it  osm-tile-server import &
 
     wait
 
