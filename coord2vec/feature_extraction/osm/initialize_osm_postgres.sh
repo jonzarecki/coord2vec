@@ -18,8 +18,8 @@ if [[ ! -f ./data.osm.pbf ]]; then
 fi
 
 cdir=`pwd`
-docker run -e THREADS=24 -p 127.0.0.1:15432:5432 -v $cdir/data.osm.pbf:/data.osm.pbf  \
-               -d -v osm-postgis-data:/var/lib/postgresql/10/main -t osm-postgis-server import
+docker run --rm -e THREADS=24 -p 127.0.0.1:15432:5432 -v $cdir/data.osm.pbf:/data.osm.pbf --name osm-postgis-server \
+                -d -v osm-postgis-data:/var/lib/postgresql/10/main osm-postgis-server:0.1 import
 cd $p
 
 

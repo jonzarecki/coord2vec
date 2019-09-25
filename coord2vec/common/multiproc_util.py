@@ -66,9 +66,9 @@ def parmap(f, X, nprocs=multiprocessing.cpu_count(), force_parallel=False, chunk
         global i
         i += 1
     except AssertionError as e:
-        if e.message == "daemonic processes are not allowed to have children":
+        if str(e) == "daemonic processes are not allowed to have children":
             retval = map(f, X)  # can't have pool inside pool
         else:
-            print("error message is: " + str(e.message))
+            print("error message is: " + str(e))
             raise  # re-raise orig exception
     return retval
