@@ -96,7 +96,7 @@ RUN apt-get install -y sudo curl
 COPY run.sh /
 
 HEALTHCHECK --interval=10s --timeout=1s --start-period=70s --retries=10 \
-    CMD curl -f http://localhost/tile/17/78201/53181.png && pg_isready && cat /done || service postgresql restart && exit 1
+    CMD curl -f http://localhost/tile/17/78201/53181.png && pg_isready && cat /done || exit 1
 
 ENTRYPOINT ["/run.sh"]
 CMD []

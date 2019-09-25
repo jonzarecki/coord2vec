@@ -5,6 +5,7 @@ import pandas as pd
 from geopandas import GeoDataFrame
 from shapely.geometry import Point
 
+from coord2vec.common.itertools import flatten
 from coord2vec.feature_extraction.osm.osm_line_feature import OsmLineFeature
 from coord2vec.feature_extraction.osm.osm_polygon_feature import OsmPolygonFeature
 from coord2vec.feature_extraction.osm.osm_tag_filters import *
@@ -23,7 +24,6 @@ class FeaturesBuilder:
         Args:
             features: a list of features (of class Feature)
         """
-        flatten = lambda l: list(itertools.chain.from_iterable([(i if isinstance(i, list) else [i]) for i in l]))
         self.features = flatten(features)
 
     def extract(self, gdf: GeoDataFrame):
@@ -37,7 +37,7 @@ class FeaturesBuilder:
         """
         features_gs_list = [feature.extract(gdf) for feature in self.features]
         features_df = pd.concat(features_gs_list, axis=1)
-        features_df.columns = [feature.name for feature in self.features]
+        features_df.columns = flatten([feature.feature_names for feature in self.features])
         return features_df
 
     def extract_coordinates(self, coords: List[Tuple[float, float]]) -> pd.DataFrame:
@@ -85,7 +85,7 @@ house_price_builder = FeaturesBuilder(
 )
 
 example_features_builder = FeaturesBuilder(
-    [OsmPolygonFeature(HOSPITAL, name='nearest_hospital', apply_type=NEAREST_NEIGHBOUR_all),
+    [OsmPolygonFeature(HOSPITAL, name='nearest_hospital', apply_type=NEAREST_NEIGHBOUR_all, max_radius_meter=1000),
      OsmPolygonFeature(HOSPITAL, name='area_of_hospital_1km', apply_type=AREA_OF_poly, max_radius_meter=1000),
      OsmPolygonFeature(HOSPITAL, name='number_of_hospital_1km', apply_type=NUMBER_OF_all, max_radius_meter=1000),
      OsmLineFeature(RESIDENTIAL_ROAD, name='length_of_residential_roads_10m', apply_type=LENGTH_OF_line,

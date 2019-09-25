@@ -74,7 +74,9 @@ if [ "$1" = "import_run" ]; then
     # Import data
     sudo -u renderer osm2pgsql -d gis --create --slim -G --hstore --multi-geometry --tag-transform-script /home/renderer/src/openstreetmap-carto/openstreetmap-carto.lua -C 2048 --number-processes ${THREADS:-4} -S /home/renderer/src/openstreetmap-carto/openstreetmap-carto.style /data.osm.pbf
 
-
+    # Initialize PostgreSQL and Apache
+    service postgresql restart
+    service apache2 restart
 
     # Initialize mapnik style
     echo "$2"
@@ -91,8 +93,8 @@ if [ "$1" = "import_run" ]; then
 #    sudo -u renderer carto /home/renderer/src/openstreetmap-carto/"$2" > /home/renderer/"$2"/mapnik.xml
 
     sed -i -E "s/num_threads=[0-9]+/num_threads=${THREADS:-4}/g" /home/renderer/"$2"/renderd.conf
-    sudo sleep 30 && touch /done &
-
+#    sudo sleep 30 && touch /done &
+    touch /done
     # Run
     sudo -u renderer renderd -f -c /home/renderer/"$2"/renderd.conf
 

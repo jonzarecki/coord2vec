@@ -9,8 +9,8 @@ import folium
 app = Flask(__name__)
 
 
-class MyTestCase(unittest.TestCase):
-    def test_something(self):
+class TestMapVisualizations(unittest.TestCase):
+    def test_flask_running(self):
         l = (34.482724, 31.492354)
         map = visualize_predictions(np.array([(l[0]+i*0.005, l[1]+j*0.005) for i in range(50) for j in range(50)]),
                               np.random.random((50*50,)) - 0.5)

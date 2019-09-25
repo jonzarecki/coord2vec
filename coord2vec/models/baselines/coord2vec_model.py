@@ -3,6 +3,7 @@ import random
 from typing import List, Tuple
 import torch
 from ignite.contrib.handlers import ProgressBar
+from more_itertools import flatten
 from sklearn.base import BaseEstimator, TransformerMixin
 from torch import nn
 from torch import optim
@@ -70,7 +71,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
 
         self.feature_builder = feature_builder
         self.n_features = len(feature_builder.features)
-        self.feature_names = [feature_builder.features[i].name for i in range(self.n_features)]
+        self.feature_names = flatten([feature_builder.features[i].feature_names for i in range(self.n_features)])
 
         # create L1 losses if not supplied
         self.losses = [L1Loss() for i in range(self.n_features)] if losses is None else losses
