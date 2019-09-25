@@ -8,9 +8,9 @@ from shapely.geometry import Point
 
 
 class Feature(ABC):
-    def __init__(self, name: str = 'anonymos_feature', **kwargs):
+    def __init__(self, feature_names=None, **kwargs):
         #  Classes that add apply functions should add them to the dictionary
-        self.name = name
+        self.feature_names = feature_names
 
     @abstractmethod
     def extract(self, gdf: GeoDataFrame) -> pd.DataFrame:
@@ -24,7 +24,7 @@ class Feature(ABC):
         """
         pass
 
-    def extract_single_coord(self, coordinate: Tuple[float, float]) -> float:
+    def extract_single_coord(self, coordinate: Tuple[float, float]) -> pd.DataFrame:
         """
         Applies the feature on the gdf, returns the series after the apply
         Args:
@@ -33,7 +33,7 @@ class Feature(ABC):
         Returns:
             The return value
         """
-        return self.extract_coordinates([coordinate]).iloc[0]
+        return self.extract_coordinates([coordinate])
 
     def extract_coordinates(self, coords: List[Tuple[float, float]]) -> pd.DataFrame:
         """

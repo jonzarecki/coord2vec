@@ -29,13 +29,19 @@ class LineMixin(PostgresFeature):
             The total length as float
         """
         q = f"""
-            with filtered_osm_geoms as ({PostgresFeature._intersect_circle_query(base_query, q_geoms, max_radius_meter)})
-
-            SELECT 
-                CASE WHEN COUNT(*) > 0 THEN 
-                    SUM(ST_Length(f.t_geom, true)) 
-                ELSE 0. END as total_length
-            FROM filtered_osm_geoms f;
+        with filtered_osm_geoms as ({PostgresFeature._intersect_circle_query(base_query, q_geoms, max_radius_meter)}),
+            
+        joined_filt_geoms as (
+        SELECT q_geom, t_geom FROM
+            filtered_osm_geoms RIGHT JOIN {q_geoms} q_geoms
+        ON q_geoms.geom=filtered_osm_geoms.q_geom
+        )            
+            
+        SELECT 
+            CASE WHEN COUNT(f.t_geom) > 0 THEN 
+                SUM(COALESCE (ST_Length(f.t_geom, true), 0.)) 
+            ELSE 0. END as total_length
+        FROM joined_filt_geoms f GROUP BY q_geom
             """
 
         df = get_df(q, conn)

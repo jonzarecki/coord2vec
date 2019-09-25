@@ -34,87 +34,88 @@ class TestOsmFeatures(unittest.TestCase):
 
     @classmethod
     def is_israel_up(cls):
-        hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'number_of', max_radius_meter=2 * 1000)
+        hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'number_of', object_name='hospital', max_radius_meter=2 * 1000)
         res = hospital_area_feat.extract(cls.gdf)
-        return res.iloc[0]['cnt'] > 0  # TODO: temp, set normal way to get feature names
+        return res.iloc[0][hospital_area_feat.feature_names[0]] > 0
 
     def test_beit_lewinstein_hospital_nearest_in_raanana(self):
         if not self.israel_osm:
             return
-        nearest_hospital_feat = OsmPolygonFeature(HOSPITAL, 'nearest_neighbour', max_radius_meter=2 * 1000)
+        nearest_hospital_feat = OsmPolygonFeature(HOSPITAL, 'nearest_neighbour', object_name='hospital', max_radius_meter=2 * 1000)
         res = nearest_hospital_feat.extract(self.gdf)
-        self.assertLess(res.iloc[0], 150)  # the coordinate is very close
+        self.assertLess(res.iloc[0][nearest_hospital_feat.feature_names[0]], 150)  # the coordinate is very close
 
     def test_bet_lewinstein_area_for_radius_2km(self):
         if not self.israel_osm:
             return
-        hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'area_of', max_radius_meter=2 * 1000)
+        hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'area_of', object_name='hospital', max_radius_meter=2 * 1000)
         res = hospital_area_feat.extract(self.gdf)
         # NOT VERIFIED YET
-        self.assertAlmostEqual(res.iloc[0], 2811, delta=1)  # area is pretty large
+        self.assertAlmostEqual(res[hospital_area_feat.feature_names[0]].iloc[0], 2811, delta=1)  # area is pretty large
 
     def test_max_radius_intersection_works(self):
         if not self.israel_osm:
             return
-        hospital_area_feat_big = OsmPolygonFeature(HOSPITAL, 'area_of', max_radius_meter=120)
+        hospital_area_feat_big = OsmPolygonFeature(HOSPITAL, 'area_of', object_name='hospital', max_radius_meter=120)
         big_radius_area = hospital_area_feat_big.extract(self.gdf)
 
-        hospital_area_feat_small = OsmPolygonFeature(HOSPITAL, 'area_of', max_radius_meter=100)
+        hospital_area_feat_small = OsmPolygonFeature(HOSPITAL, 'area_of', object_name='hospital', max_radius_meter=10)
         small_radius_area = hospital_area_feat_small.extract(self.gdf)
         # NOT VERIFIED YET
-        self.assertGreater(big_radius_area.iloc[0], small_radius_area.iloc[0])
+        self.assertGreater(big_radius_area[hospital_area_feat_big.feature_names[0]].iloc[0],
+                           small_radius_area[hospital_area_feat_small.feature_names[0]].iloc[0])
 
     def test_bet_lewinstein_is_the_only_hospital_for_radius_2km(self):
         if not self.israel_osm:
             return
-        hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'number_of', max_radius_meter=2 * 1000)
+        hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'number_of', object_name='hospital', max_radius_meter=2 * 1000)
         res = hospital_area_feat.extract(self.gdf)
-        self.assertEqual(1, res.iloc[0])
+        self.assertEqual(1, res[hospital_area_feat.feature_names[0]].iloc[0])
 
     def test_residential_roads_length_near_bet_lewinstein_only_tlalim(self):
         if not self.israel_osm:
             return
-        hospital_area_feat = OsmLineFeature(RESIDENTIAL_ROAD, 'length_of', max_radius_meter=10)
+        hospital_area_feat = OsmLineFeature(RESIDENTIAL_ROAD, 'length_of', object_name='road', max_radius_meter=10)
         res = hospital_area_feat.extract(self.gdf)
-        self.assertAlmostEqual(res.iloc[1], 9, delta=1)
+        self.assertAlmostEqual(res[hospital_area_feat.feature_names[0]].iloc[1], 9, delta=1)
 
     def test_residential_roads_number_near_bet_lewinstein_only_tlalim(self):
         if not self.israel_osm:
             return
-        hospital_area_feat = OsmLineFeature(RESIDENTIAL_ROAD, 'number_of', max_radius_meter=10)
+        hospital_area_feat = OsmLineFeature(RESIDENTIAL_ROAD, 'number_of', object_name='road', max_radius_meter=10)
         res = hospital_area_feat.extract(self.gdf)
-        self.assertEqual(res.iloc[1], 1)
+        self.assertEqual(res[hospital_area_feat.feature_names[0]].iloc[1], 1)
 
     ########## extreme test cases ##########
 
     def test_nowhere_returns_very_far_hospital(self):
-        nearest_hospital_feat = OsmPolygonFeature(HOSPITAL, 'nearest_neighbour', max_radius_meter=1000)
-        res = nearest_hospital_feat.extract(self.nowhere_gdf)
-        self.assertGreater(res.iloc[0], 1_000_000)  # the coordinate is very far from everything
+        nearest_hospital_feat = OsmPolygonFeature(HOSPITAL, 'nearest_neighbour', object_name='hospital', max_radius_meter=1000)
+        res = nearest_hospital_feat.extract(self.nowhere_gdf)  # the coordinate is very far from everything
+        self.assertEqual(res[nearest_hospital_feat.feature_names[0]].iloc[0], 1000)
 
     def test_nowhere_has_zero_hospital_area(self):
         # TODO: check why some objects return NULL when applied with ST_Area
-        hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'area_of', max_radius_meter=2 * 1000)
+        hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'area_of', object_name='hospital', max_radius_meter=2 * 1000)
         res = hospital_area_feat.extract(self.nowhere_gdf)
-        self.assertEqual(res.iloc[0], 0)
+        self.assertEqual(res[hospital_area_feat.feature_names[0]].iloc[0], 0)
 
     def test_nowhere_returns_zero_hospitals_number_of(self):
-        hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'number_of', max_radius_meter=2 * 1000)
+        hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'number_of', object_name='hospital', max_radius_meter=2 * 1000)
         res = hospital_area_feat.extract(self.nowhere_gdf)
-        self.assertEqual(res.iloc[0], 0)
+        self.assertEqual(res[hospital_area_feat.feature_names[0]].iloc[0], 0)
 
     def test_nowhere_returns_zero_road_length(self):
-        hospital_area_feat = OsmLineFeature(RESIDENTIAL_ROAD, 'length_of', max_radius_meter=10)
+        hospital_area_feat = OsmLineFeature(RESIDENTIAL_ROAD, 'length_of', object_name='hospital', max_radius_meter=10)
         res = hospital_area_feat.extract(self.nowhere_gdf)
-        self.assertEqual(0, res.iloc[0])
+        self.assertEqual(0, res[hospital_area_feat.feature_names[0]].iloc[0])
 
     ## Beijing tests
     def test_beijing_buildings_area(self):
         if self.israel_osm:
             return
-        building_area_feat = OsmPolygonFeature(BUILDING, 'area_of', max_radius_meter=2 * 1000)
+        building_area_feat = OsmPolygonFeature(BUILDING, 'area_of', object_name='building', max_radius_meter=2 * 1000)
         res = building_area_feat.extract(self.beijing_gdf)
-        self.assertGreater(res.iloc[0], 0)
+        self.assertGreater(res[building_area_feat.feature_names[0]].iloc[0], 0)
 
 
 # @patch('coord2vec.feature_extraction.osm.OsmLineFeature.extract', return_value='pumpkins')

@@ -9,7 +9,8 @@ from shapely import wkt
 from shapely.geometry import Point
 from shapely.geometry.base import BaseGeometry
 
-from coord2vec.common.db.postgres import get_df, connect_to_db, connection, get_sqlalchemy_engine, save_gdf_to_temp_table_postgres
+from coord2vec.common.db.postgres import get_df, connect_to_db, connection, get_sqlalchemy_engine, \
+    save_gdf_to_temp_table_postgres
 
 # general feature types
 from coord2vec.feature_extraction.feature import Feature
@@ -40,9 +41,10 @@ def geo2sql(geo: BaseGeometry, to_geography: bool = False) -> str:
 
 
 class PostgresFeature(Feature):
-    def __init__(self, apply_type: str, name: str = 'anonymos_feature', **kwargs):
+    def __init__(self, apply_type: str, object_name: str = 'anonymous', **kwargs):
         #  Classes that add apply functions should add them to the dictionary
-        super().__init__(name, **kwargs)
+        super().__init__(**kwargs)  # temp
+        self.object_name = object_name
         self.apply_functions = {
             NEAREST_NEIGHBOUR_all: partial(self.apply_nearest_neighbour, **kwargs),
             NUMBER_OF_all: partial(self.apply_number_of, **kwargs)
@@ -50,15 +52,19 @@ class PostgresFeature(Feature):
         self.apply_type = apply_type
 
     @staticmethod
-    def apply_nearest_neighbour(base_query: str, q_geoms: str, conn: connection, max_radius_meter, **kwargs) -> pd.DataFrame:
+    def apply_nearest_neighbour(base_query: str, q_geoms: str, conn: connection, max_radius_meter,
+                                **kwargs) -> pd.DataFrame:
         q = f"""
-        with filtered_osm_geoms as ({PostgresFeature._intersect_circle_query(base_query, q_geoms, max_radius_meter)})
+        with filtered_osm_geoms as ({PostgresFeature._intersect_circle_query(base_query, q_geoms, max_radius_meter)}),
         
-        SELECT COALESCE (
-           (SELECT ST_Distance(f.q_geom, f.t_geom) as dist
-            ORDER BY dist ASC
-            LIMIT 1), 
-        {max_radius_meter}) as dist FROM filtered_osm_geoms f;
+        joined_filt_geoms as (
+        SELECT * FROM
+            filtered_osm_geoms RIGHT JOIN {q_geoms} q_geoms
+        ON q_geoms.geom=filtered_osm_geoms.q_geom
+        )
+        
+        SELECT COALESCE (MIN(dist), {max_radius_meter}) as dist 
+            FROM (SELECT q_geom, ST_Distance(q_geom, t_geom) as dist FROM joined_filt_geoms) f GROUP BY q_geom
         """
 
         df = get_df(q, conn)
@@ -66,12 +72,19 @@ class PostgresFeature(Feature):
         return df
 
     @staticmethod
-    def apply_number_of(base_query: str, q_geoms: str, conn: connection, max_radius_meter: float, **kwargs) -> pd.DataFrame:
+    def apply_number_of(base_query: str, q_geoms: str, conn: connection, max_radius_meter: float,
+                        **kwargs) -> pd.DataFrame:
         q = f"""
-        with filtered_osm_geoms as ({PostgresFeature._intersect_circle_query(base_query, q_geoms, max_radius_meter)})
-        
-        SELECT count(*) as cnt
-            FROM filtered_osm_geoms;
+        with filtered_osm_geoms as ({PostgresFeature._intersect_circle_query(base_query, q_geoms, max_radius_meter)}),
+
+        joined_filt_geoms as (
+        SELECT * FROM
+            filtered_osm_geoms RIGHT JOIN {q_geoms} q_geoms
+        ON q_geoms.geom=filtered_osm_geoms.q_geom
+        )
+
+        SELECT count(t_geom) as cnt
+            FROM joined_filt_geoms GROUP BY q_geom
         """
 
         df = get_df(q, conn)
@@ -128,7 +141,7 @@ class PostgresFeature(Feature):
         Returns:
             The return values as a Series
         """
-        assert self.apply_type in self.apply_functions, "apply_type does not match a function"
+        assert self.apply_type in self.apply_functions, f"apply_type {self.apply_type} does not match a function"
         eng = get_sqlalchemy_engine()
         tbl_name = save_gdf_to_temp_table_postgres(gdf, eng)
 
@@ -148,9 +161,14 @@ class PostgresFeature(Feature):
             The return values as a Series
         """
         assert self.apply_type in self.apply_functions, "apply_type does not match a function"
+        if self.feature_names is None:
+            self.feature_names = [f"{self.apply_type}_{self.object_name}"]  # single feature
         func = self.apply_functions[self.apply_type]
         conn = connect_to_db()
         res = func(base_query=self._build_postgres_query(), q_geoms=tbl_name, conn=conn)
+        assert len(res.columns) == len(
+            self.feature_names), f"number of features {res.columns} to feature names {self.feature_names} does not match "
+        res.columns = self.feature_names
         conn.close()
 
         return res
