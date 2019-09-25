@@ -3,7 +3,6 @@ import random
 from typing import List, Tuple
 import torch
 from ignite.contrib.handlers import ProgressBar
-from more_itertools import flatten
 from sklearn.base import BaseEstimator, TransformerMixin
 from torch import nn
 from torch import optim
@@ -12,6 +11,7 @@ from torch.utils.data import DataLoader
 from ignite.metrics import Metric
 from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
 
+from coord2vec.common.itertools import flatten
 from coord2vec.common.mtl.metrics import EmbeddingData, DistanceCorrelation, RootMeanSquaredError
 
 from coord2vec import config
@@ -70,8 +70,8 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
             self.device = torch.device(f'cuda' if torch.cuda.is_available() else 'cpu')
 
         self.feature_builder = feature_builder
-        self.n_features = len(feature_builder.features)
-        self.feature_names = flatten([feature_builder.features[i].feature_names for i in range(self.n_features)])
+        self.feature_names = flatten([feat.feature_names for feat in feature_builder.features])
+        self.n_features = len(self.feature_names)
 
         # create L1 losses if not supplied
         self.losses = [L1Loss() for i in range(self.n_features)] if losses is None else losses

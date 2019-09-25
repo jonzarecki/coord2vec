@@ -18,8 +18,8 @@ class TestMAML(TestCase):
 
     @classmethod
     def tearDownClass(cls) -> None:
-        shutil.rmtree(os.path.join(TENSORBOARD_DIR, cls.tb_dir))
-        shutil.rmtree(TEST_CACHE_DIR)
+        shutil.rmtree(os.path.join(TENSORBOARD_DIR, cls.tb_dir), ignore_errors=True)
+        shutil.rmtree(TEST_CACHE_DIR, ignore_errors=True)
 
     def test_fit_predict(self):
         return

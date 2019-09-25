@@ -36,9 +36,9 @@ def render_single_tile(m: StaticMap, ext: list) -> Image:
     m.y_center = _lat_to_y(lat_center, m.zoom)
 
     image = Image.new('RGB', (m.width, m.height), m.background_color)
-    return m.render(m.zoom)
+    # return m.render(m.zoom)  # TODO: stop here to see polygon of actual wanted image (smaller than all)
     m._draw_base_layer(image)
-    # m.polygons.remove(polygon)
+    m.polygons.remove(polygon)
     m._draw_features(image)
     return image
 
