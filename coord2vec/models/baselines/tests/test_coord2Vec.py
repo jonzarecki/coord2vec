@@ -36,5 +36,5 @@ class TestCoord2Vec(TestCase):
 
     @classmethod
     def tearDownClass(cls) -> None:
-        shutil.rmtree(os.path.join(TENSORBOARD_DIR, cls.tb_dir))
+        shutil.rmtree(os.path.join(TENSORBOARD_DIR, cls.tb_dir), ignore_errors=True)
         # shutil.rmtree(TEST_CACHE_DIR)

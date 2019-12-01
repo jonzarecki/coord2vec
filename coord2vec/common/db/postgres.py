@@ -1,4 +1,5 @@
 import datetime
+from random import random
 
 import psycopg2
 
@@ -54,7 +55,7 @@ def save_gdf_to_temp_table_postgres(gdf: GeoDataFrame, eng: sa.engine.Engine) ->
 
     # Use 'dtype' to specify column's type
     # For the geom column, we will use GeoAlchemy's type 'Geometry'
-    tbl_name = f"t{datetime.datetime.now().strftime('%H%M%S%f')}"
+    tbl_name = f"t{datetime.datetime.now().strftime('%H%M%S%f')}{int(random()*10000)}"
     gdf.to_sql(tbl_name, eng, if_exists='replace', index=False,
                         dtype={'geom': Geography('POINT', srid=4326)})
     eng.execute(f"create index {tbl_name}_geom_idx on {tbl_name} using gist (geom);")

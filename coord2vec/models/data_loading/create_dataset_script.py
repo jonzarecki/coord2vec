@@ -41,7 +41,11 @@ def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coor
         if use_existing and os.path.exists(f"{cache_dir}/{i}.pkl"):
             return
         entropy = 0
+        try_counter = 0
         while entropy < entropy_threshold:
+            if try_counter > 100:
+                raise EnvironmentError("Unable to sample meaningful coordinates, check environment")
+            try_counter += 1
             coord = sample_coordinate_in_range(*coord_range)
             ext = build_tile_extent(coord, radius_in_meters=HALF_TILE_LENGTH)
             image = render_multi_channel(s, ext)

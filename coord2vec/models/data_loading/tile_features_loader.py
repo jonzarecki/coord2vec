@@ -48,7 +48,9 @@ class TileFeaturesDataset(Dataset):
         with open(self.pkl_paths[idx], 'rb') as f:
             image_arr, features = pickle.load(f)
 
-        features[features == float('inf')] = self.inf2value
+        for c in features.columns:
+            features_c = features[c]
+            features_c[features_c == float('inf')] = self.inf2value
         sample = {'image': image_arr, 'features': features}
 
         if self.transform:

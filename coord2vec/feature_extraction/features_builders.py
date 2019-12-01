@@ -85,11 +85,11 @@ house_price_builder = FeaturesBuilder(
 )
 
 example_features_builder = FeaturesBuilder(
-    [OsmPolygonFeature(HOSPITAL, name='nearest_hospital', apply_type=NEAREST_NEIGHBOUR_all, max_radius_meter=1000),
-     OsmPolygonFeature(HOSPITAL, name='area_of_hospital_1km', apply_type=AREA_OF_poly, max_radius_meter=1000),
-     OsmPolygonFeature(HOSPITAL, name='number_of_hospital_1km', apply_type=NUMBER_OF_all, max_radius_meter=1000),
-     OsmLineFeature(RESIDENTIAL_ROAD, name='length_of_residential_roads_10m', apply_type=LENGTH_OF_line,
+    [OsmPolygonFeature(HOSPITAL, object_name='nearest_hospital', apply_type=NEAREST_NEIGHBOUR_all, max_radius_meter=1000),
+     OsmPolygonFeature(HOSPITAL, object_name='area_of_hospital_1km', apply_type=AREA_OF_poly, max_radius_meter=1000),
+     OsmPolygonFeature(HOSPITAL, object_name='number_of_hospital_1km', apply_type=NUMBER_OF_all, max_radius_meter=1000),
+     OsmLineFeature(RESIDENTIAL_ROAD, object_name='length_of_residential_roads_10m', apply_type=LENGTH_OF_line,
                     max_radius_meter=10),
-     OsmLineFeature(RESIDENTIAL_ROAD, name='number_of_residential_roads_10m', apply_type=NUMBER_OF_all,
+     OsmLineFeature(RESIDENTIAL_ROAD, object_name='number_of_residential_roads_10m', apply_type=NUMBER_OF_all,
                     max_radius_meter=10)
      ])

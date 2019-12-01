@@ -6,7 +6,7 @@ echo `pwd`
 
 docker stop $(docker ps -aq --filter ancestor=osm-tile-server:0.1) && docker rm $(docker ps -aq --filter ancestor=osm-tile-server:0.1)
 sudo chmod 777 openstreetmap-tile-server/run.sh
-docker build openstreetmap-tile-server/ -t osm-tile-server:0.1
+docker build  openstreetmap-tile-server/ -t osm-tile-server:0.1
 
 # Download Israel as sample if no data is provided
 if [[ ! -f ./data.osm.pbf ]]; then
