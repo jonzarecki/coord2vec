@@ -8,9 +8,10 @@ from shapely.geometry import Point
 
 
 class Feature(ABC):
-    def __init__(self, feature_names=None, **kwargs):
+    def __init__(self, feature_names=None, max_radius=50, **kwargs):
         #  Classes that add apply functions should add them to the dictionary
         self.feature_names = feature_names
+        self.max_radius = max_radius  # in meters
 
     @abstractmethod
     def extract(self, gdf: GeoDataFrame) -> pd.DataFrame:

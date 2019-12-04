@@ -9,7 +9,7 @@ from geopandas import GeoDataFrame
 from psycopg2._psycopg import connection
 from sqlalchemy import create_engine
 from geoalchemy2 import Geometry, WKTElement, Geography
-
+import random
 from coord2vec import config
 
 
@@ -54,7 +54,7 @@ def save_gdf_to_temp_table_postgres(gdf: GeoDataFrame, eng: sa.engine.Engine) ->
 
     # Use 'dtype' to specify column's type
     # For the geom column, we will use GeoAlchemy's type 'Geometry'
-    tbl_name = f"t{datetime.datetime.now().strftime('%H%M%S%f')}"
+    tbl_name = f"t{datetime.datetime.now().strftime('%H%M%S%f')}{int(1000*random.random())}"
     gdf.to_sql(tbl_name, eng, if_exists='replace', index=False,
                         dtype={'geom': Geography('POINT', srid=4326)})
     eng.execute(f"create index {tbl_name}_geom_idx on {tbl_name} using gist (geom);")

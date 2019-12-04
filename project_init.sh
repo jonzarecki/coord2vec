@@ -27,7 +27,7 @@ bash ./coord2vec/image_extraction/init_tile_servers.sh
 
 echo `dig +short myip.opendns.com @resolver1.opendns.com`
 conda activate coord2vec
-cd tmp/coord2vec_zarecki
+cd /home/yonatanz/Projects/remote/coord2vec
 jupyter notebook --ip=0.0.0.0 --port=8190
 # run seperatly
 tensorboard --logdir tensorboard_runs/ --port=8191

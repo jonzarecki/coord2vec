@@ -57,24 +57,24 @@ class FeaturesBuilder:
 def poly_multi_feature(filter, name, radii: List[int] = [50]) -> List[PostgresFeature]:
     features = []
     for radius in radii:
-        features += [OsmPolygonFeature(filter, name=f'nearest_{name}_{radius}_m', apply_type=NEAREST_NEIGHBOUR_all,
-                                       max_radius_meter=radius),
-                     OsmPolygonFeature(filter, name=f'area_of_{name}_{radius}m', apply_type=AREA_OF_poly,
-                                       max_radius_meter=radius),
-                     OsmPolygonFeature(filter, name=f'number_of_{name}_{radius}m', apply_type=NUMBER_OF_all,
-                                       max_radius_meter=radius)]
+        features += [OsmPolygonFeature(filter, object_name=name, apply_type=NEAREST_NEIGHBOUR_all,
+                                       max_radius=radius),
+                     OsmPolygonFeature(filter, object_name=name, apply_type=AREA_OF_poly,
+                                       max_radius=radius),
+                     OsmPolygonFeature(filter, object_name=name, apply_type=NUMBER_OF_all,
+                                       max_radius=radius)]
     return features
 
 
 def line_multi_feature(filter, name, radii: List[int] = [50]) -> List[PostgresFeature]:
     features = []
     for radius in radii:
-        features += [OsmLineFeature(filter, name=f'dist_2_nearest_{name}_{radius}m', apply_type=NEAREST_NEIGHBOUR_all,
-                                    max_radius_meter=radius),
-                     OsmLineFeature(filter, name=f'length_of_{name}_{radius}m', apply_type=LENGTH_OF_line,
-                                    max_radius_meter=radius),
-                     OsmLineFeature(filter, name=f'number_of_{name}_{radius}m', apply_type=NUMBER_OF_all,
-                                    max_radius_meter=radius)]
+        features += [OsmLineFeature(filter, object_name=name, apply_type=NEAREST_NEIGHBOUR_all,
+                                    max_radius=radius),
+                     OsmLineFeature(filter, object_name=name, apply_type=LENGTH_OF_line,
+                                    max_radius=radius),
+                     OsmLineFeature(filter, object_name=name, apply_type=NUMBER_OF_all,
+                                    max_radius=radius)]
     return features
 
 
@@ -84,12 +84,16 @@ house_price_builder = FeaturesBuilder(
      line_multi_feature(ROAD, 'road')]
 )
 
+only_build_distance_builder = FeaturesBuilder(
+    [OsmPolygonFeature(BUILDING, object_name='building', apply_type=AREA_OF_poly, max_radius=50)]
+)
+
 example_features_builder = FeaturesBuilder(
-    [OsmPolygonFeature(HOSPITAL, name='nearest_hospital', apply_type=NEAREST_NEIGHBOUR_all, max_radius_meter=1000),
-     OsmPolygonFeature(HOSPITAL, name='area_of_hospital_1km', apply_type=AREA_OF_poly, max_radius_meter=1000),
-     OsmPolygonFeature(HOSPITAL, name='number_of_hospital_1km', apply_type=NUMBER_OF_all, max_radius_meter=1000),
-     OsmLineFeature(RESIDENTIAL_ROAD, name='length_of_residential_roads_10m', apply_type=LENGTH_OF_line,
-                    max_radius_meter=10),
-     OsmLineFeature(RESIDENTIAL_ROAD, name='number_of_residential_roads_10m', apply_type=NUMBER_OF_all,
-                    max_radius_meter=10)
+    [OsmPolygonFeature(HOSPITAL, object_name='nearest_hospital', apply_type=NEAREST_NEIGHBOUR_all, max_radius=1000),
+     OsmPolygonFeature(HOSPITAL, object_name='area_of_hospital_1km', apply_type=AREA_OF_poly, max_radius=1000),
+     OsmPolygonFeature(HOSPITAL, object_name='number_of_hospital_1km', apply_type=NUMBER_OF_all, max_radius=1000),
+     OsmLineFeature(RESIDENTIAL_ROAD, object_name='length_of_residential_roads_10m', apply_type=LENGTH_OF_line,
+                    max_radius=10),
+     OsmLineFeature(RESIDENTIAL_ROAD, object_name='number_of_residential_roads_10m', apply_type=NUMBER_OF_all,
+                    max_radius=10)
      ])

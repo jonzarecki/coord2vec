@@ -16,20 +16,20 @@ class LineMixin(PostgresFeature):
         self.apply_functions.update(line_func)
 
     @staticmethod
-    def apply_total_length(base_query: str, q_geoms: str, conn: connection, max_radius_meter: float, **kwargs) -> pd.DataFrame:
+    def apply_total_length(base_query: str, q_geoms: str, conn: connection, max_radius: float, **kwargs) -> pd.DataFrame:
         """
-        Retrieves the total length of the line geometries within $max_radius_meter
+        Retrieves the total length of the line geometries within $max_radius
         Args:
             base_query: The base query to retrieve the objects, returns geometries in 'geom'
             q_geoms: table name holding the queries geometries
             conn: The connection to the DB
-            max_radius_meter: The maximum radius to fetch the geometries
+            max_radius: The maximum radius to fetch the geometries
 
         Returns:
             The total length as float
         """
         q = f"""
-        with filtered_osm_geoms as ({PostgresFeature._intersect_circle_query(base_query, q_geoms, max_radius_meter)}),
+        with filtered_osm_geoms as ({PostgresFeature._intersect_circle_query(base_query, q_geoms, max_radius)}),
             
         joined_filt_geoms as (
         SELECT q_geom, t_geom FROM

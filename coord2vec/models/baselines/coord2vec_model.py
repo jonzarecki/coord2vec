@@ -29,6 +29,7 @@ from coord2vec.models.losses import MultiheadLoss
 class Coord2Vec(BaseEstimator, TransformerMixin):
     """
     Wrapper for the coord2vec algorithm
+    Project's "main"
     """
 
     def __init__(self, feature_builder: FeaturesBuilder,
