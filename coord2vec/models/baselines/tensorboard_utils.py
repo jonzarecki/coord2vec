@@ -57,7 +57,7 @@ def add_metrics_to_tensorboard(metrics: dict, writer: SummaryWriter, feature_nam
         writer.add_scalar(f'{feat_name} RMSE/{log_str} RMSE', avg_rmse[i], global_step=global_step)
 
     # add the distance correlation metrics
-    writer.add_scalar('General/Validation Distance Correlation', metrics['corr'], global_step=global_step)
+    # writer.add_scalar('General/Validation Distance Correlation', metrics['corr'], global_step=global_step)
 
 
 def add_embedding_visualization(writer: SummaryWriter, metrics, global_step):

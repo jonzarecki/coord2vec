@@ -5,7 +5,7 @@ import geopy
 import geopy.distance
 import numpy as np
 from shapely.geometry import Polygon, Point
-from auto_tqdm import tqdm
+from tqdm.auto import tqdm
 
 
 def is_tile_empty(im: Image) -> bool:
@@ -13,7 +13,7 @@ def is_tile_empty(im: Image) -> bool:
 
 
 def build_tile_extent(center: Tuple[float, float], radius_in_meters: float) -> list:
-    start = geopy.Point(center[1], center[0])  # reversed
+    start = geopy.Point(*center)
     d = geopy.distance.geodesic(kilometers=radius_in_meters / 1000)
     ext_points = list(map(lambda bearing: d.destination(point=start, bearing=bearing), [0, 90, 180, 270]))
     # return [ext_points[0].latitude, ext_points[3].longitude,

@@ -29,6 +29,7 @@ from coord2vec.models.losses import MultiheadLoss
 class Coord2Vec(BaseEstimator, TransformerMixin):
     """
     Wrapper for the coord2vec algorithm
+    Project's "main"
     """
 
     def __init__(self, feature_builder: FeaturesBuilder,
@@ -135,9 +136,10 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
             # print("Multi LOSS: ", multi_losses[0])
             return data, embedding, loss, multi_losses, y_pred_tensor, y_tensor
 
-        eval_metrics = {'rmse': RootMeanSquaredError(), 'corr': DistanceCorrelation(),
+        eval_metrics = {'rmse': RootMeanSquaredError(),  # 'corr': DistanceCorrelation(),
                         'embedding_data': EmbeddingData()}
-        train_metrics = {'rmse': RootMeanSquaredError(), 'corr': DistanceCorrelation()}
+        train_metrics = {'rmse': RootMeanSquaredError()  #, 'corr': DistanceCorrelation()
+                         }
         trainer = create_supervised_trainer(self.model, self.optimizer, multihead_loss_func, device=self.device,
                                             output_transform=multihead_output_transform)
         for name, metric in train_metrics.items():  # Calculate metrics also on trainer

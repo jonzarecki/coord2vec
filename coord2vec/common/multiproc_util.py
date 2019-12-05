@@ -1,5 +1,5 @@
 import multiprocessing
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 from pathos.pools import ProcessPool as Pool
 
 i = 0
@@ -20,11 +20,11 @@ def parmap(f, X, nprocs=multiprocessing.cpu_count(), force_parallel=False, chunk
         nprocs = len(X)  # too much procs
 
     if nprocs == 1 and not force_parallel:  # we want it serial (maybe for profiling)
-        return list(map(f, X))
+        return list(map(f, tqdm(X, **tqdm_kwargs)))
 
-    def _spawn_fun(input, func):
+    def _spawn_fun(input, func, c):
         import random, numpy
-        random.seed(1554+i); numpy.random.seed(42+i)  # set random seeds
+        random.seed(1554+i+c); numpy.random.seed(42+i+c)  # set random seeds
         try:
             res = func(input)
             res_dict = dict()
@@ -49,9 +49,9 @@ def parmap(f, X, nprocs=multiprocessing.cpu_count(), force_parallel=False, chunk
         p.restart(force=True)
         # can throw if current proc is daemon
         if use_tqdm:
-            retval_par = tqdm(p.imap(_spawn_fun, X, [f] * len(X), chunk_size=chunk_size), total=len(X), **tqdm_kwargs)
+            retval_par = tqdm(p.imap(_spawn_fun, X, [f] * len(X), range(len(X)), chunk_size=chunk_size), total=len(X), **tqdm_kwargs)
         else:
-            retval_par = p.map(_spawn_fun, X, [f]*len(X), chunk_size=chunk_size)
+            retval_par = p.map(_spawn_fun, X, [f]*len(X), range(len(X)), chunk_size=chunk_size)
 
         retval = list(map(lambda res_dict: res_dict["res"], retval_par))  # make it like the original map
 

@@ -42,8 +42,8 @@ def geo2sql(geo: BaseGeometry, to_geography: bool = False) -> str:
 
 class PostgresFeature(Feature):
     def __init__(self, apply_type: str, object_name: str = 'anonymous', **kwargs):
+        super().__init__(**kwargs)
         #  Classes that add apply functions should add them to the dictionary
-        super().__init__(**kwargs)  # temp
         self.object_name = object_name
         self.apply_functions = {
             NEAREST_NEIGHBOUR_all: partial(self.apply_nearest_neighbour, **kwargs),
@@ -51,11 +51,14 @@ class PostgresFeature(Feature):
         }
         self.apply_type = apply_type
 
+        # override parent
+        self.feature_names = [f"{self.apply_type}_{self.object_name}_{self.max_radius}m"]
+
     @staticmethod
-    def apply_nearest_neighbour(base_query: str, q_geoms: str, conn: connection, max_radius_meter,
+    def apply_nearest_neighbour(base_query: str, q_geoms: str, conn: connection, max_radius,
                                 **kwargs) -> pd.DataFrame:
         q = f"""
-        with filtered_osm_geoms as ({PostgresFeature._intersect_circle_query(base_query, q_geoms, max_radius_meter)}),
+        with filtered_osm_geoms as ({PostgresFeature._intersect_circle_query(base_query, q_geoms, max_radius)}),
         
         joined_filt_geoms as (
         SELECT * FROM
@@ -63,7 +66,7 @@ class PostgresFeature(Feature):
         ON q_geoms.geom=filtered_osm_geoms.q_geom
         )
         
-        SELECT COALESCE (MIN(dist), {max_radius_meter}) as dist 
+        SELECT COALESCE (MIN(dist), {max_radius}) as dist 
             FROM (SELECT q_geom, ST_Distance(q_geom, t_geom) as dist FROM joined_filt_geoms) f GROUP BY q_geom
         """
 
@@ -72,10 +75,10 @@ class PostgresFeature(Feature):
         return df
 
     @staticmethod
-    def apply_number_of(base_query: str, q_geoms: str, conn: connection, max_radius_meter: float,
+    def apply_number_of(base_query: str, q_geoms: str, conn: connection, max_radius: float,
                         **kwargs) -> pd.DataFrame:
         q = f"""
-        with filtered_osm_geoms as ({PostgresFeature._intersect_circle_query(base_query, q_geoms, max_radius_meter)}),
+        with filtered_osm_geoms as ({PostgresFeature._intersect_circle_query(base_query, q_geoms, max_radius)}),
 
         joined_filt_geoms as (
         SELECT * FROM
@@ -92,13 +95,13 @@ class PostgresFeature(Feature):
         return df
 
     @staticmethod
-    def _intersect_circle_query(base_query: str, q_geoms: str, max_radius_meter: float) -> str:
+    def _intersect_circle_query(base_query: str, q_geoms: str, max_radius: float) -> str:
         """
         Transform a normal base_query into a query after only elements within the radius from geo remain
         Args:
             base_query: the postgres base query to get geo elements
             q_geoms: table name holding the queries geometries
-            max_radius_meter: the radius of the circle to intersect with
+            max_radius: the radius of the circle to intersect with
 
         Returns:
             a Postgres query the return only the data on max radius from geo
@@ -106,10 +109,10 @@ class PostgresFeature(Feature):
         query = f"""
         select 
             {q_geoms}.geom as q_geom,
-            ST_Intersection(t.geom, ST_Buffer({q_geoms}.geom, {max_radius_meter})) as t_geom
+            ST_Intersection(t.geom, ST_Buffer({q_geoms}.geom, {max_radius})) as t_geom
             from {q_geoms} 
                 JOIN ({base_query}) t 
-                ON ST_DWithin(t.geom, {q_geoms}.geom, {max_radius_meter}, true)
+                ON ST_DWithin(t.geom, {q_geoms}.geom, {max_radius}, true)
         """
         return query
 
@@ -161,8 +164,6 @@ class PostgresFeature(Feature):
             The return values as a Series
         """
         assert self.apply_type in self.apply_functions, "apply_type does not match a function"
-        if self.feature_names is None:
-            self.feature_names = [f"{self.apply_type}_{self.object_name}"]  # single feature
         func = self.apply_functions[self.apply_type]
         conn = connect_to_db()
         res = func(base_query=self._build_postgres_query(), q_geoms=tbl_name, conn=conn)

@@ -28,7 +28,7 @@ class DistanceTimeFeature(OrsFeature):
         
         SELECT ST_ClosestPoint(t.geom, q_geoms.geom)
             FROM (SELECT way as geom FROM {self.filter_table} WHERE {self.filter_tag}) t JOIN {tbl_name} q_geoms
-                    ON ST_DWithin(t.geom, geom.geom, {self.max_radius_meter}, true)
+                    ON ST_DWithin(t.geom, geom.geom, {self.max_radius}, true)
         """
 
         conn = connect_to_db()
