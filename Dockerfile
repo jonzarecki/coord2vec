@@ -1,9 +1,6 @@
 FROM pytorch/pytorch:1.1.0-cuda10.0-cudnn7.5-runtime
 
-# run with nvidia-docer (command installed via apt)
-
-# Based on
-# https://switch2osm.org/manually-building-a-tile-server-18-04-lts/
+# run with nvidia-docker (command installed via apt)
 
 # Set up environment and renderer user
 ENV TZ=UTC

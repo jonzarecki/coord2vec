@@ -12,12 +12,12 @@ else
     exit 1
 fi
 
-if [[ -n `which java` ]] ; then
-    echo "java is installed"
-else
-    sudo apt install openjdk-11-jdk -y
-    sudo update-alternatives --config java
-fi
+#if [[ -n `which java` ]] ; then
+#    echo "java is installed"
+#else
+#    sudo apt install openjdk-11-jdk -y
+#    sudo update-alternatives --config java
+#fi
 
 # start osm servers
 sudo chmod 777 /var/run/docker.sock
