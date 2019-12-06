@@ -3,13 +3,15 @@ import pickle
 import shutil
 
 import numpy as np
+from tqdm.auto import tqdm
 
 from coord2vec import config
+from coord2vec.common import multiproc_util
 from coord2vec.common.multiproc_util import parmap
 from coord2vec.config import TRAIN_CACHE_DIR, VAL_CACHE_DIR, VAL_SAMPLE_NUM, TRAIN_SAMPLE_NUM, ENTROPY_THRESHOLD, \
-    HALF_TILE_LENGTH, tile_server_ports
+    HALF_TILE_LENGTH, tile_server_ports, get_builder
 from coord2vec.feature_extraction.features_builders import example_features_builder, house_price_builder, \
-    only_build_distance_builder
+    only_build_area_builder
 from coord2vec.feature_extraction.osm import OsmPolygonFeature
 from coord2vec.feature_extraction.osm.osm_tag_filters import BUILDING
 from coord2vec.image_extraction.tile_image import render_multi_channel, generate_static_maps
@@ -50,16 +52,37 @@ def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coor
             image = render_multi_channel(s, ext)
             entropy = _get_image_entropy(image)
 
-        feature_vec = feature_builder.extract_coordinates([coord])
+        with open(f"{cache_dir}/{i}_img.pkl", 'wb') as f:
+            pickle.dump(image, f)
+
+        return coord
+
+    coords = parmap(build_training_example, range(sample_num), use_tqdm=True, desc='Building image dataset')
+    # print(coords)
+    print("Calculating features:   ", end="", flush=True)
+    import time
+    st = time.time()
+    all_coords_feature_vec = feature_builder.extract_coordinates(coords)
+    print(f"Calculation took {time.time()-st}")
+
+    for i, coord in enumerate(tqdm(coords, total=len(coords), desc="Writing back features")):
+        if use_existing and os.path.exists(f"{cache_dir}/{i}.pkl"):
+            return
+
+        with open(f"{cache_dir}/{i}_img.pkl", 'rb') as f:
+            image = pickle.load(f)
+
+        os.remove(f"{cache_dir}/{i}_img.pkl")
 
         with open(f"{cache_dir}/{i}.pkl", 'wb') as f:
-            pickle.dump((image, feature_vec), f)
+            pickle.dump((image, all_coords_feature_vec[i:(i+1)]), f)
 
-    parmap(build_training_example, range(0, sample_num), use_tqdm=True, desc='building_dataset', nprocs=1)
+
 
 
 if __name__ == '__main__':
-    sample_and_save_dataset(VAL_CACHE_DIR, sample_num=VAL_SAMPLE_NUM, feature_builder=house_price_builder,
+    # multiproc_util.force_serial = True
+    sample_and_save_dataset(VAL_CACHE_DIR, sample_num=VAL_SAMPLE_NUM, feature_builder=get_builder(),
                             use_existing=True)
-    sample_and_save_dataset(TRAIN_CACHE_DIR, sample_num=TRAIN_SAMPLE_NUM, feature_builder=house_price_builder,
+    sample_and_save_dataset(TRAIN_CACHE_DIR, sample_num=TRAIN_SAMPLE_NUM, feature_builder=get_builder(),
                             use_existing=True)

@@ -50,7 +50,7 @@ class TileFeaturesDataset(Dataset):
 
         for c in features.columns:
             features_c = features[c]
-            features_c[features_c == float('inf')] = self.inf2value
+            features.loc[features_c == float('inf'), [c]] = self.inf2value
         sample = {'image': image_arr, 'features': features}
 
         if self.transform:
