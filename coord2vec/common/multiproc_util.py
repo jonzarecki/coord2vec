@@ -4,9 +4,10 @@ from pathos.pools import ProcessPool as Pool
 
 i = 0
 proc_count = 1
+force_serial = False
 
 
-def parmap(f, X, nprocs=multiprocessing.cpu_count(), force_parallel=False, chunk_size=1, use_tqdm=False, **tqdm_kwargs):
+def parmap(f, X, nprocs=multiprocessing.cpu_count(), chunk_size=1, use_tqdm=False, **tqdm_kwargs):
 
     if len(X) == 0:
         return []  # like map
@@ -19,7 +20,7 @@ def parmap(f, X, nprocs=multiprocessing.cpu_count(), force_parallel=False, chunk
         if nprocs != multiprocessing.cpu_count(): print("parmap too much procs")
         nprocs = len(X)  # too much procs
 
-    if nprocs == 1 and not force_parallel:  # we want it serial (maybe for profiling)
+    if force_serial or nprocs == 1:  # we want it serial (maybe for profiling)
         return list(map(f, tqdm(X, **tqdm_kwargs)))
 
     def _spawn_fun(input, func, c):
