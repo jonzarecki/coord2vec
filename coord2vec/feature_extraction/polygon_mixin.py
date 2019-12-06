@@ -34,15 +34,17 @@ class PolygonMixin(PostgresFeature):
 
         joined_filt_geoms as (
         SELECT q_geom, t_geom FROM
-            filtered_osm_geoms RIGHT JOIN {q_geoms} q_geoms
+            filtered_osm_geoms LEFT JOIN {q_geoms} q_geoms
         ON q_geoms.geom=filtered_osm_geoms.q_geom
         )            
             
         SELECT 
-            CASE WHEN COUNT(*) > 0 THEN 
-                SUM(COALESCE (ST_Area(f.t_geom, TRUE), 0.)) / 10.764
-            ELSE 0. END as total_area
-        FROM joined_filt_geoms f GROUP BY q_geom;
+            (SELECT CASE WHEN COUNT(*) > 0 THEN 
+                        SUM(COALESCE (ST_Area(t_geom, TRUE), 0.)) / 10.764
+                    ELSE 0. END
+            FROM joined_filt_geoms where q_geom=q_geoms.geom
+            ) as total_area
+        FROM {q_geoms} q_geoms;
         """
 
         df = get_df(q, conn)

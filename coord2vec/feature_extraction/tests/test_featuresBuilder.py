@@ -25,3 +25,8 @@ class TestFeaturesBuilder(TestCase):
         results = house_price_builder.extract_coordinates([(34.8576548, 32.1869038)])
         self.assertEqual(results.shape[0], 1)
         self.assertEqual(results.shape[1], len(house_price_builder.features))
+
+    def test_extract_multiple_coordinates(self):
+        results = house_price_builder.extract_coordinates([(34.8576548, 32.1869038), (34.8576548, 32.1869038)])
+        self.assertEqual(results.shape[0], 2)
+        self.assertEqual(results.shape[1], len(house_price_builder.features))
