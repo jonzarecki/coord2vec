@@ -30,5 +30,6 @@ conda activate coord2vec
 cd tmp/coord2vec_zarecki
 jupyter notebook --ip=0.0.0.0 --port=8190
 # run seperatly
+conda activate coord2vec
 tensorboard --logdir tensorboard_runs/ --port=8191
 
