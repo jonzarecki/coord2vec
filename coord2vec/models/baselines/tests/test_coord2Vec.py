@@ -20,7 +20,6 @@ class TestCoord2Vec(TestCase):
                                   tb_dir=cls.tb_dir, losses=losses)
 
     def test_fit_predict(self):
-        self.fail("takes a long time for some reason")
         # test fit
         sample_and_save_dataset(TEST_CACHE_DIR, sample_num=7, use_existing=True, entropy_threshold=0.2,
                                 feature_builder=house_price_builder)
