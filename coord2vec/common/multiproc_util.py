@@ -21,7 +21,7 @@ def parmap(f, X, nprocs=multiprocessing.cpu_count(), chunk_size=1, use_tqdm=Fals
         nprocs = len(X)  # too much procs
 
     if force_serial or nprocs == 1:  # we want it serial (maybe for profiling)
-        return list(map(f, tqdm(X, **tqdm_kwargs)))
+        return list(map(f, tqdm(X, smoothing=0, **tqdm_kwargs)))
 
     def _spawn_fun(input, func, c):
         import random, numpy
@@ -50,7 +50,8 @@ def parmap(f, X, nprocs=multiprocessing.cpu_count(), chunk_size=1, use_tqdm=Fals
         p.restart(force=True)
         # can throw if current proc is daemon
         if use_tqdm:
-            retval_par = tqdm(p.imap(_spawn_fun, X, [f] * len(X), range(len(X)), chunk_size=chunk_size), total=len(X), **tqdm_kwargs)
+            retval_par = tqdm(p.imap(_spawn_fun, X, [f] * len(X), range(len(X)), chunk_size=chunk_size), total=len(X),
+                              smoothing=0, **tqdm_kwargs)
         else:
             retval_par = p.map(_spawn_fun, X, [f]*len(X), range(len(X)), chunk_size=chunk_size)
 
