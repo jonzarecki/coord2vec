@@ -159,7 +159,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
         pbar.attach(trainer)
 
 
-        step_scheduler = MultiStepLR(self.optimizer, milestones=[1000, 3000, 5000], gamma=0.1)
+        step_scheduler = MultiStepLR(self.optimizer, milestones=[2000, 4000, 6000, 8000, 10000], gamma=0.3)
         # step_scheduler = ReduceLROnPlateau(self.optimizer, 'min')
         scheduler = LRScheduler(step_scheduler)
         trainer.add_event_handler(Events.ITERATION_STARTED, scheduler)
