@@ -16,8 +16,9 @@ np.random.seed(42)
 torch.manual_seed(42)
 
 cudnn.benchmark = True
-val_dataset = TileFeaturesDataset(VAL_CACHE_DIR)
-train_dataset = TileFeaturesDataset(TRAIN_CACHE_DIR)
 
-coord2vec = Coord2Vec(get_builder(), n_channels=3, tb_dir='build_multi_5_000')
-coord2vec.fit(train_dataset, val_dataset, epochs=200, batch_size=64)
+train_dataset = TileFeaturesDataset(TRAIN_CACHE_DIR)
+val_dataset = TileFeaturesDataset(VAL_CACHE_DIR)
+
+coord2vec = Coord2Vec(get_builder(), n_channels=3, tb_dir='build_multi_50_000_faster')
+coord2vec.fit(train_dataset, val_dataset, epochs=200, batch_size=64, evaluate_every=300)

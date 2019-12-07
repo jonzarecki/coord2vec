@@ -1,5 +1,6 @@
 from __future__ import print_function, division
 
+import os
 import pickle
 from pathlib import Path
 from typing import List
@@ -10,20 +11,24 @@ from torch.utils.data import Dataset
 
 def get_files_from_path(pathstring) -> List[str]:
     """
-    Retrives file names from the folder and returns all pickle paths
+    Retrives file names from the folder and returns dual file names (in tuple pairs)
 
     Args:
         pathstring: The folder path
 
     Returns:
-        The all pickle paths
+        The all pair file paths
     """
 
-    pkl_paths = []
-    for file in Path(pathstring).glob("**/*.pkl"):
-        pkl_paths.append(str(file))
+    files_paths = []
+    for file in Path(pathstring).glob("**/*_img.npy"):
+        fname = os.path.basename(file)
+        file_number = fname[:-8]  # minus _img.npy
+        features_file = f"{pathstring}/{file_number}_features.npy"
+        if os.path.exists(features_file):
+            files_paths.append((str(file), features_file))
 
-    return pkl_paths
+    return files_paths
 
 
 class TileFeaturesDataset(Dataset):
@@ -37,27 +42,27 @@ class TileFeaturesDataset(Dataset):
                 on a sample.
             inf2value : number to replace all the inf's with
         """
-        self.pkl_paths = get_files_from_path(root_dir)
+        self.files_paths = get_files_from_path(root_dir)
         self.transform = transform
         self.inf2value = inf2value
 
     def __len__(self):
-        return len(self.pkl_paths)
+        return len(self.files_paths)
 
     def __getitem__(self, idx):
-        with open(self.pkl_paths[idx], 'rb') as f:
-            image_arr, features = pickle.load(f)
+        img_path, feats_paths = self.files_paths[idx]
+        image_arr = np.load(img_path)
+        features_arr = np.load(feats_paths)[0]
 
-        for c in features.columns:
-            features_c = features[c]
-            features.loc[features_c == float('inf'), [c]] = self.inf2value
-        sample = {'image': image_arr, 'features': features}
+        features_arr[np.isnan(features_arr)] = self.inf2value
+
+        sample = {'image': image_arr, 'features': features_arr}
 
         if self.transform:
             sample = self.transform(sample)
 
         image_torch = torch.tensor(sample['image']).float()
-        features_torch = torch.tensor(sample['features'].values.astype(np.float)[0]).float()
+        features_torch = torch.tensor(sample['features']).float()
 
         return image_torch, features_torch
 
