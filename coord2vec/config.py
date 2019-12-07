@@ -12,8 +12,8 @@ tile_server_ports = [8101, 8102, 8103]
 h20_port = 8198
 postgis_port = 15432
 
-# CACHE_DIR = os.path.join("/media/yonatanz/yz", "cache_data", "build_road_park_multi")
-CACHE_DIR = os.path.join("/media/yonatanz/yz", "cache_data", "test_fit_large_multi_build")
+CACHE_DIR = os.path.join("/media/yonatanz/yz", "cache_data", "build_road_park_multi")
+# CACHE_DIR = os.path.join("/media/yonatanz/yz", "cache_data", "test_fit_large_multi_build")
 # CACHE_DIR = '../coord2vec_data/house_price_builder'
 TRAIN_CACHE_DIR = os.path.join(CACHE_DIR, 'train')
 VAL_CACHE_DIR = os.path.join(CACHE_DIR, 'validation')
