@@ -38,16 +38,18 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
                  losses: List[_Loss] = None,
                  losses_weights: List[float] = None,
                  log_loss: bool = False,
-                 exponent_heads:bool=False,
+                 exponent_heads: bool = False,
                  embedding_dim: int = 128,
                  tb_dir: str = 'default',
                  multi_gpu: bool = False,
                  cuda_device: int = 0,
-                 lr: float = 1e-4):
+                 lr: float = 1e-4,
+                 lr_steps: List[int] = None,
+                 lr_gamma: float = 0.1):
         """
 
         Args:
-            feature_builder: FeatureBuilder to create features with \ features were created with
+            feature_builder: FeatureBuilder to create features with the features were created with
             n_channels: the number of channels in the input images
             losses: a list of losses to use. must be same length of the number of features
             losses_weights: weights to give the different losses. if None then equals weights of 1
@@ -57,6 +59,8 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
             multi_gpu: whether to use more than one GPU or not
             cuda_device: if multi_gpu==False, choose the GPU to work on
             lr: learning rate for the Adam optimizer
+            lr_steps: Training steps in which we apply a multiply by lr_gamma to the LR
+            lr_gamma: The multiplier we multiply the LR
         """
 
         self.losses_weights = losses_weights
@@ -86,6 +90,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
 
         self.model.to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
+        self.step_scheduler = MultiStepLR(self.optimizer, milestones=lr_steps, gamma=lr_gamma)
 
     def fit(self, train_dataset: TileFeaturesDataset,
             val_dataset: TileFeaturesDataset = None,
@@ -142,7 +147,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
         eval_metrics = {'rmse': RootMeanSquaredError(),  # 'corr': DistanceCorrelation(),
                         # 'embedding_data': EmbeddingData()
                         }
-        train_metrics = {'rmse': RootMeanSquaredError()  #, 'corr': DistanceCorrelation()
+        train_metrics = {'rmse': RootMeanSquaredError()  # , 'corr': DistanceCorrelation()
                          }
         trainer = create_supervised_trainer(self.model, self.optimizer, multihead_loss_func, device=self.device,
                                             output_transform=multihead_output_transform)
@@ -158,10 +163,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
         # RunningAverage(output_transform=lambda x: x[2])
         pbar.attach(trainer)
 
-
-        step_scheduler = MultiStepLR(self.optimizer, milestones=[2000, 4000, 6000, 8000, 10000], gamma=0.3)
-        # step_scheduler = ReduceLROnPlateau(self.optimizer, 'min')
-        scheduler = LRScheduler(step_scheduler)
+        scheduler = LRScheduler(self.step_scheduler)
         trainer.add_event_handler(Events.ITERATION_STARTED, scheduler)
 
         @trainer.on(Events.EPOCH_STARTED)
@@ -178,7 +180,6 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
             minusminus_ex, minusplus_ex = engine.state.minusminus_ex, engine.state.minusplus_ex
 
             writer.add_scalar('General/Train Loss', loss, global_step=engine.state.iteration)
-
 
             # y_pred_tensor = torch.relu(y_pred_tensor)  #TODO: keeps relu here
             feat_diff = (y_pred_tensor - y_tensor)  # / y_tensor + 1

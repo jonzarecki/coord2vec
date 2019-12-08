@@ -6,6 +6,7 @@ import shutil
 import errno
 
 import pathlib
+from typing import List
 
 
 def shuffle_rows(in_filename, out_filename):
@@ -44,7 +45,6 @@ def merge_similar_rows(in_filename, out_filename):
     with open(out_filename, 'w') as out_file:
         for line in out_lines:
             out_file.write(line)
-
 
 
 def create_temp_folder(prefix=None):
@@ -100,12 +100,12 @@ def makedirs(folder_path, exists_ok=True):
         os.makedirs(folder_path)
 
 
-def list_all_files_in_folder(fold_abspath, file_ext, recursively=True):
+def list_all_files_in_folder(fold_abspath, file_ext, recursively=True) -> List[str]:
     if recursively:
         file_list = list(pathlib.Path(fold_abspath).glob('**/*.' + file_ext))
     else:
         file_list = list(pathlib.Path(fold_abspath).glob('*.' + file_ext))
-    return map(lambda p: str(p), file_list)
+    return [str(p) for p in file_list]
 
 
 def copy_file(file_path, dst_dir):

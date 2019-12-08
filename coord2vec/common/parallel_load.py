@@ -1,10 +1,13 @@
 import multiprocessing
-import cPickle as pkl
+import pickle as pkl
 import traceback
 import time
 from os.path import basename
+from typing import Dict
 
-par_loaded_objs = list()
+sleeptime = 0.5
+total_waiting_time = 250
+par_loaded_objs = list()  # global list for all waiting objs
 
 
 class ParallelLoad(object):
@@ -25,18 +28,16 @@ class ParallelLoad(object):
 
     @property
     def obj(self):
-        sleeptime = 0.5
-        total_waiting_time = 250
         if self.model is None:
             counter = 0
             while len(self.ret_dict) == 0:
-                time.sleep(0.5)
+                time.sleep(sleeptime)
                 counter += 1
                 if counter >= total_waiting_time / sleeptime:
                     break
             if len(self.ret_dict) == 0:
                 traceback.print_exc()
-                raise AssertionError("ParallelLoad failed to load object after "+str(total_waiting_time)+" seconds")
+                raise AssertionError(f"ParallelLoad failed to load object after {total_waiting_time} seconds")
             self.model = self.ret_dict[1]
             self.p, self.return_queue = None, None
             self.manager.shutdown()
@@ -47,20 +48,22 @@ class ParallelLoad(object):
         return self.model is not None
 
     @staticmethod
-    def load_pickle(pkl_path):
+    def load_pickle(pkl_path: str) -> Dict:
         try:
             sa = time.time()
             pkl_fname = basename(pkl_path)
-            print "loading " + pkl_path
-            retval = pkl.load(open(pkl_path, 'rb'))
-        except Exception as e:
+            print("loading " + pkl_path)
+            with open(pkl_path, 'rb') as f:
+                retval = pkl.load(f)
+        except Exception:
             traceback.print_exc()
             raise
-        print "pickle " + pkl_fname + " load time: ", time.time() - sa
+        print(f"pickle {pkl_fname} load time: {int(time.time() - sa)}s")
         return retval
 
     @staticmethod
     def wait_for_all_loads():
-        print "waiting for all loads"
+        print("waiting for all loads . . .     ", end="", flush=True)
         for par_load in par_loaded_objs:
             a = par_load.obj  # read (wait) for all loads
+        print("Done")
