@@ -1,4 +1,4 @@
-version: '2.4' # Docker-compose yml version for docker compose builder
+version: '2.2' # Docker-compose yml version for docker compose builder
 services:
   osm-postgis-server:  # also builds the postgres data in "osm-data"
     image: osm-postgis-server:0.1
@@ -67,12 +67,25 @@ services:
       - ./data.osm.pbf:/data.osm.pbf
     networks:
       - tile_network3
-
+  osm-tile-normal:
+    image: osm-tile-server:0.1
+    command: import_run project.mml
+    container_name: osm-tile-normal
+    environment: # env variables
+      - THREADS=24
+    ports: # Ports we wish to expose source:target
+      - 8104:80
+    volumes: # Which Bind mounts or Volumes to mount source:target
+      - osm-data-tile4:/var/lib/postgresql/10/main
+      - ./data.osm.pbf:/data.osm.pbf
+    networks:
+      - tile_network4
 volumes:
   osm-data-postgis:
   osm-data-tile1:
   osm-data-tile2:
   osm-data-tile3:
+  osm-data-tile4:
 
 networks:
   postgis_network:
@@ -82,4 +95,6 @@ networks:
   tile_network2:
     driver: bridge
   tile_network3:
+    driver: bridge
+  tile_network4:
     driver: bridge

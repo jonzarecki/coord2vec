@@ -46,10 +46,10 @@ def simple_cnn(n_channels: int, output_dim: int) -> nn.Module:
         nn.ReLU(),
         nn.MaxPool2d(kernel_size=(2, 2)),
 
-        nn.Dropout2d(p=0.0),
+        # nn.Dropout2d(p=0.0),
         Flatten(),
         nn.Linear(54 * 54 * 64, 256),
-        nn.Dropout(p=0.0),
+        # nn.Dropout(p=0.0),
         nn.Linear(256, output_dim)
     )
     return simple_cnn
@@ -71,7 +71,7 @@ def resnet18(n_channels: int, output_dim: int) -> nn.Module:
 
 
 def multihead_model(architecture: nn.Module, heads: List[nn.Module]) -> nn.Module:
-    class MultiHeadResnet(nn.Module):
+    class MultiHeadModule(nn.Module):
         def __init__(self):
             super().__init__()
             self.architecture = architecture
@@ -82,7 +82,7 @@ def multihead_model(architecture: nn.Module, heads: List[nn.Module]) -> nn.Modul
             outputs = tuple([head(embedding) for head in self.heads])
             return embedding, outputs
 
-    return MultiHeadResnet()
+    return MultiHeadModule()
 
 
 ##########################
@@ -100,6 +100,21 @@ def dual_fc_head(input_dim, hidden_dim=128, add_exponent=False) -> nn.Module:
 
     return head.float()
 
+import torch.nn.functional as F
+def simple_head(input_dim) -> nn.Module:
+    head = nn.Sequential(
+        nn.Linear(input_dim, 1),
+        # EvalRelu()
+    )
+
+    return head.float()
+
+
+class EvalRelu(nn.Module):
+    def forward(self, input):
+        if not self.training:
+            return F.relu(input, inplace=True)
+        return input
 
 class ExponentModule(nn.Module):
     def forward(self, input):

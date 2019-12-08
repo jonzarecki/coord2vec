@@ -6,6 +6,7 @@ from geopandas import GeoDataFrame
 from shapely.geometry import Point
 
 from coord2vec.common.itertools import flatten
+from coord2vec.common.multiproc_util import parmap
 from coord2vec.feature_extraction.osm.osm_line_feature import OsmLineFeature
 from coord2vec.feature_extraction.osm.osm_polygon_feature import OsmPolygonFeature
 from coord2vec.feature_extraction.osm.osm_tag_filters import *
@@ -35,7 +36,7 @@ class FeaturesBuilder:
         Returns:
             a pandas dataframe, with columns as features, and rows as the points in gdf
         """
-        features_gs_list = [feature.extract(gdf) for feature in self.features]
+        features_gs_list = parmap(lambda feature: feature.extract(gdf), self.features, use_tqdm=True, desc="Calculating features")
         features_df = pd.concat(features_gs_list, axis=1)
         features_df.columns = flatten([feature.feature_names for feature in self.features])
         return features_df
@@ -84,8 +85,12 @@ house_price_builder = FeaturesBuilder(
      line_multi_feature(ROAD, 'road')]
 )
 
-only_build_distance_builder = FeaturesBuilder(
+only_build_area_builder = FeaturesBuilder(
     [OsmPolygonFeature(BUILDING, object_name='building', apply_type=AREA_OF_poly, max_radius=50)]
+)
+
+multi_build_builder = FeaturesBuilder(
+    [poly_multi_feature(BUILDING, 'building')]
 )
 
 example_features_builder = FeaturesBuilder(

@@ -1,15 +1,18 @@
 import os
 import pickle
 import shutil
+import time
 
 import numpy as np
+from tqdm.auto import tqdm
 
 from coord2vec import config
+from coord2vec.common import multiproc_util
 from coord2vec.common.multiproc_util import parmap
 from coord2vec.config import TRAIN_CACHE_DIR, VAL_CACHE_DIR, VAL_SAMPLE_NUM, TRAIN_SAMPLE_NUM, ENTROPY_THRESHOLD, \
-    HALF_TILE_LENGTH, tile_server_ports
+    HALF_TILE_LENGTH, tile_server_ports, get_builder
 from coord2vec.feature_extraction.features_builders import example_features_builder, house_price_builder, \
-    only_build_distance_builder
+    only_build_area_builder
 from coord2vec.feature_extraction.osm import OsmPolygonFeature
 from coord2vec.feature_extraction.osm.osm_tag_filters import BUILDING
 from coord2vec.image_extraction.tile_image import render_multi_channel, generate_static_maps
@@ -38,8 +41,10 @@ def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coor
         shutil.rmtree(cache_dir, ignore_errors=True)  # remove old directory
     os.makedirs(cache_dir, exist_ok=True)
 
+    do_files_exist = lambda i: os.path.exists(f"{cache_dir}/{i}_img.pkl") and os.path.exists(f"{cache_dir}/{i}_features.pkl")
+
     def build_training_example(i):
-        if use_existing and os.path.exists(f"{cache_dir}/{i}.pkl"):
+        if use_existing and do_files_exist(i):
             return
         entropy = 0
         counter = 0
@@ -50,16 +55,47 @@ def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coor
             image = render_multi_channel(s, ext)
             entropy = _get_image_entropy(image)
 
-        feature_vec = feature_builder.extract_coordinates([coord])
+        np.save(f"{cache_dir}/{i}_img.npy", image)  # much smaller in memory
 
-        with open(f"{cache_dir}/{i}.pkl", 'wb') as f:
-            pickle.dump((image, feature_vec), f)
+        return coord
 
-    parmap(build_training_example, range(0, sample_num), use_tqdm=True, desc='building_dataset', nprocs=1)
+    coords = parmap(build_training_example, range(sample_num), use_tqdm=True, desc='Building image dataset')
+    # print(coords)
+    print("Calculating features:   ", end="", flush=True)
+    st = time.time()
+    all_coords_feature_vec = feature_builder.extract_coordinates([c for c in coords if c is not None])
+    print(f"Calculation took {time.time()-st}")
+
+    skipped = 0
+    for i, coord in enumerate(tqdm(coords, total=len(coords), desc="Writing back features")):
+        if use_existing and do_files_exist(i):
+            skipped += 1
+            return
+        np.save(f"{cache_dir}/{i}_features.npy", all_coords_feature_vec.iloc[i-skipped].values)
+
+
+
+
+def convert_dataset_to_npy(cache_dir, sample_num=TRAIN_SAMPLE_NUM, **kwargs):
+    def convert_pkl_to_npy(i):
+        with open(f"{cache_dir}/{i}.pkl", 'rb') as f:
+            img, features = pickle.load(f)
+
+        img = img.astype(np.uint8)
+        features = features.values
+        np.save(f"{cache_dir}/{i}_img.npy", img)  # much smaller in memory
+        np.save(f"{cache_dir}/{i}_features.npy", features)  # much smaller in memory
+
+        os.remove(f"{cache_dir}/{i}.pkl")
+
+
+    parmap(convert_pkl_to_npy, range(sample_num), use_tqdm=True, desc='Converting to npy')
+
 
 
 if __name__ == '__main__':
-    sample_and_save_dataset(VAL_CACHE_DIR, sample_num=VAL_SAMPLE_NUM, feature_builder=house_price_builder,
+    # multiproc_util.force_serial = True
+    convert_dataset_to_npy(VAL_CACHE_DIR, sample_num=VAL_SAMPLE_NUM, feature_builder=get_builder(),
                             use_existing=True)
-    sample_and_save_dataset(TRAIN_CACHE_DIR, sample_num=TRAIN_SAMPLE_NUM, feature_builder=house_price_builder,
+    convert_dataset_to_npy(TRAIN_CACHE_DIR, sample_num=TRAIN_SAMPLE_NUM, feature_builder=get_builder(),
                             use_existing=True)

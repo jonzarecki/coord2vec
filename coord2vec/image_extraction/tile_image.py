@@ -69,10 +69,10 @@ def render_multi_channel(static_maps: List[StaticMap], ext: list) -> np.array:
     Returns:
         numpy array where each channel is a greyscale
     """
-    multi_arr = np.zeros((len(static_maps), IMG_HEIGHT, IMG_WIDTH,))
+    multi_arr = np.zeros((len(static_maps), IMG_HEIGHT, IMG_WIDTH,), dtype=np.uint8)
 
     for i, m in enumerate(static_maps):
-        im_arr = np.array(render_single_tile(m, ext).convert('L'))
+        im_arr = np.array(render_single_tile(m, ext).convert('L'), dtype=np.uint8)
         multi_arr[i, :, :] = im_arr
 
     return multi_arr

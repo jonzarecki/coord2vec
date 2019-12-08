@@ -62,12 +62,12 @@ class PostgresFeature(Feature):
         
         joined_filt_geoms as (
         SELECT * FROM
-            filtered_osm_geoms RIGHT JOIN {q_geoms} q_geoms
+            filtered_osm_geoms LEFT JOIN {q_geoms} q_geoms
         ON q_geoms.geom=filtered_osm_geoms.q_geom
         )
         
-        SELECT COALESCE (MIN(dist), {max_radius}) as dist 
-            FROM (SELECT q_geom, ST_Distance(q_geom, t_geom) as dist FROM joined_filt_geoms) f GROUP BY q_geom
+        SELECT COALESCE ((SELECT MIN(ST_Distance(q_geom, t_geom)) FROM joined_filt_geoms where q_geom=q_geoms.geom), {max_radius}) as dist 
+            FROM {q_geoms} q_geoms;
         """
 
         df = get_df(q, conn)
@@ -82,12 +82,12 @@ class PostgresFeature(Feature):
 
         joined_filt_geoms as (
         SELECT * FROM
-            filtered_osm_geoms RIGHT JOIN {q_geoms} q_geoms
+            filtered_osm_geoms LEFT JOIN {q_geoms} q_geoms
         ON q_geoms.geom=filtered_osm_geoms.q_geom
         )
 
-        SELECT count(t_geom) as cnt
-            FROM joined_filt_geoms GROUP BY q_geom
+        SELECT (SELECT count(*) FROM joined_filt_geoms where q_geom=q_geoms.geom) as cnt
+            FROM {q_geoms} q_geoms;         
         """
 
         df = get_df(q, conn)
@@ -109,7 +109,7 @@ class PostgresFeature(Feature):
         query = f"""
         select 
             {q_geoms}.geom as q_geom,
-            ST_Intersection(t.geom, ST_Buffer({q_geoms}.geom, {max_radius})) as t_geom
+            ST_Intersection(t.geom::geography, ST_Buffer({q_geoms}.geom, {max_radius})) as t_geom
             from {q_geoms} 
                 JOIN ({base_query}) t 
                 ON ST_DWithin(t.geom, {q_geoms}.geom, {max_radius}, true)

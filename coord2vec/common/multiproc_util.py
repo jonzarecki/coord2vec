@@ -4,9 +4,10 @@ from pathos.pools import ProcessPool as Pool
 
 i = 0
 proc_count = 1
+force_serial = False
 
 
-def parmap(f, X, nprocs=multiprocessing.cpu_count(), force_parallel=False, chunk_size=1, use_tqdm=False, **tqdm_kwargs):
+def parmap(f, X, nprocs=multiprocessing.cpu_count(), chunk_size=1, use_tqdm=False, **tqdm_kwargs):
 
     if len(X) == 0:
         return []  # like map
@@ -19,8 +20,8 @@ def parmap(f, X, nprocs=multiprocessing.cpu_count(), force_parallel=False, chunk
         if nprocs != multiprocessing.cpu_count(): print("parmap too much procs")
         nprocs = len(X)  # too much procs
 
-    if nprocs == 1 and not force_parallel:  # we want it serial (maybe for profiling)
-        return list(map(f, tqdm(X, **tqdm_kwargs)))
+    if force_serial or nprocs == 1:  # we want it serial (maybe for profiling)
+        return list(map(f, tqdm(X, smoothing=0, **tqdm_kwargs)))
 
     def _spawn_fun(input, func, c):
         import random, numpy
@@ -49,7 +50,8 @@ def parmap(f, X, nprocs=multiprocessing.cpu_count(), force_parallel=False, chunk
         p.restart(force=True)
         # can throw if current proc is daemon
         if use_tqdm:
-            retval_par = tqdm(p.imap(_spawn_fun, X, [f] * len(X), range(len(X)), chunk_size=chunk_size), total=len(X), **tqdm_kwargs)
+            retval_par = tqdm(p.imap(_spawn_fun, X, [f] * len(X), range(len(X)), chunk_size=chunk_size), total=len(X),
+                              smoothing=0, **tqdm_kwargs)
         else:
             retval_par = p.map(_spawn_fun, X, [f]*len(X), range(len(X)), chunk_size=chunk_size)
 

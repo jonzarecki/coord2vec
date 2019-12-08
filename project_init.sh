@@ -12,12 +12,12 @@ else
     exit 1
 fi
 
-if [[ -n `which java` ]] ; then
-    echo "java is installed"
-else
-    sudo apt install openjdk-11-jdk -y
-    sudo update-alternatives --config java
-fi
+#if [[ -n `which java` ]] ; then
+#    echo "java is installed"
+#else
+#    sudo apt install openjdk-11-jdk -y
+#    sudo update-alternatives --config java
+#fi
 
 # start osm servers
 sudo chmod 777 /var/run/docker.sock
@@ -30,5 +30,6 @@ conda activate coord2vec
 cd /home/yonatanz/Projects/remote/coord2vec
 jupyter notebook --ip=0.0.0.0 --port=8190
 # run seperatly
-tensorboard --logdir tensorboard_runs/ --port=8191
+conda activate coord2vec
+tensorboard --logdir /media/yonatanz/yz/tensorboard_runs/ --port=8192
 

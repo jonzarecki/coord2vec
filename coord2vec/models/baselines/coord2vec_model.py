@@ -2,13 +2,14 @@ import os
 import random
 from typing import List, Tuple
 import torch
-from ignite.contrib.handlers import ProgressBar
+from ignite.contrib.handlers import ProgressBar, LRScheduler
 from sklearn.base import BaseEstimator, TransformerMixin
 from torch import nn
 from torch import optim
 from torch.nn.modules.loss import _Loss, L1Loss
+from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau, MultiStepLR
 from torch.utils.data import DataLoader
-from ignite.metrics import Metric
+from ignite.metrics import Metric, RunningAverage
 from ignite.engine import Events, create_supervised_trainer, create_supervised_evaluator
 
 from coord2vec.common.itertools import flatten
@@ -19,7 +20,7 @@ from coord2vec.config import HALF_TILE_LENGTH, TENSORBOARD_DIR
 from coord2vec.feature_extraction.features_builders import FeaturesBuilder
 from coord2vec.image_extraction.tile_image import generate_static_maps, render_multi_channel
 from coord2vec.image_extraction.tile_utils import build_tile_extent
-from coord2vec.models.architectures import resnet18, dual_fc_head, multihead_model, simple_cnn
+from coord2vec.models.architectures import resnet18, dual_fc_head, multihead_model, simple_cnn, simple_head
 from coord2vec.models.baselines.tensorboard_utils import TrainExample, \
     create_summary_writer, add_metrics_to_tensorboard, add_embedding_visualization, build_example_image_figure
 from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
@@ -40,7 +41,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
                  exponent_heads:bool=False,
                  embedding_dim: int = 128,
                  tb_dir: str = 'default',
-                 multi_gpu: bool = True,
+                 multi_gpu: bool = False,
                  cuda_device: int = 0,
                  lr: float = 1e-4):
         """
@@ -90,8 +91,8 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
             val_dataset: TileFeaturesDataset = None,
             epochs: int = 10,
             batch_size: int = 10,
-            num_workers: int = 4,
-            evaluate_every: int = 5):
+            num_workers: int = 10,
+            evaluate_every: int = 35):
         """
         Args:
             train_dataset: The dataset object for training data
@@ -134,11 +135,15 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
                 loss, multi_losses = criterion(output, torch.split(y, 1, dim=1))
             # print("LOSS: ", loss)
             # print("Multi LOSS: ", multi_losses[0])
+            import numpy as np
+            # print(loss)
             return data, embedding, loss, multi_losses, y_pred_tensor, y_tensor
 
-        eval_metrics = {'rmse': RootMeanSquaredError(), 'corr': DistanceCorrelation(),
-                        'embedding_data': EmbeddingData()}
-        train_metrics = {'rmse': RootMeanSquaredError(), 'corr': DistanceCorrelation()}
+        eval_metrics = {'rmse': RootMeanSquaredError(),  # 'corr': DistanceCorrelation(),
+                        # 'embedding_data': EmbeddingData()
+                        }
+        train_metrics = {'rmse': RootMeanSquaredError()  #, 'corr': DistanceCorrelation()
+                         }
         trainer = create_supervised_trainer(self.model, self.optimizer, multihead_loss_func, device=self.device,
                                             output_transform=multihead_output_transform)
         for name, metric in train_metrics.items():  # Calculate metrics also on trainer
@@ -150,9 +155,14 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
                                                 output_transform=multihead_output_transform)
 
         pbar = ProgressBar()
-        # RunningAverage(output_transform=lambda x: x).attach(trainer, 'loss')
-        # pbar.attach(trainer, ['loss'])
+        # RunningAverage(output_transform=lambda x: x[2])
         pbar.attach(trainer)
+
+
+        step_scheduler = MultiStepLR(self.optimizer, milestones=[2000, 4000, 6000, 8000, 10000], gamma=0.3)
+        # step_scheduler = ReduceLROnPlateau(self.optimizer, 'min')
+        scheduler = LRScheduler(step_scheduler)
+        trainer.add_event_handler(Events.ITERATION_STARTED, scheduler)
 
         @trainer.on(Events.EPOCH_STARTED)
         def init_state_params(engine):
@@ -161,6 +171,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
 
         @trainer.on(Events.ITERATION_COMPLETED)
         def log_training_loss(engine):
+            writer.add_scalar('General/LR', scheduler.get_param(), global_step=engine.state.iteration)
             _, embedding, loss, multi_losses, y_pred_tensor, y_tensor = engine.state.output
             images_batch, features_batch = engine.state.batch
             plusplus_ex, plusminus_ex = engine.state.plusplus_ex, engine.state.plusminus_ex
@@ -168,6 +179,8 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
 
             writer.add_scalar('General/Train Loss', loss, global_step=engine.state.iteration)
 
+
+            # y_pred_tensor = torch.relu(y_pred_tensor)  #TODO: keeps relu here
             feat_diff = (y_pred_tensor - y_tensor)  # / y_tensor + 1
             feat_sum = y_pred_tensor + y_tensor
             for j in range(self.n_features):
@@ -221,7 +234,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
                 metrics = evaluator.state.metrics
                 # can add more metrics here
                 add_metrics_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="validation")
-                add_embedding_visualization(writer, metrics, global_step)
+                # add_embedding_visualization(writer, metrics, global_step)
 
         trainer.run(train_data_loader, max_epochs=epochs)
 
@@ -302,6 +315,6 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
     def _build_model(self, n_channels, n_heads):
         # model = resnet18(n_channels, self.embedding_dim)
         model = simple_cnn(n_channels, self.embedding_dim)
-        heads = [dual_fc_head(self.embedding_dim, add_exponent=self.exponent_head) for i in range(n_heads)]
+        heads = [simple_head(self.embedding_dim) for _ in range(n_heads)]
         model = multihead_model(model, heads)
         return model

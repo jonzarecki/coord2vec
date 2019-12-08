@@ -33,15 +33,17 @@ class LineMixin(PostgresFeature):
             
         joined_filt_geoms as (
         SELECT q_geom, t_geom FROM
-            filtered_osm_geoms RIGHT JOIN {q_geoms} q_geoms
+            filtered_osm_geoms LEFT JOIN {q_geoms} q_geoms
         ON q_geoms.geom=filtered_osm_geoms.q_geom
         )            
             
         SELECT 
-            CASE WHEN COUNT(f.t_geom) > 0 THEN 
-                SUM(COALESCE (ST_Length(f.t_geom, true), 0.)) 
-            ELSE 0. END as total_length
-        FROM joined_filt_geoms f GROUP BY q_geom
+            (SELECT CASE WHEN COUNT(*) > 0 THEN 
+                SUM(COALESCE (ST_Length(t_geom, true), 0.)) 
+            ELSE 0. END
+            FROM joined_filt_geoms where q_geom=q_geoms.geom
+            ) as total_length
+        FROM {q_geoms} q_geoms;
             """
 
         df = get_df(q, conn)
