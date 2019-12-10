@@ -36,11 +36,8 @@ def build_example_image_figure(ex: TrainExample):
     return fig
 
 
-def create_summary_writer(model, data_loader, log_dir, expr_name) -> SummaryWriter:
-    tb_path = os.path.join(log_dir, expr_name) if expr_name == 'test' \
-        else os.path.join(log_dir, expr_name, str(datetime.datetime.now()))
-
-    writer = SummaryWriter(tb_path)
+def create_summary_writer(model, data_loader, log_dir) -> SummaryWriter:
+    writer = SummaryWriter(log_dir)
     # data_loader_iter = iter(data_loader)
     # x, y = next(data_loader_iter)
     # try:

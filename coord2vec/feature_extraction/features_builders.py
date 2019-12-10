@@ -26,33 +26,37 @@ class FeaturesBuilder:
             features: a list of features (of class Feature)
         """
         self.features = flatten(features)
+        self.features_names = flatten([feature.feature_names for feature in self.features])
+        self.relevant_feature_idxs = flatten([[(f in feature.feature_names) for f in feature.all_feature_names]
+                                              for feature in self.features])
 
-    def extract(self, gdf: GeoDataFrame):
+    def extract(self, gdf: GeoDataFrame, only_relevant=False):
         """
         extract the desired features on desired points
         Args:
             gdf: a GeoDataFrame with at least one column of the desired POINTS
+            only_relevant: extract only relevant features, (normed or not normed)
 
         Returns:
             a pandas dataframe, with columns as features, and rows as the points in gdf
         """
-        features_gs_list = parmap(lambda feature: feature.extract(gdf), self.features, use_tqdm=True, desc="Calculating features")
+        features_gs_list = parmap(lambda feature: feature.extract(gdf, only_relevant), self.features, use_tqdm=True, desc="Calculating features")
         features_df = pd.concat(features_gs_list, axis=1)
-        features_df.columns = flatten([feature.feature_names for feature in self.features])
         return features_df
 
-    def extract_coordinates(self, coords: List[Tuple[float, float]]) -> pd.DataFrame:
+    def extract_coordinates(self, coords: List[Tuple[float, float]], only_relevant=False) -> pd.DataFrame:
         """
         extract the desired features on desired points
         Args:
             coords: list of coordinates
+            only_relevant: extract only relevant features, (normed or not normed)
 
         Returns:
             a pandas dataframe, with columns as features, and rows as the points in gdf
         """
         wkt_points = [Point(coord) for coord in coords]
         gdf = GeoDataFrame(pd.DataFrame({'geom': wkt_points}), geometry='geom')
-        return self.extract(gdf)
+        return self.extract(gdf, only_relevant)
 
 
 def poly_multi_feature(filter, name, radii: List[int] = [50]) -> List[PostgresFeature]:

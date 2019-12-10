@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 
 COORD2VEC_DIR_PATH = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.dirname(COORD2VEC_DIR_PATH)
@@ -13,22 +14,28 @@ h20_port = 8198
 postgis_port = 15432
 
 
-LONG_TERM_DIR = "/media/yonatanz/yz/coord2vec/"
+LONG_TERM_DIR = "/media/yonatanz/yz/"
 CACHE_DIR = os.path.join(LONG_TERM_DIR, "cache_data", "build_road_park_multi")
 # CACHE_DIR = os.path.join("/media/yonatanz/yz", "cache_data", "test_fit_large_multi_build")
 # CACHE_DIR = '../coord2vec_data/house_price_builder'
 TRAIN_CACHE_DIR = os.path.join(CACHE_DIR, 'train')
 VAL_CACHE_DIR = os.path.join(CACHE_DIR, 'validation')
 
-TMP_EXPR_FILES_DIR = os.path.join(LONG_TERM_DIR, "project_files")
+
+EXPR_NAME = 'build_park_road_multi_50_000_long_steps'
+TEST_CACHE_DIR = os.path.join(CACHE_DIR, "test_dir")
 
 def get_builder():
     from coord2vec.feature_extraction.features_builders import multi_build_builder, house_price_builder
     return house_price_builder
 
-TEST_CACHE_DIR = os.path.join(CACHE_DIR, "test_dir")
-TENSORBOARD_DIR = os.path.join("/media/yonatanz/yz", "tensorboard_runs")
-# TENSORBOARD_DIR = os.path.join(PROJECT_ROOT, "tensorboard_runs")
+_curr_time = str(datetime.now())
+
+TENSORBOARD_DIR = os.path.join(LONG_TERM_DIR, "tensorboard_runs", EXPR_NAME, _curr_time)
+CURRENT_EXPR_DIR = os.path.join(LONG_TERM_DIR, EXPR_NAME, _curr_time)
+SAVED_MODEL_DIR = os.path.join(CURRENT_EXPR_DIR, 'models')
+TMP_EXPR_FILES_DIR = os.path.join(SAVED_MODEL_DIR, "project_files")
+
 
 VAL_SAMPLE_NUM = 5_000
 TRAIN_SAMPLE_NUM = 50_000

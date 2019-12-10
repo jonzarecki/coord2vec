@@ -3,13 +3,15 @@ from __future__ import print_function, division
 import os
 import pickle
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 import torch
 import numpy as np
 from torch.utils.data import Dataset
 
+from coord2vec.feature_extraction.features_builders import FeaturesBuilder
 
-def get_files_from_path(pathstring) -> List[str]:
+
+def get_files_from_path(pathstring) -> List[Tuple[str, str]]:
     """
     Retrives file names from the folder and returns dual file names (in tuple pairs)
 
@@ -34,9 +36,10 @@ def get_files_from_path(pathstring) -> List[str]:
 class TileFeaturesDataset(Dataset):
     """Tile Features Dataset """
 
-    def __init__(self, root_dir, transform=None, inf2value: float = 1e3):
+    def __init__(self, root_dir, feature_builder, transform=None, inf2value: float = 1e3):
         """
         Args:
+            feature_builder:
             root_dir (string): Directory with all the images.
             transform (callable, optional): Optional transform to be applied
                 on a sample.
@@ -44,6 +47,7 @@ class TileFeaturesDataset(Dataset):
         """
         self.files_paths = get_files_from_path(root_dir)
         self.transform = transform
+        self.feature_builder = feature_builder
         self.inf2value = inf2value
 
     def __len__(self):
@@ -52,9 +56,14 @@ class TileFeaturesDataset(Dataset):
     def __getitem__(self, idx):
         img_path, feats_paths = self.files_paths[idx]
         image_arr = np.load(img_path)
-        features_arr = np.load(feats_paths)[0]
+        features_arr = np.load(feats_paths)
+        features_arr = features_arr[0] if len(features_arr.shape) > 1 else features_arr
+
+        if len(features_arr) > len(self.feature_builder.features_names):  # read more from cache (both norm and not)
+            features_arr = features_arr[self.feature_builder.relevant_feature_idxs]
 
         features_arr[np.isnan(features_arr)] = self.inf2value
+
 
         sample = {'image': image_arr, 'features': features_arr}
 
@@ -68,15 +77,16 @@ class TileFeaturesDataset(Dataset):
 
 
 class SingleTileFeaturesDataset(TileFeaturesDataset):
-    def __init__(self, root_dir, feature_index: int = None, transform=None):
+    def __init__(self, root_dir, feature_builder: FeaturesBuilder, feature_index: int = None, transform=None):
         """
         Args:
+            feature_builder:
             root_dir (string): Directory with all the images.
             feature_index: the index of the feature to be used
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        super().__init__(root_dir, transform)
+        super().__init__(root_dir, feature_builder, transform)
         self.feature_index = feature_index
 
     def __getitem__(self, idx):

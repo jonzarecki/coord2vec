@@ -20,6 +20,7 @@ class DistanceTimeFeature(OrsFeature):
         self.transportation_type = transportation_type
 
     def extract(self, gdf: GeoDataFrame) -> pd.DataFrame:
+        raise NotImplementedError("ORS Not implemented fully")
         eng = get_sqlalchemy_engine()
         tbl_name = save_gdf_to_temp_table_postgres(gdf, eng)
 

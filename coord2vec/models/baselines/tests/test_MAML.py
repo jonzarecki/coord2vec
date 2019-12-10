@@ -25,7 +25,7 @@ class TestMAML(TestCase):
         return
         # test fit
         sample_and_save_dataset(TEST_CACHE_DIR, sample_num=7, use_existing=False)
-        dataset = TileFeaturesDataset(TEST_CACHE_DIR)
+        dataset = TileFeaturesDataset(TEST_CACHE_DIR, example_features_builder)
         self.coord2vec.fit(dataset, n_epochs=3, batch_size=1)
 
         # test predict

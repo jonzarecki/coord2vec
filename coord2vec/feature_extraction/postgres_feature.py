@@ -13,6 +13,7 @@ from coord2vec.common.db.postgres import get_df, connect_to_db, connection, get_
     save_gdf_to_temp_table_postgres
 
 # general feature types
+from coord2vec.common.itertools import flatten
 from coord2vec.feature_extraction.feature import Feature
 
 NEAREST_NEIGHBOUR_all = 'nearest_neighbour'
@@ -41,7 +42,7 @@ def geo2sql(geo: BaseGeometry, to_geography: bool = False) -> str:
 
 
 class PostgresFeature(Feature):
-    def __init__(self, apply_type: str, object_name: str = 'anonymous', **kwargs):
+    def __init__(self, apply_type: str, object_name: str, **kwargs):
         super().__init__(**kwargs)
         #  Classes that add apply functions should add them to the dictionary
         self.object_name = object_name
@@ -52,7 +53,12 @@ class PostgresFeature(Feature):
         self.apply_type = apply_type
 
         # override parent
-        self.feature_names = [f"{self.apply_type}_{self.object_name}_{self.max_radius}m"]
+        self.all_feature_names = [f"{self.apply_type}_{self.object_name}_{self.max_radius}m"]
+        self.all_feature_names = flatten([[feat_name, f"{feat_name}_norm"] for feat_name in self.all_feature_names])
+        if self.normed:
+            self.feature_names = [feat_name for feat_name in self.all_feature_names if ('norm' in feat_name)]
+        else:
+            self.feature_names = [feat_name for feat_name in self.all_feature_names if ('norm' not in feat_name)]
 
     @staticmethod
     def apply_nearest_neighbour(base_query: str, q_geoms: str, conn: connection, max_radius,
@@ -64,10 +70,14 @@ class PostgresFeature(Feature):
         SELECT * FROM
             filtered_osm_geoms LEFT JOIN {q_geoms} q_geoms
         ON q_geoms.geom=filtered_osm_geoms.q_geom
-        )
+        ),
         
-        SELECT COALESCE ((SELECT MIN(ST_Distance(q_geom, t_geom)) FROM joined_filt_geoms where q_geom=q_geoms.geom), {max_radius}) as dist 
-            FROM {q_geoms} q_geoms;
+        result as (
+        SELECT COALESCE ((SELECT MIN(ST_Distance(q_geom, t_geom)) FROM joined_filt_geoms where q_geom=q_geoms.geom), {max_radius}) as dist
+            FROM {q_geoms} q_geoms
+        )
+
+        SELECT dist, dist / {max_radius} as dist_norm FROM result;
         """
 
         df = get_df(q, conn)
@@ -84,10 +94,14 @@ class PostgresFeature(Feature):
         SELECT * FROM
             filtered_osm_geoms LEFT JOIN {q_geoms} q_geoms
         ON q_geoms.geom=filtered_osm_geoms.q_geom
+        ),
+        
+        result as (
+        SELECT (SELECT count(*) FROM joined_filt_geoms where q_geom=q_geoms.geom) as cnt   
+            FROM {q_geoms} q_geoms
         )
 
-        SELECT (SELECT count(*) FROM joined_filt_geoms where q_geom=q_geoms.geom) as cnt
-            FROM {q_geoms} q_geoms;         
+        SELECT cnt, cnt / (PI() * pow({max_radius}, 2)) as cnt_norm FROM result;
         """
 
         df = get_df(q, conn)
@@ -135,11 +149,12 @@ class PostgresFeature(Feature):
         """
         pass
 
-    def extract(self, gdf: GeoDataFrame) -> pd.DataFrame:
+    def extract(self, gdf: GeoDataFrame, only_relevant=False) -> pd.DataFrame:
         """
         Applies the feature on the gdf, returns the series after the apply
         Args:
             gdf: The gdf we want to apply the feature on
+            only_relevant: extract only relevant features, (normed or not normed)
 
         Returns:
             The return values as a Series
@@ -149,8 +164,11 @@ class PostgresFeature(Feature):
         tbl_name = save_gdf_to_temp_table_postgres(gdf, eng)
 
         res = self.extract_with_tblname(tbl_name)
+        if only_relevant:
+            res = res[self.feature_names]
 
-        eng.execute(f"DROP TABLE {tbl_name}")
+        with eng.begin() as con:
+            con.execute(f"DROP TABLE {tbl_name}")
         eng.dispose()
         return res
 
@@ -167,9 +185,9 @@ class PostgresFeature(Feature):
         func = self.apply_functions[self.apply_type]
         conn = connect_to_db()
         res = func(base_query=self._build_postgres_query(), q_geoms=tbl_name, conn=conn)
-        assert len(res.columns) == len(
-            self.feature_names), f"number of features {res.columns} to feature names {self.feature_names} does not match "
-        res.columns = self.feature_names
+        assert len(res.columns) == len(self.all_feature_names), \
+            f"number of features {res.columns} to feature names {self.all_feature_names} does not match "
+        res.columns = self.all_feature_names
         conn.close()
 
         return res

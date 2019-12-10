@@ -1,3 +1,4 @@
+import math
 import unittest
 
 import pandas as pd
@@ -41,9 +42,11 @@ class TestOsmFeatures(unittest.TestCase):
     def test_beit_lewinstein_hospital_nearest_in_raanana(self):
         if not self.israel_osm:
             return
-        nearest_hospital_feat = OsmPolygonFeature(HOSPITAL, 'nearest_neighbour', object_name='hospital', max_radius=2 * 1000)
+        nearest_hospital_feat = OsmPolygonFeature(HOSPITAL, 'nearest_neighbour', object_name='hospital',
+                                                  max_radius=2 * 1000)
         res = nearest_hospital_feat.extract(self.gdf)
-        self.assertLess(res.iloc[0][nearest_hospital_feat.feature_names[0]], 150)  # the coordinate is very close
+        self.assertLess(res.iloc[0][nearest_hospital_feat.all_feature_names[0]], 150)  # the coordinate is very close
+        self.assertLess(res.iloc[0][nearest_hospital_feat.all_feature_names[1]], 150 / nearest_hospital_feat.max_radius)
 
     def test_bet_lewinstein_area_for_radius_2km(self):
         if not self.israel_osm:
@@ -51,7 +54,13 @@ class TestOsmFeatures(unittest.TestCase):
         hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'area_of', object_name='hospital', max_radius=2 * 1000)
         res = hospital_area_feat.extract(self.gdf)
         # NOT VERIFIED YET
-        self.assertAlmostEqual(res[hospital_area_feat.feature_names[0]].iloc[0], 2811, delta=1)  # area is pretty large
+        self.assertAlmostEqual(res[hospital_area_feat.all_feature_names[0]].iloc[0], 2811, delta=1)  # area is pretty large
+
+        hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'area_of', object_name='hospital', max_radius=2 * 1000,
+                                               normed=True)
+        res = hospital_area_feat.extract(self.gdf)
+        self.assertAlmostEqual(res[hospital_area_feat.all_feature_names[1]].iloc[0],
+                               2811 / (hospital_area_feat.max_radius ** 2 * math.pi), delta=1e-4)
 
     def test_max_radius_intersection_works(self):
         if not self.israel_osm:
@@ -89,7 +98,8 @@ class TestOsmFeatures(unittest.TestCase):
     ########## extreme test cases ##########
 
     def test_nowhere_returns_very_far_hospital(self):
-        nearest_hospital_feat = OsmPolygonFeature(HOSPITAL, 'nearest_neighbour', object_name='hospital', max_radius=1000)
+        nearest_hospital_feat = OsmPolygonFeature(HOSPITAL, 'nearest_neighbour', object_name='hospital',
+                                                  max_radius=1000)
         res = nearest_hospital_feat.extract(self.nowhere_gdf)  # the coordinate is very far from everything
         self.assertEqual(res[nearest_hospital_feat.feature_names[0]].iloc[0], 1000)
 

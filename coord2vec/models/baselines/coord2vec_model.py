@@ -33,19 +33,10 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
     Project's "main"
     """
 
-    def __init__(self, feature_builder: FeaturesBuilder,
-                 n_channels: int,
-                 losses: List[_Loss] = None,
-                 losses_weights: List[float] = None,
-                 log_loss: bool = False,
-                 exponent_heads: bool = False,
-                 embedding_dim: int = 128,
-                 tb_dir: str = 'default',
-                 multi_gpu: bool = False,
-                 cuda_device: int = 0,
-                 lr: float = 1e-4,
-                 lr_steps: List[int] = None,
-                 lr_gamma: float = 0.1):
+    def __init__(self, feature_builder: FeaturesBuilder, n_channels: int, losses: List[_Loss] = None,
+                 losses_weights: List[float] = None, log_loss: bool = False, exponent_heads: bool = False,
+                 embedding_dim: int = 128, multi_gpu: bool = False, cuda_device: int = 0, lr: float = 1e-4,
+                 lr_steps: List[int] = None, lr_gamma: float = 0.1):
         """
 
         Args:
@@ -55,7 +46,6 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
             losses_weights: weights to give the different losses. if None then equals weights of 1
             log_loss: whether to use the log function on the loss before back propagation
             embedding_dim: dimension of the embedding to create
-            tb_dir: the directory to use in tensorboard
             multi_gpu: whether to use more than one GPU or not
             cuda_device: if multi_gpu==False, choose the GPU to work on
             lr: learning rate for the Adam optimizer
@@ -66,7 +56,6 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
         self.losses_weights = losses_weights
         self.log_loss = log_loss
         self.exponent_head = exponent_heads
-        self.tb_dir = tb_dir
         self.embedding_dim = embedding_dim
         self.n_channels = n_channels
         self.multi_gpu = multi_gpu
@@ -75,12 +64,11 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
         else:
             self.device = torch.device(f'cuda' if torch.cuda.is_available() else 'cpu')
 
-        self.feature_builder = feature_builder
-        self.feature_names = flatten([feat.feature_names for feat in feature_builder.features])
+        self.feature_names = feature_builder.features_names
         self.n_features = len(self.feature_names)
 
         # create L1 losses if not supplied
-        self.losses = [L1Loss() for i in range(self.n_features)] if losses is None else losses
+        self.losses = [L1Loss() for _ in range(self.n_features)] if losses is None else losses
         assert len(self.losses) == self.n_features, "Number of losses must be equal to number of features"
 
         # create the model
@@ -97,7 +85,8 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
             epochs: int = 10,
             batch_size: int = 10,
             num_workers: int = 10,
-            evaluate_every: int = 35):
+            evaluate_every: int = 300,
+            save_every: int = 1000):
         """
         Args:
             train_dataset: The dataset object for training data
@@ -105,7 +94,8 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
             epochs: number of epochs to train the network
             batch_size: batch size for the network
             num_workers: number of workers for the network
-            evaluate_every: every how many batches to run evaluation
+            evaluate_every: every how many steps to run evaluation
+            save_every: every how many steps to save the model
 
         Returns:
             a trained pytorch model
@@ -124,7 +114,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
         criterion = MultiheadLoss(self.losses, use_log=self.log_loss, weights=self.losses_weights).to(self.device)
 
         # create tensorboard
-        writer = create_summary_writer(self.model, train_data_loader, log_dir=TENSORBOARD_DIR, expr_name=self.tb_dir)
+        writer = create_summary_writer(self.model, train_data_loader, log_dir=TENSORBOARD_DIR)
 
         def multihead_loss_func(y_pred, y):
             return criterion(y_pred[1], torch.split(y, 1, dim=1))[0]
@@ -134,14 +124,8 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
             y_pred_tensor = torch.stack(output).squeeze(2).transpose(0, 1)
             y_tensor = y
             data = x
-            # print("\n\nY_pred: ", y_pred[1][0])
-            # print("Y_true: ", y[0])
             with torch.no_grad():
                 loss, multi_losses = criterion(output, torch.split(y, 1, dim=1))
-            # print("LOSS: ", loss)
-            # print("Multi LOSS: ", multi_losses[0])
-            import numpy as np
-            # print(loss)
             return data, embedding, loss, multi_losses, y_pred_tensor, y_tensor
 
         eval_metrics = {'rmse': RootMeanSquaredError(),  # 'corr': DistanceCorrelation(),
@@ -181,7 +165,6 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
 
             writer.add_scalar('General/Train Loss', loss, global_step=engine.state.iteration)
 
-            # y_pred_tensor = torch.relu(y_pred_tensor)  #TODO: keeps relu here
             feat_diff = (y_pred_tensor - y_tensor)  # / y_tensor + 1
             feat_sum = y_pred_tensor + y_tensor
             for j in range(self.n_features):
@@ -236,10 +219,12 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
                 # can add more metrics here
                 add_metrics_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="validation")
                 # add_embedding_visualization(writer, metrics, global_step)
+            if global_step % save_every == 0:
+                self.save_trained_model(writer.log_dir + f"/saved_models/{global_step}_step_trained_model.pkl")
 
         trainer.run(train_data_loader, max_epochs=epochs)
 
-        self.save_trained_model(config.COORD2VEC_DIR_PATH + "/models/saved_models/trained_model.pkl")
+        self.save_trained_model(config.COORD2VEC_DIR_PATH + "/models/saved_models/final_trained_model.pkl")
         return self.model
 
     def load_trained_model(self, path: str):

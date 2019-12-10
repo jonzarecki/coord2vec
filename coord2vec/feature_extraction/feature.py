@@ -8,17 +8,19 @@ from shapely.geometry import Point
 
 
 class Feature(ABC):
-    def __init__(self, feature_names=None, max_radius=50, **kwargs):
+    def __init__(self, feature_names=None, max_radius=50, normed=False, **kwargs):
         #  Classes that add apply functions should add them to the dictionary
         self.feature_names = feature_names
         self.max_radius = max_radius  # in meters
+        self.normed = normed
 
     @abstractmethod
-    def extract(self, gdf: GeoDataFrame) -> pd.DataFrame:
+    def extract(self, gdf: GeoDataFrame, only_relevant=False) -> pd.DataFrame:
         """
         Applies the feature on the gdf, returns the series after the apply
         Args:
             gdf: The gdf we want to apply the feature on
+            only_relevant: extract only relevant features, (normed or not normed)
 
         Returns:
             The return values as a Series

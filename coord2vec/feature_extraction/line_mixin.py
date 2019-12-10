@@ -35,16 +35,20 @@ class LineMixin(PostgresFeature):
         SELECT q_geom, t_geom FROM
             filtered_osm_geoms LEFT JOIN {q_geoms} q_geoms
         ON q_geoms.geom=filtered_osm_geoms.q_geom
-        )            
-            
+        ),            
+        
+        result as (    
         SELECT 
             (SELECT CASE WHEN COUNT(*) > 0 THEN 
                 SUM(COALESCE (ST_Length(t_geom, true), 0.)) 
             ELSE 0. END
             FROM joined_filt_geoms where q_geom=q_geoms.geom
             ) as total_length
-        FROM {q_geoms} q_geoms;
-            """
+        FROM {q_geoms} q_geoms
+        )
+
+        SELECT total_length, total_length / (PI() * pow({max_radius}, 2)) as total_length_norm FROM result;
+        """
 
         df = get_df(q, conn)
 

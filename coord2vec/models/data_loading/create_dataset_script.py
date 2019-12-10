@@ -74,8 +74,6 @@ def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coor
         np.save(f"{cache_dir}/{i}_features.npy", all_coords_feature_vec.iloc[i-skipped].values)
 
 
-
-
 def convert_dataset_to_npy(cache_dir, sample_num=TRAIN_SAMPLE_NUM, **kwargs):
     def convert_pkl_to_npy(i):
         with open(f"{cache_dir}/{i}.pkl", 'rb') as f:
@@ -87,7 +85,6 @@ def convert_dataset_to_npy(cache_dir, sample_num=TRAIN_SAMPLE_NUM, **kwargs):
         np.save(f"{cache_dir}/{i}_features.npy", features)  # much smaller in memory
 
         os.remove(f"{cache_dir}/{i}.pkl")
-
 
     parmap(convert_pkl_to_npy, range(sample_num), use_tqdm=True, desc='Converting to npy')
 
