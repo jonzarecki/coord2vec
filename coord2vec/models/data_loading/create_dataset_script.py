@@ -36,12 +36,15 @@ def _get_image_entropy(image):
 
 def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coord_range=config.israel_range,
                             sample_num=TRAIN_SAMPLE_NUM, use_existing=True, feature_builder=example_features_builder):
+    print(f"Building dataset for {cache_dir}")
+
     s = generate_static_maps(config.tile_server_dns_noport, tile_server_ports)
     if not use_existing:
         shutil.rmtree(cache_dir, ignore_errors=True)  # remove old directory
     os.makedirs(cache_dir, exist_ok=True)
 
-    do_files_exist = lambda i: os.path.exists(f"{cache_dir}/{i}_img.pkl") and os.path.exists(f"{cache_dir}/{i}_features.pkl")
+    do_files_exist = lambda i: os.path.exists(f"{cache_dir}/{i}_img.npy") and \
+                               os.path.exists(f"{cache_dir}/{i}_features.npy")
 
     def build_training_example(i):
         if use_existing and do_files_exist(i):
@@ -63,15 +66,20 @@ def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coor
     # print(coords)
     print("Calculating features:   ", end="", flush=True)
     st = time.time()
-    all_coords_feature_vec = feature_builder.extract_coordinates([c for c in coords if c is not None])
+    relevant_coords = [c for c in coords if c is not None]
+    all_coords_feature_vec = feature_builder.extract_coordinates([c for c in coords if c is not None], only_relevant=False)
     print(f"Calculation took {time.time()-st}")
 
-    skipped = 0
-    for i, coord in enumerate(tqdm(coords, total=len(coords), desc="Writing back features")):
-        if use_existing and do_files_exist(i):
-            skipped += 1
-            return
-        np.save(f"{cache_dir}/{i}_features.npy", all_coords_feature_vec.iloc[i-skipped].values)
+    if len(relevant_coords) != 0:
+        skipped = 0
+        for i, coord in enumerate(tqdm(coords, total=len(coords), desc="Writing back features")):
+            if use_existing and do_files_exist(i):
+                skipped += 1
+                return
+            np.save(f"{cache_dir}/{i}_features.npy", all_coords_feature_vec.iloc[i-skipped].values)
+
+    print("done")
+
 
 
 def convert_dataset_to_npy(cache_dir, sample_num=TRAIN_SAMPLE_NUM, **kwargs):
@@ -86,13 +94,13 @@ def convert_dataset_to_npy(cache_dir, sample_num=TRAIN_SAMPLE_NUM, **kwargs):
 
         os.remove(f"{cache_dir}/{i}.pkl")
 
-    parmap(convert_pkl_to_npy, range(sample_num), use_tqdm=True, desc='Converting to npy')
+    parmap(convert_pkl_to_npy, range(sample_num), use_tqdm=True, desc='Converting to npy', nprocs=15)
 
 
 
 if __name__ == '__main__':
     # multiproc_util.force_serial = True
-    convert_dataset_to_npy(VAL_CACHE_DIR, sample_num=VAL_SAMPLE_NUM, feature_builder=get_builder(),
+    sample_and_save_dataset(VAL_CACHE_DIR, sample_num=VAL_SAMPLE_NUM, feature_builder=get_builder(),
                             use_existing=True)
-    convert_dataset_to_npy(TRAIN_CACHE_DIR, sample_num=TRAIN_SAMPLE_NUM, feature_builder=get_builder(),
+    sample_and_save_dataset(TRAIN_CACHE_DIR, sample_num=TRAIN_SAMPLE_NUM, feature_builder=get_builder(),
                             use_existing=True)

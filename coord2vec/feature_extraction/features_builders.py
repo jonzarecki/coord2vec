@@ -1,6 +1,7 @@
 import itertools
 from typing import List, Tuple, Union
 
+import copy
 import pandas as pd
 from geopandas import GeoDataFrame
 from shapely.geometry import Point
@@ -40,7 +41,8 @@ class FeaturesBuilder:
         Returns:
             a pandas dataframe, with columns as features, and rows as the points in gdf
         """
-        features_gs_list = parmap(lambda feature: feature.extract(gdf, only_relevant), self.features, use_tqdm=True, desc="Calculating features")
+        features_gs_list = parmap(lambda feature: feature.extract(gdf, only_relevant), self.features, use_tqdm=True,
+                                  desc="Calculating features")
         features_df = pd.concat(features_gs_list, axis=1)
         return features_df
 
@@ -83,11 +85,24 @@ def line_multi_feature(filter, name, radii: List[int] = [50]) -> List[PostgresFe
     return features
 
 
+def set_all_to_norm(b: FeaturesBuilder):
+    b = copy.deepcopy(b)
+    for i, f in enumerate(b.features):
+        f.normed = True
+    return b
+
+
 house_price_builder = FeaturesBuilder(
     [poly_multi_feature(BUILDING, 'building'),
      poly_multi_feature(PARK, 'park'),
      line_multi_feature(ROAD, 'road')]
 )
+
+normed_house_price_builder = set_all_to_norm(FeaturesBuilder(
+    [poly_multi_feature(BUILDING, 'building'),
+     poly_multi_feature(PARK, 'park'),
+     line_multi_feature(ROAD, 'road')]
+))
 
 only_build_area_builder = FeaturesBuilder(
     [OsmPolygonFeature(BUILDING, object_name='building', apply_type=AREA_OF_poly, max_radius=50)]

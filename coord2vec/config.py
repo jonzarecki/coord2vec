@@ -15,14 +15,15 @@ postgis_port = 15432
 
 
 LONG_TERM_DIR = "/media/yonatanz/yz/"
-CACHE_DIR = os.path.join(LONG_TERM_DIR, "cache_data", "build_road_park_multi")
+CACHE_DIR = os.path.join(LONG_TERM_DIR, "cache_data", "build_road_park_multi_with_norm")
+# CACHE_DIR = os.path.join(LONG_TERM_DIR, "cache_data", "build_road_park_multi")
 # CACHE_DIR = os.path.join("/media/yonatanz/yz", "cache_data", "test_fit_large_multi_build")
 # CACHE_DIR = '../coord2vec_data/house_price_builder'
 TRAIN_CACHE_DIR = os.path.join(CACHE_DIR, 'train')
 VAL_CACHE_DIR = os.path.join(CACHE_DIR, 'validation')
 
 
-EXPR_NAME = 'build_park_road_multi_50_000_long_steps'
+EXPR_NAME = 'normed_build_park_road_multi_50_000'
 TEST_CACHE_DIR = os.path.join(CACHE_DIR, "test_dir")
 
 def get_builder():
@@ -34,11 +35,11 @@ _curr_time = str(datetime.now())
 TENSORBOARD_DIR = os.path.join(LONG_TERM_DIR, "tensorboard_runs", EXPR_NAME, _curr_time)
 CURRENT_EXPR_DIR = os.path.join(LONG_TERM_DIR, EXPR_NAME, _curr_time)
 SAVED_MODEL_DIR = os.path.join(CURRENT_EXPR_DIR, 'models')
-TMP_EXPR_FILES_DIR = os.path.join(SAVED_MODEL_DIR, "project_files")
+TMP_EXPR_FILES_DIR = os.path.join(CURRENT_EXPR_DIR, "project_files")
 
 
-VAL_SAMPLE_NUM = 5_000
-TRAIN_SAMPLE_NUM = 50_000
+VAL_SAMPLE_NUM = 10_000
+TRAIN_SAMPLE_NUM = 100_000
 
 IMG_WIDTH, IMG_HEIGHT = (224, 224)
 israel_range = [34.482724, 31.492354, 34.583301, 31.585196]

@@ -2,6 +2,7 @@ from __future__ import print_function, division
 
 import os
 import pickle
+import pandas as pd
 from pathlib import Path
 from typing import List, Tuple
 import torch
@@ -45,9 +46,10 @@ class TileFeaturesDataset(Dataset):
                 on a sample.
             inf2value : number to replace all the inf's with
         """
-        self.files_paths = get_files_from_path(root_dir)
+        self.files_paths = pd.Series(get_files_from_path(root_dir))
         self.transform = transform
-        self.feature_builder = feature_builder
+        self.feat_names = pd.Series(feature_builder.features_names)
+        self.relevant_feature_idxs = np.array(feature_builder.relevant_feature_idxs)
         self.inf2value = inf2value
 
     def __len__(self):
@@ -59,8 +61,8 @@ class TileFeaturesDataset(Dataset):
         features_arr = np.load(feats_paths)
         features_arr = features_arr[0] if len(features_arr.shape) > 1 else features_arr
 
-        if len(features_arr) > len(self.feature_builder.features_names):  # read more from cache (both norm and not)
-            features_arr = features_arr[self.feature_builder.relevant_feature_idxs]
+        if len(features_arr) > len(self.feat_names):  # read more from cache (both norm and not)
+            features_arr = features_arr[self.relevant_feature_idxs]
 
         features_arr[np.isnan(features_arr)] = self.inf2value
 
