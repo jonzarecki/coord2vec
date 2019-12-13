@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 from unittest import TestCase
 
-from coord2vec.models.architectures import resnet18, multihead_model, dual_fc_head, simple_cnn
+from coord2vec.models.architectures import multihead_model, dual_fc_head, simple_cnn
+from coord2vec.models.resnet import resnet18
 
 
 class TestArchitectures(TestCase):

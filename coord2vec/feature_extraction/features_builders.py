@@ -89,6 +89,26 @@ house_price_builder = FeaturesBuilder(
      line_multi_feature(ROAD, 'road')]
 )
 
+def partial_line_multi_feature(filter, name, radii: List[int] = [50]) -> List[PostgresFeature]:
+    features = []
+    for radius in radii:
+        features += [OsmLineFeature(filter, object_name=name, apply_type=NEAREST_NEIGHBOUR_all,
+                                    max_radius=radius),
+                     OsmLineFeature(filter, object_name=name, apply_type=LENGTH_OF_line,
+                                    max_radius=radius)]
+        # No number-of. As it's weird for lines (cut arbitrarily sometimes)
+    return features
+
+
+house_price_builder_partial = FeaturesBuilder(
+    [poly_multi_feature(BUILDING, 'building', [50, 100]),
+     [OsmPolygonFeature(PARK, object_name='park', apply_type=NEAREST_NEIGHBOUR_all,
+                        max_radius=100),
+      OsmPolygonFeature(PARK, object_name='park', apply_type=AREA_OF_poly,
+                        max_radius=100)],
+     line_multi_feature(ROAD, 'road', [50, 100])]
+)
+
 only_build_area_builder = FeaturesBuilder(
     [OsmPolygonFeature(BUILDING, object_name='building', apply_type=AREA_OF_poly, max_radius=50)]
 )

@@ -37,6 +37,7 @@ def build_example_image_figure(ex: TrainExample):
 
 
 def create_summary_writer(model, data_loader, log_dir) -> SummaryWriter:
+    print(f"Printing logs to {log_dir}")
     writer = SummaryWriter(log_dir)
     # data_loader_iter = iter(data_loader)
     # x, y = next(data_loader_iter)

@@ -20,11 +20,12 @@ from coord2vec.config import HALF_TILE_LENGTH, TENSORBOARD_DIR
 from coord2vec.feature_extraction.features_builders import FeaturesBuilder
 from coord2vec.image_extraction.tile_image import generate_static_maps, render_multi_channel
 from coord2vec.image_extraction.tile_utils import build_tile_extent
-from coord2vec.models.architectures import resnet18, dual_fc_head, multihead_model, simple_cnn, simple_head
+from coord2vec.models.architectures import dual_fc_head, multihead_model, simple_cnn, simple_head
 from coord2vec.models.baselines.tensorboard_utils import TrainExample, \
     create_summary_writer, add_metrics_to_tensorboard, add_embedding_visualization, build_example_image_figure
 from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
 from coord2vec.models.losses import MultiheadLoss
+from coord2vec.models.resnet import wide_resnet50_2, resnet18, resnet50
 
 
 class Coord2Vec(BaseEstimator, TransformerMixin):
@@ -63,6 +64,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
             self.device = torch.device(f'cuda:{cuda_device}' if torch.cuda.is_available() else 'cpu')
         else:
             self.device = torch.device(f'cuda' if torch.cuda.is_available() else 'cpu')
+        # self.device = 'cpu'
 
         self.feature_names = feature_builder.features_names
         self.n_features = len(self.feature_names)
@@ -299,8 +301,8 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
         return embeddings.to('cpu')
 
     def _build_model(self, n_channels, n_heads):
-        # model = resnet18(n_channels, self.embedding_dim)
-        model = simple_cnn(n_channels, self.embedding_dim)
+        model = wide_resnet50_2(n_channels, self.embedding_dim)
+        # model = simple_cnn(n_channels, self.embedding_dim)
         heads = [simple_head(self.embedding_dim) for _ in range(n_heads)]
         model = multihead_model(model, heads)
         return model

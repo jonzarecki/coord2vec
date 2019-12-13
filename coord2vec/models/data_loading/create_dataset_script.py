@@ -92,7 +92,7 @@ def convert_dataset_to_npy(cache_dir, sample_num=TRAIN_SAMPLE_NUM, **kwargs):
 
 if __name__ == '__main__':
     # multiproc_util.force_serial = True
-    convert_dataset_to_npy(VAL_CACHE_DIR, sample_num=VAL_SAMPLE_NUM, feature_builder=get_builder(),
+    sample_and_save_dataset(VAL_CACHE_DIR, sample_num=VAL_SAMPLE_NUM, feature_builder=get_builder(),
                             use_existing=True)
-    convert_dataset_to_npy(TRAIN_CACHE_DIR, sample_num=TRAIN_SAMPLE_NUM, feature_builder=get_builder(),
+    sample_and_save_dataset(TRAIN_CACHE_DIR, sample_num=50_000, feature_builder=get_builder(),
                             use_existing=True)

@@ -55,21 +55,6 @@ def simple_cnn(n_channels: int, output_dim: int) -> nn.Module:
     return simple_cnn
 
 
-def resnet18(n_channels: int, output_dim: int) -> nn.Module:
-    """
-    create a resnet-18 with first and last layers to fit the coord2vec
-    Args:
-        n_channels: number of OSM channels in the input
-        output_dim: dimension of the output - based on all the losses we want
-
-    Returns:
-        A nn.Module of the resnet
-    """
-    resnet = models.resnet18(num_classes=output_dim)
-    resnet.conv1 = nn.Conv2d(n_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
-    return resnet.float()
-
-
 def multihead_model(architecture: nn.Module, heads: List[nn.Module]) -> nn.Module:
     class MultiHeadModule(nn.Module):
         def __init__(self):
