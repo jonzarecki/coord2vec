@@ -92,10 +92,11 @@ USER renderer
 
 # Change conf files to make postgres accessible from the outside
 USER root
+COPY postgresql.conf /etc/postgresql/10/main/postgresql.conf
 RUN echo 'host    all             all             0.0.0.0/0            trust' >> /etc/postgresql/10/main/pg_hba.conf
 RUN sed -i -e 's/localhost/*/g' /etc/postgresql/10/main/postgresql.conf
 RUN sed -i -e 's/#listen_addresses/listen_addresses/g' /etc/postgresql/10/main/postgresql.conf
-#COPY postgresql.conf /etc/postgresql/10/main/postgresql.conf
+
 
 RUN apt-get install -y systemd curl
 

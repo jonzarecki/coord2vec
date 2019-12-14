@@ -9,7 +9,8 @@ docker volume rm osm-postgis-data
 docker volume create osm-postgis-data
 sudo chmod 777 osm-postgis-server/run.sh
 
-docker build osm-postgis-server/ -t osm-postgis-server:0.1
+#docker build osm-postgis-server/ -t osm-postgis-server:0.1
+docker build --no-cache osm-postgis-server/ -t osm-postgis-server:0.1
 
 # Download Israel as sample if no data is provided
 if [[ ! -f ./data.osm.pbf ]]; then

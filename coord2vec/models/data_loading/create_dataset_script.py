@@ -44,6 +44,9 @@ def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coor
     do_files_exist = lambda i: os.path.exists(f"{cache_dir}/{i}_img.pkl") and os.path.exists(f"{cache_dir}/{i}_features.pkl")
 
     def build_training_example(i):
+        import random, numpy
+        random.seed(1554+i); numpy.random.seed(42+i)  # set random seeds
+
         if use_existing and do_files_exist(i):
             return
         entropy = 0
@@ -59,7 +62,7 @@ def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coor
 
         return coord
 
-    coords = parmap(build_training_example, range(sample_num), use_tqdm=True, desc='Building image dataset')
+    coords = parmap(build_training_example, range(sample_num), use_tqdm=True, desc='Building image dataset', nprocs=15)
     # print(coords)
     print("Calculating features:   ", end="", flush=True)
     st = time.time()

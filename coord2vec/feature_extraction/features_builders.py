@@ -26,6 +26,7 @@ class FeaturesBuilder:
             features: a list of features (of class Feature)
         """
         self.features = flatten(features)
+        self.all_feature_names = flatten([feature.all_feature_names for feature in self.features])
         self.features_names = flatten([feature.feature_names for feature in self.features])
         self.relevant_feature_idxs = flatten([[(f in feature.feature_names) for f in feature.all_feature_names]
                                               for feature in self.features])
@@ -40,7 +41,8 @@ class FeaturesBuilder:
         Returns:
             a pandas dataframe, with columns as features, and rows as the points in gdf
         """
-        features_gs_list = parmap(lambda feature: feature.extract(gdf, only_relevant), self.features, use_tqdm=True, desc="Calculating features")
+        features_gs_list = parmap(lambda feature: feature.extract(gdf, only_relevant), self.features, use_tqdm=True,
+                                  desc="Calculating features")
         features_df = pd.concat(features_gs_list, axis=1)
         return features_df
 
@@ -57,6 +59,16 @@ class FeaturesBuilder:
         wkt_points = [Point(coord) for coord in coords]
         gdf = GeoDataFrame(pd.DataFrame({'geom': wkt_points}), geometry='geom')
         return self.extract(gdf, only_relevant)
+
+    def manual_set_relevant_features(self, new_features: List[Union[PostgresFeature, List[PostgresFeature]]]):
+        new_features = flatten(new_features)
+        all_new_feature_names = flatten([feature.all_feature_names for feature in new_features])
+        assert all([fname for fname in
+                    all_new_feature_names if
+                    fname in self.all_feature_names]), "all new feature names should exists in old"
+
+        self.features_names = flatten([feature.feature_names for feature in new_features])  # update relevant
+        self.relevant_feature_idxs = [(fname in self.features_names) for fname in self.all_feature_names]
 
 
 def poly_multi_feature(filter, name, radii: List[int] = [50]) -> List[PostgresFeature]:
@@ -89,6 +101,7 @@ house_price_builder = FeaturesBuilder(
      line_multi_feature(ROAD, 'road')]
 )
 
+
 def partial_line_multi_feature(filter, name, radii: List[int] = [50]) -> List[PostgresFeature]:
     features = []
     for radius in radii:
@@ -102,12 +115,15 @@ def partial_line_multi_feature(filter, name, radii: List[int] = [50]) -> List[Po
 
 house_price_builder_partial = FeaturesBuilder(
     [poly_multi_feature(BUILDING, 'building', [50, 100]),
-     [OsmPolygonFeature(PARK, object_name='park', apply_type=NEAREST_NEIGHBOUR_all,
-                        max_radius=100),
-      OsmPolygonFeature(PARK, object_name='park', apply_type=AREA_OF_poly,
-                        max_radius=100)],
+     poly_multi_feature(PARK, 'park', [50, 100]),
      line_multi_feature(ROAD, 'road', [50, 100])]
 )
+
+house_price_builder_partial.manual_set_relevant_features([poly_multi_feature(BUILDING, 'building', [50, 100]),
+                                                          [OsmPolygonFeature(PARK, object_name='park',
+                                                                             apply_type=NEAREST_NEIGHBOUR_all,
+                                                                             max_radius=100)],
+                                                          line_multi_feature(ROAD, 'road', [50, 100])])
 
 only_build_area_builder = FeaturesBuilder(
     [OsmPolygonFeature(BUILDING, object_name='building', apply_type=AREA_OF_poly, max_radius=50)]

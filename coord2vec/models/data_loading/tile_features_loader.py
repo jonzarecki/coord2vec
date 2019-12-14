@@ -6,7 +6,9 @@ from pathlib import Path
 from typing import List, Tuple
 import torch
 import numpy as np
+import torchvision
 from torch.utils.data import Dataset
+from torchvision import transforms
 
 from coord2vec.feature_extraction.features_builders import FeaturesBuilder
 
@@ -36,17 +38,24 @@ def get_files_from_path(pathstring) -> List[Tuple[str, str]]:
 class TileFeaturesDataset(Dataset):
     """Tile Features Dataset """
 
-    def __init__(self, root_dir, feature_builder, transform=None, inf2value: float = 1e3):
+    def __init__(self, root_dir, feature_builder, image_transforms=None, inf2value: float = 1e3):
         """
         Args:
             feature_builder:
             root_dir (string): Directory with all the images.
-            transform (callable, optional): Optional transform to be applied
-                on a sample.
+            image_transforms (callable, optional): Optional transform to be applied
+                on an image.
             inf2value : number to replace all the inf's with
         """
         self.files_paths = get_files_from_path(root_dir)
-        self.transform = transform
+        if image_transforms is None:
+            image_transforms = torchvision.transforms.Compose(
+                [transforms.ToPILImage(),
+                 transforms.RandomHorizontalFlip(),
+                 transforms.RandomVerticalFlip(),
+                 transforms.ToTensor(),
+                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+        self.image_transforms = image_transforms
         self.feature_builder = feature_builder
         self.inf2value = inf2value
 
@@ -64,29 +73,23 @@ class TileFeaturesDataset(Dataset):
 
         features_arr[np.isnan(features_arr)] = self.inf2value
 
-
-        sample = {'image': image_arr, 'features': features_arr}
-
-        if self.transform:
-            sample = self.transform(sample)
-
-        image_torch = torch.tensor(sample['image']).float()
-        features_torch = torch.tensor(sample['features']).float()
+        image_torch = self.image_transforms(image_arr.swapaxes(0, 2))  # make it (X, X, 3)
+        features_torch = torch.tensor(features_arr).float()
 
         return image_torch, features_torch
 
 
 class SingleTileFeaturesDataset(TileFeaturesDataset):
-    def __init__(self, root_dir, feature_builder: FeaturesBuilder, feature_index: int = None, transform=None):
+    def __init__(self, root_dir, feature_builder: FeaturesBuilder, feature_index: int = None, image_transforms=None):
         """
         Args:
             feature_builder:
             root_dir (string): Directory with all the images.
             feature_index: the index of the feature to be used
-            transform (callable, optional): Optional transform to be applied
+            image_transforms (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        super().__init__(root_dir, feature_builder, transform)
+        super().__init__(root_dir, feature_builder, image_transforms)
         self.feature_index = feature_index
 
     def __getitem__(self, idx):

@@ -3,11 +3,28 @@ from typing import List
 import torch
 import torch.nn as nn
 import torchvision.models as models
+from .resnet import *
 
 
 ##########################
 ##    Architechtures    ##
 ##########################
+
+def load_architecture(arch_name: str):
+    print(f"Working with {arch_name} architecture")
+    if arch_name == 'resnet18':
+        return resnet18
+    elif arch_name == 'resnet34':
+        return resnet34
+    elif arch_name == 'resnet50':
+        return resnet50
+    elif arch_name == 'resnet101':
+        return resnet101
+    elif arch_name == 'wide_resnet50_2':
+        return wide_resnet50_2
+    elif arch_name == 'wide_resnet101_2':
+        return wide_resnet101_2
+
 
 # def rgb_pretrained_resnet50(output_dim: int) -> nn.Module:
 #     net = models.resnet50(pretrained=True)
@@ -35,6 +52,7 @@ class Flatten(nn.Module):
     def forward(self, x):
         x = x.view(x.size()[0], -1)
         return x
+
 
 def simple_cnn(n_channels: int, output_dim: int) -> nn.Module:
     simple_cnn = nn.Sequential(
@@ -85,7 +103,10 @@ def dual_fc_head(input_dim, hidden_dim=128, add_exponent=False) -> nn.Module:
 
     return head.float()
 
+
 import torch.nn.functional as F
+
+
 def simple_head(input_dim) -> nn.Module:
     head = nn.Sequential(
         nn.Linear(input_dim, 1),
@@ -101,10 +122,7 @@ class EvalRelu(nn.Module):
             return F.relu(input, inplace=True)
         return input
 
+
 class ExponentModule(nn.Module):
     def forward(self, input):
         return torch.exp(input)
-
-
-if __name__ == '__main__':
-    print("Zarecki is ugly, and forever will he be")

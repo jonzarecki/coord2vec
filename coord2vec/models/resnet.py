@@ -201,7 +201,6 @@ class ResNet(nn.Module):
 
 
 def _resnet(arch, block, layers, n_channels=3, output_dim=128, **kwargs):
-    print(f"Working with {arch}")
     model = ResNet(block, layers, output_dim, n_channels)
     return model
 

@@ -31,5 +31,5 @@ cd /home/yonatanz/Projects/remote/coord2vec
 jupyter notebook --ip=0.0.0.0 --port=8190
 # run seperatly
 conda activate coord2vec
-tensorboard --logdir /media/yonatanz/yz/tensorboard_runs/ --port=8192
+tensorboard --logdir /media/yonatanz/yz/coord2vec/tensorboard_runs/ --port=8192
 

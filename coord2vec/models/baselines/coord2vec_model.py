@@ -1,6 +1,6 @@
 import os
 import random
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 import torch
 from ignite.contrib.handlers import ProgressBar, LRScheduler
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -25,7 +25,7 @@ from coord2vec.models.baselines.tensorboard_utils import TrainExample, \
     create_summary_writer, add_metrics_to_tensorboard, add_embedding_visualization, build_example_image_figure
 from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
 from coord2vec.models.losses import MultiheadLoss
-from coord2vec.models.resnet import wide_resnet50_2, resnet18, resnet50
+from coord2vec.models.resnet import wide_resnet50_2, resnet18, resnet50, resnet34
 
 
 class Coord2Vec(BaseEstimator, TransformerMixin):
@@ -36,6 +36,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
 
     def __init__(self, feature_builder: FeaturesBuilder, n_channels: int, losses: List[_Loss] = None,
                  losses_weights: List[float] = None, log_loss: bool = False, exponent_heads: bool = False,
+                 cnn_model: Callable = resnet34,
                  embedding_dim: int = 128, multi_gpu: bool = False, cuda_device: int = 0, lr: float = 1e-4,
                  lr_steps: List[int] = None, lr_gamma: float = 0.1):
         """
@@ -58,6 +59,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
         self.log_loss = log_loss
         self.exponent_head = exponent_heads
         self.embedding_dim = embedding_dim
+        self.cnn_model = cnn_model
         self.n_channels = n_channels
         self.multi_gpu = multi_gpu
         if not multi_gpu:
@@ -74,7 +76,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
         assert len(self.losses) == self.n_features, "Number of losses must be equal to number of features"
 
         # create the model
-        self.model = self._build_model(self.n_channels, self.n_features)
+        self.model = self._build_model(cnn_model, self.n_channels, self.n_features)
         if multi_gpu:
             self.model = nn.DataParallel(self.model)
 
@@ -300,8 +302,8 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
         embeddings, output = self.model(images)
         return embeddings.to('cpu')
 
-    def _build_model(self, n_channels, n_heads):
-        model = wide_resnet50_2(n_channels, self.embedding_dim)
+    def _build_model(self, cnn_model, n_channels, n_heads):
+        model = cnn_model(n_channels, self.embedding_dim)
         # model = simple_cnn(n_channels, self.embedding_dim)
         heads = [simple_head(self.embedding_dim) for _ in range(n_heads)]
         model = multihead_model(model, heads)

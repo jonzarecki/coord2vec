@@ -15,28 +15,42 @@ postgis_port = 15432
 
 
 LONG_TERM_DIR = "/media/yonatanz/yz/"
-CACHE_DIR = os.path.join(LONG_TERM_DIR, "cache_data", "build_road_park_partial_norm")
-# CACHE_DIR = os.path.join("/media/yonatanz/yz", "cache_data", "test_fit_large_multi_build")
-# CACHE_DIR = '../coord2vec_data/house_price_builder'
-TRAIN_CACHE_DIR = os.path.join(CACHE_DIR, 'train')
-VAL_CACHE_DIR = os.path.join(CACHE_DIR, 'validation')
+PROJ_LONG_TERM_DIR = os.path.join(LONG_TERM_DIR, "coord2vec")
+DATA_LONG_TERM_DIR = os.path.join(LONG_TERM_DIR, "data")
+CACHE_DIR = os.path.join(DATA_LONG_TERM_DIR, "coord2vec_data")
 
+# DATA_NAME = "build_road_park_multi_with_norm"
+DATA_NAME = 'build_park_road_partial_norm'
 
-# EXPR_NAME = 'build_park_road_partial_norm_50_000'
-EXPR_NAME = 'build_park_road_norm_50_000_resnet_50'
+EXPR_NAME = f'{DATA_NAME}_norm_resnet34'
 TEST_CACHE_DIR = os.path.join(CACHE_DIR, "test_dir")
 
-def get_builder():
-    from coord2vec.feature_extraction.features_builders import multi_build_builder, house_price_builder, \
-        house_price_builder_partial
-    return house_price_builder_partial
+TRAIN_CACHE_DIR = os.path.join(CACHE_DIR, DATA_NAME, 'train')
+VAL_CACHE_DIR = os.path.join(CACHE_DIR, DATA_NAME, 'validation')
 
 _curr_time = str(datetime.now())
 
-TENSORBOARD_DIR = os.path.join(LONG_TERM_DIR, "tensorboard_runs", EXPR_NAME, _curr_time)
-CURRENT_EXPR_DIR = os.path.join(LONG_TERM_DIR, EXPR_NAME, _curr_time)
+TENSORBOARD_DIR = os.path.join(PROJ_LONG_TERM_DIR, "tensorboard_runs", EXPR_NAME, _curr_time)
+CURRENT_EXPR_DIR = os.path.join(PROJ_LONG_TERM_DIR, EXPR_NAME, _curr_time)
 SAVED_MODEL_DIR = os.path.join(CURRENT_EXPR_DIR, 'models')
-TMP_EXPR_FILES_DIR = os.path.join(SAVED_MODEL_DIR, "project_files")
+TMP_EXPR_FILES_DIR = os.path.join(CURRENT_EXPR_DIR, "project_files")
+
+
+builder_name = "house_price_builder_partial"
+def get_builder():
+    from coord2vec.feature_extraction.features_builders import multi_build_builder, house_price_builder, \
+        house_price_builder_partial
+    print(f"working with house_price_builder_partial")
+    return house_price_builder_partial
+
+def update_params(opt):
+    global TENSORBOARD_DIR, CURRENT_EXPR_DIR, SAVED_MODEL_DIR, TMP_EXPR_FILES_DIR
+    EXPR_NAME = f'{DATA_NAME}_{opt.arch}_{builder_name}'
+
+    TENSORBOARD_DIR = os.path.join(PROJ_LONG_TERM_DIR, "tensorboard_runs", EXPR_NAME, _curr_time)
+    CURRENT_EXPR_DIR = os.path.join(PROJ_LONG_TERM_DIR, EXPR_NAME, _curr_time)
+    SAVED_MODEL_DIR = os.path.join(CURRENT_EXPR_DIR, 'models')
+    TMP_EXPR_FILES_DIR = os.path.join(CURRENT_EXPR_DIR, "project_files")
 
 
 VAL_SAMPLE_NUM = 10_000
