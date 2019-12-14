@@ -3,6 +3,7 @@ import random
 from typing import List, Tuple, Callable
 import torch
 from ignite.contrib.handlers import ProgressBar, LRScheduler
+from ignite.handlers import ModelCheckpoint
 from sklearn.base import BaseEstimator, TransformerMixin
 from torch import nn
 from torch import optim
@@ -36,7 +37,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
 
     def __init__(self, feature_builder: FeaturesBuilder, n_channels: int, losses: List[_Loss] = None,
                  losses_weights: List[float] = None, log_loss: bool = False, exponent_heads: bool = False,
-                 cnn_model: Callable = resnet34,
+                 cnn_model: Callable = resnet34, model_save_path: str = None,
                  embedding_dim: int = 128, multi_gpu: bool = False, cuda_device: int = 0, lr: float = 1e-4,
                  lr_steps: List[int] = None, lr_gamma: float = 0.1):
         """
@@ -55,6 +56,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
             lr_gamma: The multiplier we multiply the LR
         """
 
+        self.model_save_path = model_save_path
         self.losses_weights = losses_weights
         self.log_loss = log_loss
         self.exponent_head = exponent_heads
@@ -147,12 +149,19 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
                                                 device=self.device,
                                                 output_transform=multihead_output_transform)
 
+        if self.model_save_path is not None:
+            # do we want to use it ? from Ignite
+            checkpoint_handler = ModelCheckpoint(self.model_save_path, 'checkpoint',
+                                                 save_interval=save_every,
+                                                 n_saved=10, require_empty=False, create_dir=True)
+
         pbar = ProgressBar()
         # RunningAverage(output_transform=lambda x: x[2])
         pbar.attach(trainer)
 
         scheduler = LRScheduler(self.step_scheduler)
         trainer.add_event_handler(Events.ITERATION_STARTED, scheduler)
+        trainer.add_event_handler(Events.EPOCH_COMPLETED, checkpoint_handler, {'mymodel': self.model})
 
         @trainer.on(Events.EPOCH_STARTED)
         def init_state_params(engine):
@@ -224,11 +233,10 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
                 add_metrics_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="validation")
                 # add_embedding_visualization(writer, metrics, global_step)
             if global_step % save_every == 0:
-                self.save_trained_model(writer.log_dir + f"/saved_models/{global_step}_step_trained_model.pkl")
+                self.save_trained_model(global_step)
 
         trainer.run(train_data_loader, max_epochs=epochs)
 
-        self.save_trained_model(config.COORD2VEC_DIR_PATH + "/models/saved_models/final_trained_model.pkl")
         return self.model
 
     def load_trained_model(self, path: str):
@@ -251,7 +259,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
 
     def _model_to(self):
         self.model = self.model.to(self.device)
-        # # from apex import amp
+        # from apex import amp
         # if self.amp:
         #     model, optimizer = amp.initialize(model.to('cuda'), optimizer, opt_level="O1")
 
@@ -270,11 +278,6 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
             'embedding_dim': self.embedding_dim,
             'losses': self.losses,
         }, path)
-
-        # do we want to use it ? from Ignite
-        # checkpoint_handler = ModelCheckpoint(args.checkpoint_model_dir, 'checkpoint',
-        #                                  save_interval=args.checkpoint_interval,
-        #                                  n_saved=10, require_empty=False, create_dir=True)
 
         self.model = self.model.to(self.device)
 

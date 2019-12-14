@@ -8,16 +8,16 @@ from coord2vec import config
 from coord2vec.common.expr_util import save_all_py_files
 from coord2vec.models.architectures import load_architecture
 from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
-from coord2vec.config import VAL_CACHE_DIR, TRAIN_CACHE_DIR, get_builder, EXPR_NAME
+from coord2vec.config import VAL_CACHE_DIR, TRAIN_CACHE_DIR, get_builder, EXPR_NAME, SAVED_MODEL_DIR
 from coord2vec.models.baselines import Coord2Vec
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, default=64, help='input batch size')
-    parser.add_argument('--embedding_size', type=int, default=128)
+    parser.add_argument('--embedding_size', type=int, default=256)
     parser.add_argument('--n_feats', type=int, default=9)
-    parser.add_argument('--arch', type=str, default='resnet34')
+    parser.add_argument('--arch', type=str, default='resnet18')
     parser.add_argument('--start_lr', type=float, default=1e-4)
     parser.add_argument('--lr_steps', nargs='+', default=[20_000, 40_000], help='List of steps in which we apply an LR step')
     parser.add_argument('--lr_gamma', type=float, default=0.1, help='gamma to multiply each lr step')
@@ -48,6 +48,7 @@ if __name__ == '__main__':
     save_all_py_files()
 
     coord2vec = Coord2Vec(builder, n_channels=3, embedding_dim=opt.embedding_size, lr=opt.start_lr,
-                          lr_steps=opt.lr_steps, lr_gamma=opt.lr_gamma, cnn_model=load_architecture(opt.arch))
+                          lr_steps=opt.lr_steps, lr_gamma=opt.lr_gamma, cnn_model=load_architecture(opt.arch),
+                          model_save_path=SAVED_MODEL_DIR)
     coord2vec.fit(train_dataset, val_dataset, epochs=opt.nepoch, batch_size=opt.batch_size,
                   evaluate_every=opt.val_interval, save_every=opt.save_interval)
