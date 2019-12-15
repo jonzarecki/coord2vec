@@ -233,7 +233,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
                 add_metrics_to_tensorboard(metrics, writer, self.feature_names, global_step, log_str="validation")
                 # add_embedding_visualization(writer, metrics, global_step)
             if global_step % save_every == 0:
-                self.save_trained_model(global_step)
+                self.save_trained_model(f"{self.model_save_path}/{global_step}_model.pth")
 
         trainer.run(train_data_loader, max_epochs=epochs)
 
