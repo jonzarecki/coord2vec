@@ -19,8 +19,8 @@ PROJ_LONG_TERM_DIR = os.path.join(LONG_TERM_DIR, "coord2vec")
 DATA_LONG_TERM_DIR = os.path.join(LONG_TERM_DIR, "data")
 CACHE_DIR = os.path.join(DATA_LONG_TERM_DIR, "coord2vec_data")
 
-DATA_NAME = "build_road_park_multi_with_norm"
-# DATA_NAME = 'build_park_road_partial_norm'
+# DATA_NAME = "build_road_park_multi_with_norm"
+DATA_NAME = 'build_park_road_partial_norm'
 
 EXPR_NAME = f'{DATA_NAME}_norm_resnet34'
 TEST_CACHE_DIR = os.path.join(CACHE_DIR, "test_dir")
@@ -42,10 +42,10 @@ def get_builder():
         house_price_builder_partial
     global builder_name
 
-    builder_name = "house_price_builder"
+    builder_name = "house_price_builder_partial"
     print(f"working with {builder_name}")
 
-    return house_price_builder
+    return house_price_builder_partial
 
 def update_params(opt):
     global TENSORBOARD_DIR, CURRENT_EXPR_DIR, SAVED_MODEL_DIR, TMP_EXPR_FILES_DIR

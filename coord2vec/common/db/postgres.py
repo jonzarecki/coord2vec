@@ -58,4 +58,5 @@ def save_gdf_to_temp_table_postgres(gdf: GeoDataFrame, eng: sa.engine.Engine) ->
     gdf.to_sql(tbl_name, eng, if_exists='replace', index=False,
                         dtype={'geom': Geography('POINT', srid=4326)})
     eng.execute(f"create index {tbl_name}_geom_idx on {tbl_name} using gist (geom);")
+    # TODO: add buffer column and build index on it.
     return tbl_name
