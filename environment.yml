@@ -55,6 +55,8 @@ dependencies:
 - flask
 - bokeh
 - holoviews
+- panel  # To run in jupyterLab run:  `jupyter labextension install @pyviz/jupyterlab_pyviz`
+
 
 - pip:
     - nbclean

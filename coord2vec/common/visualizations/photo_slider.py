@@ -49,11 +49,12 @@ def _save_tile_images_to_local_path(dataset: TileFeaturesDataset, max_photos=Non
         a_img_p, b_img_p, c_img_p = f'pics/{i}-A.png', f'pics/{i}-B.png', f'pics/{i}-C.png'
 
         def save_to_png(img_channel, p):
-            rgbArray = np.zeros((224, 224, 3), 'uint8')
-            rgbArray[..., 0] = img_channel.numpy() * 255
-            rgbArray[..., 0] = img_channel.numpy() * 255
-            rgbArray[..., 2] = img_channel.numpy() * 255
-            Image.fromarray(rgbArray).save(p)
+            data = np.random.randint(5, size=(224, 224), dtype=np.uint8)
+
+            data[...] = img_channel.numpy() * 255
+            # rgbArray[..., 0] = img_channel.numpy() * 255
+            # rgbArray[..., 2] = img_channel.numpy() * 255
+            Image.fromarray(data).save(p)
 
         save_to_png(img_a, a_img_p)
         save_to_png(img_b, b_img_p)
