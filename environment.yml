@@ -14,7 +14,7 @@ dependencies:
 - pip
 - scikit-learn
 - scikit-image
-- h2o  # install via conda install -c h2oai h2o
+- h2o  # from h2oai channel
 - pytest
 - argparse
 
@@ -69,3 +69,6 @@ dependencies:
     - tb-nightly  # for tensorboard
     - openrouteservice
     - xlrd  # missing from docker
+
+    - xgboost  # region-encoder
+    - query

@@ -1,0 +1,234 @@
+name: region_encoder
+channels:
+- conda-forge
+- defaults
+
+dependencies:
+# Core scientific python
+- numpy
+- matplotlib
+- python>=3.6
+- seaborn
+- pip
+- scikit-learn
+- scikit-image
+- h2o  # install via conda install -c h2oai h2o
+- pytest
+
+# Deep Learning
+- pytorch
+- torchvision
+- cudatoolkit
+
+
+# From requirements.txt
+- libcxxabi
+- libgfortran
+- libiconv
+- mkl
+- readline
+- sqlite
+- tk
+- unixodbc
+- yaml
+- zlib
+- hdf5
+- libcxx
+- libpng
+- libprotobuf
+- libtiff
+- libxml2
+- openssl
+- qt
+- curl
+- freetype
+- geos
+- libxslt
+- python
+- alabaster
+- asn1crypto
+- backports
+- beautifulsoup4
+- bitarray
+- boto
+- bz2file
+- chardet
+- click
+- cloudpickle
+- colorama
+- contextlib2
+- cython
+- decorator
+- docutils
+- entrypoints
+- et_xmlfile
+- fastcache
+- greenlet
+- heapdict
+- idna
+- imagesize
+- ipython_genutils
+- itsdangerous
+- jdcal
+- jedi
+- jmespath
+- jsonschema
+- lazy
+- llvmlite
+- locket
+- lxml
+- mistune
+- mkl
+- nose
+- numpy
+- olefile
+- pandocfilters
+- path.py
+- pep8
+- ply
+- psutil
+- ptyprocess
+- py
+- pycosat
+- pycparser
+- pycrypto
+- pycurl
+- pyflakes
+
+- pygments
+- pyodbc
+- pyparsing
+- pytz
+- pyyaml
+- pyzmq
+- qtpy
+- rope
+- ruamel_yaml
+- setuptools
+- simplegeneric
+- sip
+- six
+- snowballstemmer
+- sortedcontainers
+- sqlalchemy
+- tblib
+- testpath
+- toolz
+- tornado
+- unicodecsv
+- wcwidth
+- werkzeug
+- wheel
+- wrapt
+- xlrd
+- xlsxwriter
+- xlwt
+- astroid
+- astropy
+- babel
+- bottleneck
+- cffi
+- clyent
+- cycler
+- cytoolz
+- get_terminal_size
+- gevent
+- h5py
+- html5lib
+- isort
+- jinja2
+- networkx
+- nltk
+- numba
+- numexpr
+- openpyxl
+- packaging
+- partd
+- pathlib2
+- patsy
+- pexpect
+- pickleshare
+- pillow
+- pip
+- prompt_toolkit
+- protobuf
+- pyqt
+- pytest
+- python
+- pywavelets
+- qtawesome
+- scipy
+- shapely
+- singledispatch
+- sortedcollections
+- sympy
+- terminado
+- traitlets
+- zict
+- anaconda
+- bleach
+- bokeh
+- botocore
+- cryptography
+- datashape
+- pandas
+- pylint
+- pytables
+- sphinx
+- anaconda
+- dask
+- descartes
+- numpydoc
+- odo
+- pyopenssl
+- s3transfer
+- statsmodels
+- anaconda
+- blaze
+- boto3
+- distributed
+- qtconsole
+- smart_open
+- gensim
+- spyder
+
+# Spatial packages
+#- rasterstats
+- geopy
+#- cartopy
+- geoalchemy2
+- geopandas
+#- rasterio
+#- contextily
+#- pysal
+- pyproj
+- folium
+- gdal
+- libgdal
+#- kealib
+#- geocoder
+- geojson
+- psycopg2
+
+# Jupyter Environment
+- autopep8
+- notebook
+- ipython
+- jupyter_contrib_nbextensions
+- jupyterlab
+- jupyter
+- nb_conda
+
+# Web app / visualization
+- flask
+- bokeh
+- holoviews
+
+- pip:
+    - nbclean
+    - imageio
+    - tqdm
+    - pathos
+    - torchsummary
+    - argparse
+    - xgboost
