@@ -53,6 +53,8 @@ def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coor
         counter = 0
         while entropy < entropy_threshold:
             counter += 1
+            if counter > 100:
+                raise AssertionError("unable to build high entropy image")
             coord = sample_coordinate_in_range(*coord_range)
             ext = build_tile_extent(coord, radius_in_meters=HALF_TILE_LENGTH)
             image = render_multi_channel(s, ext)

@@ -27,17 +27,21 @@ class TestOsmFeatures(unittest.TestCase):
         cls.seattle_gdf = GeoDataFrame(pd.DataFrame({'geom': [seattle]}), geometry='geom')
 
         # check if Israel osm docker is up
-        cls.israel_osm = cls.is_israel_up()
+        cls.israel_osm = cls.is_osm_up(cls.gdf)
 
-        # beijing class variables
-        beijing_building = wkt.loads('POINT (39.9207 116.39766)')
-        cls.beijing_gdf = GeoDataFrame(pd.DataFrame({'geom': [beijing_building]}), geometry='geom')
+        cls.beijing_gdf = GeoDataFrame(pd.DataFrame({'geom': [wkt.loads('POINT (39.9207 116.3976)')]}), geometry='geom')
+        cls.china_osm = cls.is_osm_up(cls.beijing_gdf)
 
-    @classmethod
-    def is_israel_up(cls):
-        hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'number_of', object_name='hospital', max_radius=2 * 1000)
-        res = hospital_area_feat.extract(cls.gdf)
-        return res.iloc[0][hospital_area_feat.feature_names[0]] > 0
+        cls.manhattan_gdf = GeoDataFrame(pd.DataFrame({'geom': [wkt.loads('POINT (40.7612 -73.9826)')]}), geometry='geom')
+        cls.na_osm = cls.is_osm_up(cls.manhattan_gdf)
+
+        assert any([cls.israel_osm, cls.china_osm, cls.na_osm])
+
+    @staticmethod
+    def is_osm_up(gdf):
+        building_area_feat = OsmPolygonFeature(BUILDING, 'area_of', object_name='building', max_radius=2 * 1000)
+        res = building_area_feat.extract(gdf)
+        return res[building_area_feat.feature_names[0]].iloc[0] > 0
 
     def test_beit_lewinstein_hospital_nearest_in_raanana(self):
         if not self.israel_osm:
@@ -104,7 +108,6 @@ class TestOsmFeatures(unittest.TestCase):
         self.assertEqual(res[nearest_hospital_feat.feature_names[0]].iloc[0], 1000)
 
     def test_nowhere_has_zero_hospital_area(self):
-        # TODO: check why some objects return NULL when applied with ST_Area
         hospital_area_feat = OsmPolygonFeature(HOSPITAL, 'area_of', object_name='hospital', max_radius=2 * 1000)
         res = hospital_area_feat.extract(self.nowhere_gdf)
         self.assertEqual(res[hospital_area_feat.feature_names[0]].iloc[0], 0)
@@ -121,7 +124,15 @@ class TestOsmFeatures(unittest.TestCase):
 
     ## Beijing tests
     def test_beijing_buildings_area(self):
-        if self.israel_osm:
+        if not self.china_osm:
+            return
+        building_area_feat = OsmPolygonFeature(BUILDING, 'area_of', object_name='building', max_radius=2 * 1000)
+        res = building_area_feat.extract(self.beijing_gdf)
+        self.assertGreater(res[building_area_feat.feature_names[0]].iloc[0], 0)
+
+    ## NA tests
+    def test_na_buildings_area(self):
+        if not self.na_osm:
             return
         building_area_feat = OsmPolygonFeature(BUILDING, 'area_of', object_name='building', max_radius=2 * 1000)
         res = building_area_feat.extract(self.beijing_gdf)

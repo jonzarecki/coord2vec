@@ -10,7 +10,7 @@ services:
       - 15432:5432
     volumes: # Which Bind mounts or Volumes to mount source:target
       - osm-data-postgis:/var/lib/postgresql/10/main
-      - ./data.osm.pbf:/data.osm.pbf
+      - /media/yonatanz/yz/data/osm/north-america-latest.osm.pbf:/data.osm.pbf
     networks:
       - postgis_network
 
@@ -28,7 +28,7 @@ services:
       - 8101:80
     volumes: # Which Bind mounts or Volumes to mount source:target
       - osm-data-tile1:/var/lib/postgresql/10/main
-      - ./data.osm.pbf:/data.osm.pbf
+      - /media/yonatanz/yz/data/osm/north-america-latest.osm.pbf:/data.osm.pbf
     networks:
       - tile_network1
   osm-tile-road:
@@ -46,7 +46,7 @@ services:
       - 8102:80
     volumes: # Which Bind mounts or Volumes to mount source:target
       - osm-data-tile2:/var/lib/postgresql/10/main
-      - ./data.osm.pbf:/data.osm.pbf
+      - /media/yonatanz/yz/data/osm/north-america-latest.osm.pbf:/data.osm.pbf
     networks:
       - tile_network2
   osm-tile-landcover:
@@ -64,7 +64,7 @@ services:
       - 8103:80
     volumes: # Which Bind mounts or Volumes to mount source:target
       - osm-data-tile3:/var/lib/postgresql/10/main
-      - ./data.osm.pbf:/data.osm.pbf
+      - /media/yonatanz/yz/data/osm/north-america-latest.osm.pbf:/data.osm.pbf
     networks:
       - tile_network3
   osm-tile-normal:
@@ -77,7 +77,7 @@ services:
       - 8104:80
     volumes: # Which Bind mounts or Volumes to mount source:target
       - osm-data-tile4:/var/lib/postgresql/10/main
-      - ./data.osm.pbf:/data.osm.pbf
+      - /media/yonatanz/yz/data/osm/north-america-latest.osm.pbf:/data.osm.pbf
     networks:
       - tile_network4
 volumes:
