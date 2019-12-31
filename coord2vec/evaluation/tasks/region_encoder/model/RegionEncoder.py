@@ -4,14 +4,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from region_encoder.model.AutoEncoder import AutoEncoder
-from region_encoder.model.GraphConvNet import GCN
-from region_encoder.model.discriminator import DiscriminatorMLP
-from region_encoder.config import get_config
+from coord2vec.evaluation.tasks.region_encoder.model import AutoEncoder
+from coord2vec.evaluation.tasks.region_encoder.model import GCN
+from coord2vec.evaluation.tasks.region_encoder.model import DiscriminatorMLP
+from coord2vec.evaluation.tasks.region_encoder.config import get_config
 import numpy as np
 import matplotlib.pyplot as plt
-from region_encoder.grid.create_grid import RegionGrid
-from region_encoder.model.utils import write_embeddings
+from coord2vec.evaluation.tasks.region_encoder.grid.create_grid import RegionGrid
+from coord2vec.evaluation.tasks.region_encoder.model.utils import write_embeddings
 
 class RegionEncoder(nn.Module):
     """

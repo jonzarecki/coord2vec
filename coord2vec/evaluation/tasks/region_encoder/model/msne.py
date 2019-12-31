@@ -1,10 +1,9 @@
-from sklearn.decomposition import NMF
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from region_encoder.config import get_config
-from region_encoder.grid.create_grid import RegionGrid
-from region_encoder.model.utils import write_embeddings
+from coord2vec.evaluation.tasks.region_encoder.config import get_config
+from coord2vec.evaluation.tasks.region_encoder.grid.create_grid import RegionGrid
+from coord2vec.evaluation.tasks.region_encoder.model.utils import write_embeddings
 import numpy as np
 from geopy.distance import distance
 import pickle
@@ -13,8 +12,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from sklearn.neighbors import NearestNeighbors
-
 
 
 class MSNEAutoEncoder(nn.Module):

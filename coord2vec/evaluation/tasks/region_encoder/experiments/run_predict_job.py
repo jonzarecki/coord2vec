@@ -1,15 +1,21 @@
 import sys
 import os
+
+
+import random, numpy
+random.seed(1554); numpy.random.seed(42)  # set random seeds
+
 import numpy as np
 import pandas as pd
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from region_encoder.config import get_config, REGION_ENCODER_DIR_PATH
-from region_encoder.grid.create_grid import RegionGrid
+from coord2vec.evaluation.tasks.region_encoder.config import get_config, REGION_ENCODER_DIR_PATH
+from coord2vec.evaluation.tasks.region_encoder.grid.create_grid import RegionGrid
 from sklearn.model_selection import KFold
-from region_encoder.experiments.prediction import HousePriceModel, TrafficVolumeModel, CheckinModel
+from coord2vec.evaluation.tasks.region_encoder.experiments.prediction import HousePriceModel, TrafficVolumeModel, CheckinModel
 
 
-
+import random, numpy
+random.seed(1554); numpy.random.seed(42)  # set random seeds
 
 
 if len(sys.argv) == 1:

@@ -2,9 +2,8 @@ import unittest
 
 import numpy
 
-from region_encoder.config import get_config
-from region_encoder.grid.create_grid import RegionGrid
-from image.image_retrieval import get_images_for_all_no_marker
+from coord2vec.evaluation.tasks.region_encoder.config import get_config
+from coord2vec.evaluation.tasks.region_encoder.grid.create_grid import RegionGrid
 
 c = get_config()
 TEST_REGION_GRID = RegionGrid(50, poi_file=open(c["poi_file"], 'rb'), load_imgs=False)

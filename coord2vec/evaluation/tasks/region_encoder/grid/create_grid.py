@@ -5,6 +5,7 @@ import random
 import sys
 # this should add files properly
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__))))
 from config import get_config
 import numpy
 import pandas

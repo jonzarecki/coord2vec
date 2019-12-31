@@ -2,9 +2,9 @@ from sklearn.decomposition import NMF
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from region_encoder.config import get_config
-from region_encoder.grid.create_grid import RegionGrid
-from region_encoder.model.utils import write_embeddings
+from coord2vec.evaluation.tasks.region_encoder.config import get_config
+from coord2vec.evaluation.tasks.region_encoder.grid.create_grid import RegionGrid
+from coord2vec.evaluation.tasks.region_encoder.model.utils import write_embeddings
 
 if len(sys.argv) == 1:
     raise Exception("No input. Input must be 'A' (adjacency) or 'W' (weighted)")

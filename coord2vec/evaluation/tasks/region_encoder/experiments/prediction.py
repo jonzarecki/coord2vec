@@ -2,29 +2,25 @@ import sys
 import os
 import pandas as pd
 import numpy as np
-
-
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import xgboost
 from sklearn.metrics import mean_squared_error, mean_absolute_error
-from region_encoder.model.utils import load_embedding
+from coord2vec.evaluation.tasks.region_encoder.model.utils import load_embedding
 from sklearn.linear_model import Lasso, Ridge
 from sklearn.ensemble import RandomForestRegressor
-from region_encoder.experiments.mlp import MLP
-import torch
 from sklearn.neural_network import MLPRegressor
-from region_encoder.experiments.metrics import *
-from sklearn.preprocessing import normalize, scale
+from sklearn.preprocessing import scale
 
 class PredictionModel(object):
-    def __init__(self, idx_coor_map, config, n_epochs, embedding=None, second_embedding=None, third_embedding=None, builder=None):
+    def __init__(self, idx_coor_map, config, n_epochs, embedding=None, second_embedding=None, third_embedding=None,
+                 extract_coords_features=None):
         self.idx_coor_map = idx_coor_map
         self.config = config
         self.n_epochs = n_epochs
         self.embedding = embedding
         self.second_embedding = second_embedding
         self.third_embedding = third_embedding
-        self.builder = builder
+        self.extract_coords_features = extract_coords_features
         self.param = {
             'objective': 'reg:linear',
             'eta': 0.02,
@@ -69,7 +65,6 @@ class PredictionModel(object):
 
     def train_eval(self, train_idx, test_idx, model='xgb', random_state=None):
 
-        # TODO: Fix random seed for all regressors?
         if model == 'xgb':
             trn = xgboost.DMatrix(self.X[train_idx, :], label=self.y[train_idx])
             tst = xgboost.DMatrix(self.X[test_idx, :], label=self.y[test_idx])
@@ -91,7 +86,7 @@ class PredictionModel(object):
 
         elif model == 'rf':
 
-            model = RandomForestRegressor(random_state=random_state)
+            model = RandomForestRegressor(n_estimators=10, random_state=random_state)
             model.fit(X=self.X[train_idx, :], y=self.y[train_idx])
             pred = model.predict(X=self.X[test_idx])
 
@@ -134,8 +129,8 @@ class CheckinModel(PredictionModel):
 
 
 class HousePriceModel(PredictionModel):
-    def __init__(self, idx_coor_map, config, n_epochs, embedding=None, second_embedding=None, third_embedding=None, builder=None):
-        super(HousePriceModel, self).__init__(idx_coor_map, config, n_epochs, embedding, second_embedding, third_embedding, builder)
+    def __init__(self, idx_coor_map, config, n_epochs, embedding=None, second_embedding=None, third_embedding=None, extract_coords_features=None):
+        super(HousePriceModel, self).__init__(idx_coor_map, config, n_epochs, embedding, second_embedding, third_embedding, extract_coords_features)
 
     def get_features(self, input_data):
         features = input_data[['numBedrooms', 'numBathrooms', 'sqft', 'region_coor', 'priceSqft', 'lat', 'lon']]
@@ -146,14 +141,18 @@ class HousePriceModel(PredictionModel):
             embed_df = pd.DataFrame(embed, index=self.idx_coor_map.values())
             embed_features = pd.merge(features, embed_df, left_on='region_coor', right_index=True, how='inner')
             embed_features.drop('region_coor', axis=1, inplace=True)
-
             X = embed_features.drop(['priceSqft','lat','lon'], axis=1).values
             y = embed_features['priceSqft'].values
 
-        elif self.builder is not None:
-            coords = features[['lon', 'lat']]
-        else:
-            embed = load_embedding(self.config['embedding_file'])
+        elif self.extract_coords_features is not None:  # coord2vec
+            coords = [tuple(x) for x in features[['lon', 'lat']].values]
+            coord_features = self.extract_coords_features(coords)
+            embed_features = pd.concat([features, coord_features], axis=1)
+            keepcols = [str(c) for c in list(embed_features.columns) if ('region_coor' not in str(c) and 'priceSqft' not in str(c))]
+            X = embed_features[keepcols].values
+            y = embed_features['priceSqft'].values
+        else:  # naive
+            embed = load_embedding(self.config['embedding_file'])  # region-encoder encodings
             embed_df = pd.DataFrame(embed, index=self.idx_coor_map.values())
             embed_features = pd.merge(features, embed_df, left_on='region_coor', right_index=True, how='inner')
             embed_features = pd.get_dummies(embed_features, columns=['region_coor'])

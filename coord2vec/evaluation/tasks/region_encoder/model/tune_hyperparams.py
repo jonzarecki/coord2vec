@@ -1,10 +1,10 @@
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from region_encoder.config import get_config
-from region_encoder.grid.create_grid import RegionGrid
-from region_encoder.model.RegionEncoder import RegionEncoder
-from region_encoder.model.utils import write_embeddings
+from coord2vec.evaluation.tasks.region_encoder.config import get_config
+from coord2vec.evaluation.tasks.region_encoder.grid.create_grid import RegionGrid
+from coord2vec.evaluation.tasks.region_encoder.model import RegionEncoder
+from coord2vec.evaluation.tasks.region_encoder.model.utils import write_embeddings
 import torch
 import numpy as np
 
@@ -55,16 +55,16 @@ for i in range(N_RUNS):
 
 
     mod = RegionEncoder(n_nodes=n_nodes,
-                            n_nodal_features=n_nodal_features,
-                            h_dim_graph=h_dim_graph,
-                            h_dim_img=h_dim_img,
-                            lambda_ae=lambda_ae,
-                            lambda_edge=lambda_edge,
-                            lambda_g=lambda_g,
-                            neg_samples_gcn=neg_samples_gcn,
-                            h_dim_size=h_dim_size,
-                            img_dims=img_dims,
-                            lambda_weight_decay=lambda_weight_decay)
+                        n_nodal_features=n_nodal_features,
+                        h_dim_graph=h_dim_graph,
+                        h_dim_img=h_dim_img,
+                        lambda_ae=lambda_ae,
+                        lambda_edge=lambda_edge,
+                        lambda_g=lambda_g,
+                        neg_samples_gcn=neg_samples_gcn,
+                        h_dim_size=h_dim_size,
+                        img_dims=img_dims,
+                        lambda_weight_decay=lambda_weight_decay)
     mod.run_train_job(region_grid, epochs=epochs, lr=learning_rate, tol_order=3)
 
     if torch.cuda.is_available():

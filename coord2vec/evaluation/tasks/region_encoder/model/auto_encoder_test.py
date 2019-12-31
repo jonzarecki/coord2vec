@@ -1,14 +1,11 @@
 import os
 import sys
-from collections import OrderedDict
 import torch.nn.functional as F
 import torch
 import torch.nn as nn
 import torch.optim as optim
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from region_encoder.config import get_config
-from region_encoder.model.utils import write_embeddings
-
+from coord2vec.evaluation.tasks.region_encoder.config import get_config
 
 
 class AutoEncoder(nn.Module):
@@ -146,7 +143,7 @@ if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
     import numpy as np
-    from region_encoder.grid.create_grid import RegionGrid
+    from coord2vec.evaluation.tasks.region_encoder.grid.create_grid import RegionGrid
 
 
     # functions to show an image

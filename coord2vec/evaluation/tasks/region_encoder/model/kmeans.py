@@ -4,7 +4,7 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config import get_config
-from grid.create_grid import RegionGrid
+from grid.create_grid.create_grid import RegionGrid
 from model.utils import write_embeddings
 
 c = get_config()

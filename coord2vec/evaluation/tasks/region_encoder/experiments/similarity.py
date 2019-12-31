@@ -2,13 +2,13 @@ import sys
 import os
 import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from region_encoder.config import get_config
-from region_encoder.grid.create_grid import RegionGrid
+from coord2vec.evaluation.tasks.region_encoder.config import get_config
+from coord2vec.evaluation.tasks.region_encoder.grid.create_grid import RegionGrid
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import pandas as pd
 from sklearn.neighbors import NearestNeighbors
-from region_encoder.model.utils import load_embedding
+from coord2vec.evaluation.tasks.region_encoder.model.utils import load_embedding
 
 def get_knn(X, k, idx_coor_map):
     nbrs = NearestNeighbors(n_neighbors=k, algorithm='ball_tree')

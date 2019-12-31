@@ -1,12 +1,12 @@
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from region_encoder.model.RegionEncoder import RegionEncoder
-from region_encoder.grid.create_grid import RegionGrid, get_images_for_grid
-from region_encoder.config import get_config
+from coord2vec.evaluation.tasks.region_encoder.model import RegionEncoder
+from coord2vec.evaluation.tasks.region_encoder.grid.create_grid import RegionGrid, get_images_for_grid
+from coord2vec.evaluation.tasks.region_encoder.config import get_config
 import pickle
 import torch
-from region_encoder.model.utils import write_embeddings
+from coord2vec.evaluation.tasks.region_encoder.model.utils import write_embeddings
 
 # Main script if region area, or grid configuration changes
 

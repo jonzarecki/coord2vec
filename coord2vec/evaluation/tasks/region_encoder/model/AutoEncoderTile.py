@@ -8,8 +8,8 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from region_encoder.config import get_config
-from region_encoder.model.utils import write_embeddings
+from coord2vec.evaluation.tasks.region_encoder.config import get_config
+from coord2vec.evaluation.tasks.region_encoder.model.utils import write_embeddings
 
 
 class ViewEncode(nn.Module):
@@ -142,7 +142,7 @@ class AutoEncoder(nn.Module):
 if __name__ == "__main__":
 
     import numpy as np
-    from region_encoder.grid.create_grid import RegionGrid
+    from coord2vec.evaluation.tasks.region_encoder.grid.create_grid import RegionGrid
 
     if len(sys.argv) > 1:
         epochs = int(sys.argv[1])
