@@ -1,11 +1,11 @@
-FROM ubuntu:18.04
+FROM ubuntu:19.04
 
 # Based on
 # https://switch2osm.org/manually-building-a-tile-server-18-04-lts/
 
 # Install dependencies
 RUN apt-get update
-RUN apt-get install -y libboost-all-dev git-core tar unzip wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c0-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev apache2 apache2-dev libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsg
+RUN apt-get install -y libboost-all-dev git-core tar unzip wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev apache2 apache2-dev libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsg
 
 # Set up environment and renderer user
 ENV TZ=UTC
@@ -59,43 +59,43 @@ USER renderer
 RUN carto -v
 RUN carto project.mml > mapnik.xml
 
-# Load shapefiles
-WORKDIR /home/renderer/src/openstreetmap-carto
-RUN scripts/get-shapefiles.py
-
-# Install fonts
-USER root
-RUN apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted ttf-unifont
-USER renderer
-
-# Configure renderd
-USER root
-RUN sed -i 's/renderaccount/renderer/g' /usr/local/etc/renderd.conf
-RUN sed -i 's/hot/tile/g' /usr/local/etc/renderd.conf
-USER renderer
-
-# Configure Apache
-USER root
-RUN mkdir /var/lib/mod_tile
-RUN chown renderer /var/lib/mod_tile
-RUN mkdir /var/run/renderd
-RUN chown renderer /var/run/renderd
-RUN echo "LoadModule tile_module /usr/lib/apache2/modules/mod_tile.so" >> /etc/apache2/conf-available/mod_tile.conf
-RUN a2enconf mod_tile
-COPY apache.conf /etc/apache2/sites-available/000-default.conf
-USER renderer
+## Load shapefiles
+#WORKDIR /home/renderer/src/openstreetmap-carto
+#RUN scripts/get-shapefiles.py
+#
+## Install fonts
+#USER root
+#RUN apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted ttf-unifont
+#USER renderer
+#
+## Configure renderd
+#USER root
+#RUN sed -i 's/renderaccount/renderer/g' /usr/local/etc/renderd.conf
+#RUN sed -i 's/hot/tile/g' /usr/local/etc/renderd.conf
+#USER renderer
+#
+## Configure Apache
+#USER root
+#RUN mkdir /var/lib/mod_tile
+#RUN chown renderer /var/lib/mod_tile
+#RUN mkdir /var/run/renderd
+#RUN chown renderer /var/run/renderd
+#RUN echo "LoadModule tile_module /usr/lib/apache2/modules/mod_tile.so" >> /etc/apache2/conf-available/mod_tile.conf
+#RUN a2enconf mod_tile
+#COPY apache.conf /etc/apache2/sites-available/000-default.conf
+#USER renderer
 
 # Install PostgreSQL
 USER root
-RUN apt-get install -y postgresql postgresql-contrib postgis postgresql-10-postgis-2.4
+RUN apt-get install -y postgresql postgresql-contrib postgis postgresql-11-postgis-2.5
 USER renderer
 
 # Change conf files to make postgres accessible from the outside
 USER root
-COPY postgresql.conf /etc/postgresql/10/main/postgresql.conf
-RUN echo 'host    all             all             0.0.0.0/0            trust' >> /etc/postgresql/10/main/pg_hba.conf
-RUN sed -i -e 's/localhost/*/g' /etc/postgresql/10/main/postgresql.conf
-RUN sed -i -e 's/#listen_addresses/listen_addresses/g' /etc/postgresql/10/main/postgresql.conf
+COPY postgresql.conf /etc/postgresql/11/main/postgresql.conf
+RUN echo 'host    all             all             0.0.0.0/0            trust' >> /etc/postgresql/11/main/pg_hba.conf
+RUN sed -i -e 's/localhost/*/g' /etc/postgresql/11/main/postgresql.conf
+RUN sed -i -e 's/#listen_addresses/listen_addresses/g' /etc/postgresql/11/main/postgresql.conf
 
 
 RUN apt-get install -y systemd curl
