@@ -12,7 +12,7 @@ if [ "$1" = "import" ]; then
     sudo -u postgres psql -d gis -c "ALTER TABLE spatial_ref_sys OWNER TO renderer;"
 
     # Import data
-    sudo -u renderer osm2pgsql -d gis --slim -G --hstore --multi-geometry \
+    sudo -u renderer osm2pgsql -l -d gis --slim -G --hstore --multi-geometry \
       --tag-transform-script /home/renderer/src/openstreetmap-carto/openstreetmap-carto.lua --number-processes 16 -S /home/renderer/src/openstreetmap-carto/openstreetmap-carto.style \
       /data.osm.pbf
     service postgresql start
