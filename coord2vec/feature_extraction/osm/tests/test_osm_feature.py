@@ -32,7 +32,7 @@ class TestOsmFeatures(unittest.TestCase):
         cls.beijing_gdf = GeoDataFrame(pd.DataFrame({'geom': [wkt.loads('POINT (39.9207 116.3976)')]}), geometry='geom')
         cls.china_osm = cls.is_osm_up(cls.beijing_gdf)
 
-        cls.manhattan_gdf = GeoDataFrame(pd.DataFrame({'geom': [wkt.loads('POINT (40.7612 -73.9826)')]}), geometry='geom')
+        cls.manhattan_gdf = GeoDataFrame(pd.DataFrame({'geom': [wkt.loads('POINT (-73.9826 40.7612)')]}), geometry='geom')
         cls.na_osm = cls.is_osm_up(cls.manhattan_gdf)
 
         assert any([cls.israel_osm, cls.china_osm, cls.na_osm])
@@ -135,7 +135,7 @@ class TestOsmFeatures(unittest.TestCase):
         if not self.na_osm:
             return
         building_area_feat = OsmPolygonFeature(BUILDING, 'area_of', object_name='building', max_radius=2 * 1000)
-        res = building_area_feat.extract(self.beijing_gdf)
+        res = building_area_feat.extract(self.manhattan_gdf)
         self.assertGreater(res[building_area_feat.feature_names[0]].iloc[0], 0)
 
 

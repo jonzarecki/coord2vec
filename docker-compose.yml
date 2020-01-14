@@ -1,11 +1,11 @@
 version: '2.2' # Docker-compose yml version for docker compose extract_coords_features
 services:
   osm-postgis-server:  # also builds the postgres data in "osm-data"
-    image: osm-postgis-server:0.1
+    image: osm-postgis-server:1.1
     command: ["import"]
     container_name: osm-postgis-server
     environment: # env variables
-      - THREADS=24
+      - THREADS=24  # affects RAM usage
     ports: # Ports we wish to expose source:target
       - 15432:5432
     volumes: # Which Bind mounts or Volumes to mount source:target
@@ -23,7 +23,7 @@ services:
 #      osm-postgis-server:
 #        condition: service_healthy
     environment: # env variables
-      - THREADS=24
+      - THREADS=12
     ports: # Ports we wish to expose source:target
       - 8101:80
     volumes: # Which Bind mounts or Volumes to mount source:target
@@ -41,7 +41,7 @@ services:
 #      osm-tile-building:
 #        condition: service_healthy
     environment: # env variables
-      - THREADS=24
+      - THREADS=12
     ports: # Ports we wish to expose source:target
       - 8102:80
     volumes: # Which Bind mounts or Volumes to mount source:target
@@ -59,7 +59,7 @@ services:
 #      osm-tile-road:
 #        condition: service_healthy
     environment: # env variables
-      - THREADS=24
+      - THREADS=12
     ports: # Ports we wish to expose source:target
       - 8103:80
     volumes: # Which Bind mounts or Volumes to mount source:target
@@ -71,8 +71,13 @@ services:
     image: osm-tile-server:0.1
     command: import_run project.mml
     container_name: osm-tile-normal
+#    depends_on:
+#      osm-postgis-server:
+#        condition: service_healthy
+#      osm-tile-landcover:
+#        condition: service_healthy
     environment: # env variables
-      - THREADS=24
+      - THREADS=12
     ports: # Ports we wish to expose source:target
       - 8104:80
     volumes: # Which Bind mounts or Volumes to mount source:target
