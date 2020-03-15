@@ -1,11 +1,11 @@
-FROM ubuntu:19.04
+FROM ubuntu:18.04
 
 # Based on
 # https://switch2osm.org/manually-building-a-tile-server-18-04-lts/
 
 # Install dependencies
 RUN apt-get update
-RUN apt-get install -y libboost-all-dev git-core tar unzip wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsg
+RUN apt-get install -y libboost-all-dev git-core tar unzip wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c0-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev apache2 apache2-dev libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsg
 
 # Set up environment and renderer user
 ENV TZ=UTC
@@ -29,34 +29,83 @@ USER root
 RUN make install
 USER renderer
 
-# Configure stylesheet (used in tag transformation)
+# Install and test Mapnik
+USER root
+RUN apt-get -y install autoconf apache2-dev libtool libxml2-dev libbz2-dev libgeos-dev libgeos++-dev libproj-dev gdal-bin libmapnik-dev mapnik-utils python-mapnik
+USER renderer
+RUN python -c 'import mapnik'
+
+# Install mod_tile and renderd
+WORKDIR /home/renderer/src
+RUN git clone -b switch2osm https://github.com/SomeoneElseOSM/mod_tile.git
+WORKDIR /home/renderer/src/mod_tile
+RUN ./autogen.sh
+RUN ./configure
+RUN make
+USER root
+RUN make install
+RUN make install-mod_tile
+RUN ldconfig
+USER renderer
+
+# Configure stylesheet
 WORKDIR /home/renderer/src
 RUN git clone https://github.com/jonzarecki/openstreetmap-carto.git
+WORKDIR /home/renderer/src/openstreetmap-carto
+USER root
+RUN apt-get install -y npm nodejs
+RUN npm install -g carto
+USER renderer
+RUN carto -v
+RUN carto project.mml > mapnik.xml
+
+# Load shapefiles
+WORKDIR /home/renderer/src/openstreetmap-carto
+RUN scripts/get-shapefiles.py
+
+# Install fonts
+USER root
+RUN apt-get install -y fonts-noto-cjk fonts-noto-hinted fonts-noto-unhinted ttf-unifont
+USER renderer
+
+# Configure renderd
+USER root
+RUN sed -i 's/renderaccount/renderer/g' /usr/local/etc/renderd.conf
+RUN sed -i 's/hot/tile/g' /usr/local/etc/renderd.conf
+USER renderer
+
+# Configure Apache
+USER root
+RUN mkdir /var/lib/mod_tile
+RUN chown renderer /var/lib/mod_tile
+RUN mkdir /var/run/renderd
+RUN chown renderer /var/run/renderd
+RUN echo "LoadModule tile_module /usr/lib/apache2/modules/mod_tile.so" >> /etc/apache2/conf-available/mod_tile.conf
+RUN a2enconf mod_tile
+COPY apache.conf /etc/apache2/sites-available/000-default.conf
+USER renderer
 
 # Install PostgreSQL
 USER root
-RUN apt-get install -y postgresql postgresql-contrib postgis postgresql-11-postgis-2.5
-RUN apt-get install -y postgresql-11-pgrouting osm2pgrouting
+RUN apt-get install -y postgresql postgresql-contrib postgis postgresql-10-postgis-2.4
+RUN apt-get install -y postgresql-10-pgrouting osm2pgrouting
 USER renderer
 
-# Change conf files to make postgres accessible from the outside and fast
+# Change conf files to make postgres accessible from the outside
 USER root
-RUN echo 'host    all             all             0.0.0.0/0            trust' >> /etc/postgresql/11/main/pg_hba.conf
-RUN sed -i -e 's/localhost/*/g' /etc/postgresql/11/main/postgresql.conf
-RUN sed -i -e 's/#listen_addresses/listen_addresses/g' /etc/postgresql/11/main/postgresql.conf
+RUN echo 'host    all             all             0.0.0.0/0            trust' >> /etc/postgresql/10/main/pg_hba.conf
+RUN sed -i -e 's/localhost/*/g' /etc/postgresql/10/main/postgresql.conf
+RUN sed -i -e 's/#listen_addresses/listen_addresses/g' /etc/postgresql/10/main/postgresql.conf
 
-RUN sed -i -e 's/shared_buffers = 128MB/shared_buffers = 2GB/g' /etc/postgresql/11/main/postgresql.conf
-RUN sed -i -e 's/#work_mem = 4MB/work_mem = 10GB/g' /etc/postgresql/11/main/postgresql.conf
-RUN sed -i -e 's/#maintenance_work_mem = 64MB/maintenance_work_mem = 1GB/g' /etc/postgresql/11/main/postgresql.conf
-RUN sed -i -e 's/#max_worker_processes = 8/max_worker_processes = 100/g' /etc/postgresql/11/main/postgresql.conf
-RUN sed -i -e 's/#max_parallel_workers_per_gather = 2/max_parallel_workers_per_gather = 16/g' /etc/postgresql/11/main/postgresql.conf
-RUN sed -i -e 's/#max_parallel_workers = 8/max_parallel_workers = 50/g' /etc/postgresql/11/main/postgresql.conf
+USER renderer
 
 # Start running
 USER root
-RUN apt-get install -y sudo systemd curl
-COPY run.sh /
-HEALTHCHECK --interval=10s --timeout=1s --start-period=70s --retries=10 CMD pg_isready && cat /done || exit 1
+RUN apt-get install -y sudo
+COPY ../../../../../osm-features-docker/run.sh /
 
+HEALTHCHECK --interval=10s --timeout=1s --start-period=70s --retries=10 CMD pg_isready && cat /done || exit 1
+#ENV http_proxy=
+#ENV https_proxy=
 ENTRYPOINT ["/run.sh"]
 CMD []

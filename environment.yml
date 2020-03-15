@@ -9,7 +9,7 @@ dependencies:
 # Core scientific python
 - numpy
 - matplotlib
-- python>=3.6
+- python=3.6.*
 - seaborn
 - pip
 - scikit-learn
@@ -47,7 +47,6 @@ dependencies:
 - notebook
 - ipython
 - jupyter_contrib_nbextensions
-- jupyterlab
 - jupyter
 - nb_conda
 
@@ -55,10 +54,9 @@ dependencies:
 - flask
 - bokeh
 - holoviews
-- panel  # To run in jupyterLab run:  `jupyter labextension install @pyviz/jupyterlab_pyviz`
-- pyviz
 
 - pip:
+    - panel
     - nbclean
     - imageio
     - tqdm
@@ -68,7 +66,8 @@ dependencies:
     - torchsummary
     - tb-nightly  # for tensorboard
     - openrouteservice
-    - xlrd  # missing from docker
-
+    - xlrd
     - xgboost  # region-encoder
     - query
+    - opencv-python
+    - shap

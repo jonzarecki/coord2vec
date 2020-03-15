@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from shapely.geometry import Polygon
 
 COORD2VEC_DIR_PATH = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.dirname(COORD2VEC_DIR_PATH)
@@ -23,8 +24,8 @@ CACHE_DIR = os.path.join(DATA_LONG_TERM_DIR, "coord2vec_data")
 DATA_NAME = 'build_park_road_partial_norm'
 
 EXPR_NAME = f'{DATA_NAME}_norm_resnet34'
+DISTANCE_CACHE_DIR = os.path.join(PROJECT_ROOT, 'cache_dir')
 TEST_CACHE_DIR = os.path.join(CACHE_DIR, "test_dir")
-
 TRAIN_CACHE_DIR = os.path.join(CACHE_DIR, DATA_NAME, 'train')
 VAL_CACHE_DIR = os.path.join(CACHE_DIR, DATA_NAME, 'validation')
 
@@ -60,6 +61,12 @@ def update_params(opt):
 VAL_SAMPLE_NUM = 10_000
 TRAIN_SAMPLE_NUM = 100_000
 
+NEG_RATIO = 1.5
+TRUE_POSITIVE_RADIUS = 100
+
+IMG_WIDTH, IMG_HEIGHT = (224, 224)
+israel_range = [34.482724, 31.492354, 34.583301, 31.585196]
+SMALL_TEST_POLYGON = Polygon([])
 IMG_WIDTH, IMG_HEIGHT = (224, 224)
 israel_range = [34.482724, 31.492354, 34.583301, 31.585196]
 beijing_range = [116.205692, 39.747142, 116.632688, 40.041051]
@@ -68,3 +75,7 @@ chicago_range = [-87.6998, 41.6284, -87.5262, 41.9989]
 nyc_range = [-74.0210, 40.6994, -73.8908, 40.8293]
 ENTROPY_THRESHOLD = 1.5
 HALF_TILE_LENGTH = 100
+
+STEP_SIZE = 20
+# Oracle config
+SCORES_TABLE = 'building_scores'
