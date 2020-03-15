@@ -1,16 +1,16 @@
-version: '2.4' # Docker-compose yml version for docker compose builder
+version: '2.2' # Docker-compose yml version for docker compose extract_coords_features
 services:
   osm-postgis-server:  # also builds the postgres data in "osm-data"
-    image: osm-postgis-server:0.1
+    image: osm-postgis-server:1.1
     command: ["import"]
     container_name: osm-postgis-server
     environment: # env variables
-      - THREADS=24
+      - THREADS=24  # affects RAM usage
     ports: # Ports we wish to expose source:target
       - 15432:5432
     volumes: # Which Bind mounts or Volumes to mount source:target
       - osm-data-postgis:/var/lib/postgresql/10/main
-      - ./data.osm.pbf:/data.osm.pbf
+      - /media/yonatanz/yz/data/osm/ny_ill_isr.osm.pbf:/data.osm.pbf
     networks:
       - postgis_network
 
@@ -23,12 +23,12 @@ services:
 #      osm-postgis-server:
 #        condition: service_healthy
     environment: # env variables
-      - THREADS=24
+      - THREADS=12
     ports: # Ports we wish to expose source:target
       - 8101:80
     volumes: # Which Bind mounts or Volumes to mount source:target
       - osm-data-tile1:/var/lib/postgresql/10/main
-      - ./data.osm.pbf:/data.osm.pbf
+      - /media/yonatanz/yz/data/osm/ny_ill_isr.osm.pbf:/data.osm.pbf
     networks:
       - tile_network1
   osm-tile-road:
@@ -41,12 +41,12 @@ services:
 #      osm-tile-building:
 #        condition: service_healthy
     environment: # env variables
-      - THREADS=24
+      - THREADS=12
     ports: # Ports we wish to expose source:target
       - 8102:80
     volumes: # Which Bind mounts or Volumes to mount source:target
       - osm-data-tile2:/var/lib/postgresql/10/main
-      - ./data.osm.pbf:/data.osm.pbf
+      - /media/yonatanz/yz/data/osm/ny_ill_isr.osm.pbf:/data.osm.pbf
     networks:
       - tile_network2
   osm-tile-landcover:
@@ -59,20 +59,38 @@ services:
 #      osm-tile-road:
 #        condition: service_healthy
     environment: # env variables
-      - THREADS=24
+      - THREADS=12
     ports: # Ports we wish to expose source:target
       - 8103:80
     volumes: # Which Bind mounts or Volumes to mount source:target
       - osm-data-tile3:/var/lib/postgresql/10/main
-      - ./data.osm.pbf:/data.osm.pbf
+      - /media/yonatanz/yz/data/osm/ny_ill_isr.osm.pbf:/data.osm.pbf
     networks:
       - tile_network3
-
+  osm-tile-normal:
+    image: osm-tile-server:0.1
+    command: import_run project.mml
+    container_name: osm-tile-normal
+#    depends_on:
+#      osm-postgis-server:
+#        condition: service_healthy
+#      osm-tile-landcover:
+#        condition: service_healthy
+    environment: # env variables
+      - THREADS=12
+    ports: # Ports we wish to expose source:target
+      - 8104:80
+    volumes: # Which Bind mounts or Volumes to mount source:target
+      - osm-data-tile4:/var/lib/postgresql/10/main
+      - /media/yonatanz/yz/data/osm/ny_ill_isr.osm.pbf:/data.osm.pbf
+    networks:
+      - tile_network4
 volumes:
   osm-data-postgis:
   osm-data-tile1:
   osm-data-tile2:
   osm-data-tile3:
+  osm-data-tile4:
 
 networks:
   postgis_network:
@@ -82,4 +100,6 @@ networks:
   tile_network2:
     driver: bridge
   tile_network3:
+    driver: bridge
+  tile_network4:
     driver: bridge
