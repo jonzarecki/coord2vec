@@ -1,16 +1,16 @@
 from sklearn.base import BaseEstimator
 import numpy as np
 
-class Random(BaseEstimator):
+class RandomGeo(BaseEstimator):
     """
     Wrapper for the random embedding baseline
     """
-    def __init__(self, dim=128):
+    def __init__(self, dim=9, **kwargs):
         self.dim = dim
 
     def fit(self, **kwargs):
         pass
 
-    def predict(self, coords):
+    def transform(self, coords):
         embeddings = np.random.rand(len(coords), self.dim)
         return embeddings

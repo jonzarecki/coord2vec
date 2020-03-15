@@ -36,7 +36,6 @@ def render_single_tile(m: StaticMap, ext: list) -> Image:
     m.y_center = _lat_to_y(lat_center, m.zoom)
 
     image = Image.new('RGB', (m.width, m.height), m.background_color)
-    # return m.render(m.zoom)  # TODO: stop here to see polygon of actual wanted image (smaller than all)
     m._draw_base_layer(image)
     m.polygons.remove(polygon)
     m._draw_features(image)
@@ -69,10 +68,10 @@ def render_multi_channel(static_maps: List[StaticMap], ext: list) -> np.array:
     Returns:
         numpy array where each channel is a greyscale
     """
-    multi_arr = np.zeros((len(static_maps), IMG_HEIGHT, IMG_WIDTH,), dtype=np.uint8)
+    multi_arr = np.zeros((len(static_maps), IMG_HEIGHT, IMG_WIDTH,))
 
     for i, m in enumerate(static_maps):
-        im_arr = np.array(render_single_tile(m, ext).convert('L'), dtype=np.uint8)
+        im_arr = np.array(render_single_tile(m, ext).convert('L'))
         multi_arr[i, :, :] = im_arr
 
     return multi_arr
@@ -80,9 +79,9 @@ def render_multi_channel(static_maps: List[StaticMap], ext: list) -> np.array:
 
 if __name__ == '__main__':
     m = StaticMap(IMG_WIDTH, IMG_HEIGHT, url_template=config.tile_server_dns_noport.replace('{p}', '8080'))
-    center = [34.7805, 32.1170]
+    center = [36.7805, 36.1170]
     s = generate_static_maps(config.tile_server_dns_noport, config.tile_server_ports)
-    ext = [34.7855, 32.1070, 34.7855 + 0.001, 32.1070 + 0.001]
+    ext = [36.7855, 36.1070, 36.7855 + 0.001, 36.1070 + 0.001]
 
     image = render_single_tile(m, ext)
     image_multi = render_multi_channel(s, ext)

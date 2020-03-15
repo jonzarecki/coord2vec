@@ -14,9 +14,8 @@ dependencies:
 - pip
 - scikit-learn
 - scikit-image
-- h2o  # from h2oai channel
+- h2o  # install via conda install -c h2oai h2o
 - pytest
-- argparse
 
 # Deep Learning
 - pytorch=1.1.0
@@ -28,7 +27,7 @@ dependencies:
 #- rasterstats
 - geopy
 #- cartopy
-- geoalchemy2
+- geoalchemy2 # missing from docker
 - geopandas
 #- rasterio
 #- contextily
@@ -55,8 +54,6 @@ dependencies:
 - flask
 - bokeh
 - holoviews
-- panel  # To run in jupyterLab run:  `jupyter labextension install @pyviz/jupyterlab_pyviz`
-- pyviz
 
 - pip:
     - nbclean
@@ -68,7 +65,7 @@ dependencies:
     - torchsummary
     - tb-nightly  # for tensorboard
     - openrouteservice
-    - xlrd  # missing from docker
-
-    - xgboost  # region-encoder
-    - query
+    - xlrd
+    - cx-Oracle
+    - opencv-python
+    - shap # missing from docker

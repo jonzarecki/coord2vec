@@ -12,9 +12,8 @@ from tqdm import tqdm
 
 from coord2vec.config import TENSORBOARD_DIR
 from coord2vec.feature_extraction.features_builders import FeaturesBuilder
-from coord2vec.models.architectures import dual_fc_head
+from coord2vec.models.architectures import resnet18, dual_fc_head
 from coord2vec.models.data_loading.tile_features_loader import TileFeaturesDataset
-from coord2vec.models.resnet import wide_resnet50_2
 
 
 class MAML:
@@ -36,7 +35,7 @@ class MAML:
         assert len(self.losses) == self.n_features, "Number of losses must be equal to number of features"
 
         # create the model
-        self.common_model = wide_resnet50_2(n_channels, self.embedding_dim)
+        self.common_model = resnet18(n_channels, self.embedding_dim)
         self.head_models = [dual_fc_head(self.embedding_dim) for i in range(self.n_features)]
 
         self.optimizer = torch.optim.SGD(self.common_model.parameters(), lr=1e-3)

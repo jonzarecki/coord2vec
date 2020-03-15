@@ -1,0 +1,1 @@
+This folder will hold rendered tiles and their features for training.
