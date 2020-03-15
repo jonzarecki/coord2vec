@@ -14,7 +14,7 @@ class RootMeanSquaredError(MtlMetric):
         self._sum_of_squared_errors = None
         self._num_examples = 0
 
-    # TODO: test
+    # no test
     def update_mtl(self, data, embedding, loss, multi_losses, y_pred_tensor, y_tensor):
         squared_errors = torch.pow(y_pred_tensor - y_tensor.view_as(y_pred_tensor), 2)
         if self._sum_of_squared_errors is None:

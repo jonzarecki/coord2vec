@@ -11,8 +11,6 @@ from coord2vec.common import multiproc_util
 from coord2vec.common.multiproc_util import parmap
 from coord2vec.config import TRAIN_CACHE_DIR, VAL_CACHE_DIR, VAL_SAMPLE_NUM, TRAIN_SAMPLE_NUM, ENTROPY_THRESHOLD, \
     HALF_TILE_LENGTH, tile_server_ports, get_builder
-from coord2vec.feature_extraction.features_builders import example_features_builder, house_price_builder, \
-    only_build_area_builder
 from coord2vec.feature_extraction.osm import OsmPolygonFeature
 from coord2vec.feature_extraction.osm.osm_tag_filters import BUILDING
 from coord2vec.image_extraction.tile_image import render_multi_channel, generate_static_maps
@@ -35,7 +33,7 @@ def _get_image_entropy(image):
 
 
 def sample_and_save_dataset(cache_dir, entropy_threshold=ENTROPY_THRESHOLD, coord_range=config.israel_range,
-                            sample_num=TRAIN_SAMPLE_NUM, use_existing=True, feature_builder=example_features_builder):
+                            sample_num=TRAIN_SAMPLE_NUM, use_existing=True, feature_builder=None):
     s = generate_static_maps(config.tile_server_dns_noport, tile_server_ports)
     if not use_existing:
         shutil.rmtree(cache_dir, ignore_errors=True)  # remove old directory
@@ -96,8 +94,8 @@ def convert_dataset_to_npy(cache_dir, sample_num=TRAIN_SAMPLE_NUM, **kwargs):
 
 
 if __name__ == '__main__':
-    # multiproc_util.force_serial = True
-    sample_and_save_dataset(VAL_CACHE_DIR, coord_range=config.nyc_range, sample_num=VAL_SAMPLE_NUM, feature_builder=get_builder(),
-                            use_existing=True)
-    sample_and_save_dataset(TRAIN_CACHE_DIR, coord_range=config.nyc_range, sample_num=TRAIN_SAMPLE_NUM, feature_builder=get_builder(),
-                            use_existing=True)
+    raise AssertionError("Not updated !")
+    # sample_and_save_dataset(VAL_CACHE_DIR, sample_num=VAL_SAMPLE_NUM, feature_builder=house_price_builder,
+    #                         use_existing=True)
+    # sample_and_save_dataset(TRAIN_CACHE_DIR, sample_num=TRAIN_SAMPLE_NUM, feature_builder=house_price_builder,
+    #                         use_existing=True)

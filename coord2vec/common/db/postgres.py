@@ -1,16 +1,19 @@
 import datetime
+from typing import List
 
-import psycopg2
-
+import geopandas as gpd
 import pandas as pd
 import pandas.io.sql as sqlio
+import psycopg2
 import sqlalchemy as sa
-from geopandas import GeoDataFrame
+from geoalchemy2 import WKTElement, Geography
+from geoalchemy2.types import _GISType
 from psycopg2._psycopg import connection
+from shapely.geometry import Point
 from sqlalchemy import create_engine
-from geoalchemy2 import Geometry, WKTElement, Geography
-import random
+
 from coord2vec import config
+from coord2vec.common.db.sqlalchemy_utils import insert_into_table, get_temp_table_name
 
 
 def connect_to_db() -> connection:
@@ -27,6 +30,7 @@ def get_sqlalchemy_engine() -> sa.engine.Engine:
     )
 
 
+# TODO: why 2 get_df. delete one
 def get_df(query: str, conn: connection, dispose_conn=False) -> pd.DataFrame:
     """
     Executes the query and fetches the results
@@ -46,17 +50,31 @@ def get_df(query: str, conn: connection, dispose_conn=False) -> pd.DataFrame:
     return res
 
 
-def save_gdf_to_temp_table_postgres(gdf: GeoDataFrame, eng: sa.engine.Engine) -> str:
-    gdf = gdf.copy(deep=True)
-    gdf['geom'] = gdf.geometry.apply(lambda x: WKTElement(x.wkt, srid=4326))
-    # drop the geometry column as it is now duplicative
-    # gdf.drop('geometry', 1, inplace=True)
+def save_geo_series_to_tmp_table(geo_series: gpd.GeoSeries, eng: sa.engine.Engine) -> str:
+    """
+    Save a geo series as a table in the db, for better performance
+    Args:
+        geo_series: The GeoSeries to be inserted into a db table
+        eng: SQL Alchemy engine
 
-    # Use 'dtype' to specify column's type
-    # For the geom column, we will use GeoAlchemy's type 'Geometry'
-    tbl_name = f"t{datetime.datetime.now().strftime('%H%M%S%f')}{int(1000*random.random())}"
-    gdf.to_sql(tbl_name, eng, if_exists='replace', index=False,
-                        dtype={'geom': Geography('POINT', srid=4326)})
-    eng.execute(f"create index {tbl_name}_geom_idx on {tbl_name} using gist (geom);")
-    # TODO: add buffer column and build index on it.
+    Returns:
+        The name of the new table
+    """
+    geo_series = geo_series.rename('geom')
+    gdf = gpd.GeoDataFrame(geo_series, columns=['geom'], geometry='geom')
+    gdf['geom'] = gdf.geometry.apply(lambda x: WKTElement(x.wkt, srid=4326))
+    gdf['geom_id'] = range(len(gdf))
+    tbl_name = get_temp_table_name()
+    insert_into_table(eng, gdf, tbl_name, dtypes={'geom': Geography(srid=4326), 'geom_id': sa.INT})
+    add_postgis_index(eng, tbl_name, 'geom')
     return tbl_name
+
+
+def get_index_str_for_unique(index_columns: List[str], dtypes: dict):
+    return ",".join([f"ST_GeoHash({col})" if isinstance(dtypes[col], _GISType) else col
+                     for col in index_columns])
+
+
+def add_postgis_index(eng: sa.engine.Engine, table_name: str, geom_col: str):
+    with eng.begin() as con:
+        con.execute(f"create index {table_name}_{geom_col}_idx on {table_name} using gist ({geom_col});")

@@ -5,7 +5,6 @@ import geopy
 import geopy.distance
 import numpy as np
 from shapely.geometry import Polygon, Point
-from tqdm.auto import tqdm
 
 
 def is_tile_empty(im: Image) -> bool:
@@ -13,7 +12,7 @@ def is_tile_empty(im: Image) -> bool:
 
 
 def build_tile_extent(center: Tuple[float, float], radius_in_meters: float) -> list:
-    start = geopy.Point(*center)
+    start = geopy.Point(center[1], center[0])  # reversed
     d = geopy.distance.geodesic(kilometers=radius_in_meters / 1000)
     ext_points = list(map(lambda bearing: d.destination(point=start, bearing=bearing), [0, 90, 180, 270]))
     # return [ext_points[0].latitude, ext_points[3].longitude,
@@ -52,7 +51,7 @@ def sample_grid_in_poly(poly: Polygon, step: float = 0.01) -> List[Tuple]:
 
 def sample_coordinates_in_poly(poly: Polygon, num_samples=1, seed=None) -> List[Tuple]:
     np.random.seed(seed)
-    coords = [sample_coordinate_in_poly(poly) for _ in tqdm(range(num_samples))]
+    coords = [sample_coordinate_in_poly(poly) for _ in range(num_samples)]
 
     return coords
 

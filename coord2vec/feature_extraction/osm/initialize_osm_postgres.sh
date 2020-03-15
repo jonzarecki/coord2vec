@@ -9,8 +9,7 @@ docker volume rm osm-postgis-data
 docker volume create osm-postgis-data
 sudo chmod 777 osm-postgis-server/run.sh
 
-#docker build osm-postgis-server/ -t osm-postgis-server:0.1
-docker build --no-cache osm-postgis-server/ -t osm-postgis-server:0.1
+docker build osm-postgis-server/ -t osm-postgis-server:0.1
 
 # Download Israel as sample if no data is provided
 if [[ ! -f ./data.osm.pbf ]]; then
@@ -19,8 +18,7 @@ if [[ ! -f ./data.osm.pbf ]]; then
 fi
 
 cdir=`pwd`
-docker run --rm -e THREADS=24 -p 127.0.0.1:15432:5432 \
-  -v /media/yonatanz/yz/data/osm/north-america-latest.osm.pbf:/data.osm.pbf --name osm-postgis-server \
+docker run --rm -e THREADS=24 -p 127.0.0.1:15432:5432 -v $cdir/data.osm.pbf:/data.osm.pbf --name osm-postgis-server \
                 -d -v osm-postgis-data:/var/lib/postgresql/10/main osm-postgis-server:0.1 import
 cd $p
 
