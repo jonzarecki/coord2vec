@@ -1,7 +1,6 @@
 name: coord2vec
 channels:
 - pytorch
-- h2oai
 - conda-forge
 - defaults
 
@@ -9,17 +8,16 @@ dependencies:
 # Core scientific python
 - numpy
 - matplotlib
-- python>=3.6
+- python=3.6
 - seaborn
 - pip
 - scikit-learn
 - scikit-image
-- h2o  # from h2oai channel
 - pytest
 - argparse
 
 # Deep Learning
-- pytorch=1.1.0
+- pytorch=1.4.0
 - torchvision
 - cudatoolkit
 - ignite  # from the pytorch channel
@@ -47,7 +45,6 @@ dependencies:
 - notebook
 - ipython
 - jupyter_contrib_nbextensions
-- jupyterlab
 - jupyter
 - nb_conda
 
@@ -55,10 +52,9 @@ dependencies:
 - flask
 - bokeh
 - holoviews
-- panel  # To run in jupyterLab run:  `jupyter labextension install @pyviz/jupyterlab_pyviz`
-- pyviz
 
 - pip:
+    - panel
     - nbclean
     - imageio
     - tqdm
@@ -66,9 +62,7 @@ dependencies:
     - staticmap
     - pathos
     - torchsummary
-    - tb-nightly  # for tensorboard
     - openrouteservice
-    - xlrd  # missing from docker
-
-    - xgboost  # region-encoder
-    - query
+    - xlrd
+    - opencv-python
+    - shap

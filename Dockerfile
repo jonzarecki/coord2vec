@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:1.1.0-cuda10.0-cudnn7.5-runtime
+FROM pytorch/pytorch:1.4-cuda10.1-cudnn7-runtime
 
 # run with nvidia-docker (command installed via apt)
 
@@ -10,10 +10,6 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # Install useful commands
 RUN apt-get update
 RUN apt-get install software-properties-common -y
-# Install java (for h20)
-RUN add-apt-repository ppa:openjdk-r/ppa -y
-RUN apt-get update
-RUN apt-get install openjdk-9-jdk -y
 
 # Install coord2vec environment
 WORKDIR /home/root
