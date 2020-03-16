@@ -9,17 +9,17 @@ docker volume rm osm-postgis-data
 docker volume create osm-postgis-data
 sudo chmod 777 osm-postgis-server/run.sh
 
-docker build osm-postgis-server/ -t osm-postgis-server:0.1
+docker build osm-postgis-server/ -t osm-postgis-server:1.1
 
 # Download Israel as sample if no data is provided
 if [[ ! -f ./data.osm.pbf ]]; then
     echo "WARNING: No import file at /data.osm.pbf, so importing Israel as example..."
-    wget https://download.geofabrik.de/asia/israel-and-palestine-latest.osm.pbf -O ./data.osm.pbf
+    wget https://download.geofabrik.de/asia/china-latest.osm.pbf -O ./data.osm.pbf
 fi
 
 cdir=`pwd`
 docker run --rm -e THREADS=24 -p 127.0.0.1:15432:5432 -v $cdir/data.osm.pbf:/data.osm.pbf --name osm-postgis-server \
-                -d -v osm-postgis-data:/var/lib/postgresql/10/main osm-postgis-server:0.1 import
+                -d -v osm-postgis-data:/var/lib/postgresql/10/main osm-postgis-server:1.1 import
 cd $p
 
 

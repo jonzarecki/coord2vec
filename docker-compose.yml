@@ -15,76 +15,76 @@ services:
       - postgis_network
 
   # after rendering the postgis in osm-postgis-server we can start the tile servers
-  osm-tile-building:
-    image: osm-tile-server:0.1
-    command: import_run project_building_only.mml
-    container_name: osm-tile-building
-#    depends_on:
-#      osm-postgis-server:
-#        condition: service_healthy
-    environment: # env variables
-      - THREADS=12
-    ports: # Ports we wish to expose source:target
-      - 8101:80
-    volumes: # Which Bind mounts or Volumes to mount source:target
-      - osm-data-tile1:/var/lib/postgresql/10/main
-      - /media/yonatanz/yz/data/osm/ny_ill_isr.osm.pbf:/data.osm.pbf
-    networks:
-      - tile_network1
-  osm-tile-road:
-    image: osm-tile-server:0.1
-    command: import_run project_road_only.mml
-    container_name: osm-tile-road
-#    depends_on:
-#      osm-postgis-server:
-#        condition: service_healthy
-#      osm-tile-building:
-#        condition: service_healthy
-    environment: # env variables
-      - THREADS=12
-    ports: # Ports we wish to expose source:target
-      - 8102:80
-    volumes: # Which Bind mounts or Volumes to mount source:target
-      - osm-data-tile2:/var/lib/postgresql/10/main
-      - /media/yonatanz/yz/data/osm/ny_ill_isr.osm.pbf:/data.osm.pbf
-    networks:
-      - tile_network2
-  osm-tile-landcover:
-    image: osm-tile-server:0.1
-    command: import_run project_landcover_only.mml
-    container_name: osm-tile-landcover
-#    depends_on:
-#      osm-postgis-server:
-#        condition: service_healthy
-#      osm-tile-road:
-#        condition: service_healthy
-    environment: # env variables
-      - THREADS=12
-    ports: # Ports we wish to expose source:target
-      - 8103:80
-    volumes: # Which Bind mounts or Volumes to mount source:target
-      - osm-data-tile3:/var/lib/postgresql/10/main
-      - /media/yonatanz/yz/data/osm/ny_ill_isr.osm.pbf:/data.osm.pbf
-    networks:
-      - tile_network3
-  osm-tile-normal:
-    image: osm-tile-server:0.1
-    command: import_run project.mml
-    container_name: osm-tile-normal
-#    depends_on:
-#      osm-postgis-server:
-#        condition: service_healthy
-#      osm-tile-landcover:
-#        condition: service_healthy
-    environment: # env variables
-      - THREADS=12
-    ports: # Ports we wish to expose source:target
-      - 8104:80
-    volumes: # Which Bind mounts or Volumes to mount source:target
-      - osm-data-tile4:/var/lib/postgresql/10/main
-      - /media/yonatanz/yz/data/osm/ny_ill_isr.osm.pbf:/data.osm.pbf
-    networks:
-      - tile_network4
+#  osm-tile-building:
+#    image: osm-tile-server:0.1
+#    command: import_run project_building_only.mml
+#    container_name: osm-tile-building
+##    depends_on:
+##      osm-postgis-server:
+##        condition: service_healthy
+#    environment: # env variables
+#      - THREADS=12
+#    ports: # Ports we wish to expose source:target
+#      - 8101:80
+#    volumes: # Which Bind mounts or Volumes to mount source:target
+#      - osm-data-tile1:/var/lib/postgresql/10/main
+#      - /media/yonatanz/yz/data/osm/ny_ill_isr.osm.pbf:/data.osm.pbf
+#    networks:
+#      - tile_network1
+#  osm-tile-road:
+#    image: osm-tile-server:0.1
+#    command: import_run project_road_only.mml
+#    container_name: osm-tile-road
+##    depends_on:
+##      osm-postgis-server:
+##        condition: service_healthy
+##      osm-tile-building:
+##        condition: service_healthy
+#    environment: # env variables
+#      - THREADS=12
+#    ports: # Ports we wish to expose source:target
+#      - 8102:80
+#    volumes: # Which Bind mounts or Volumes to mount source:target
+#      - osm-data-tile2:/var/lib/postgresql/10/main
+#      - /media/yonatanz/yz/data/osm/ny_ill_isr.osm.pbf:/data.osm.pbf
+#    networks:
+#      - tile_network2
+#  osm-tile-landcover:
+#    image: osm-tile-server:0.1
+#    command: import_run project_landcover_only.mml
+#    container_name: osm-tile-landcover
+##    depends_on:
+##      osm-postgis-server:
+##        condition: service_healthy
+##      osm-tile-road:
+##        condition: service_healthy
+#    environment: # env variables
+#      - THREADS=12
+#    ports: # Ports we wish to expose source:target
+#      - 8103:80
+#    volumes: # Which Bind mounts or Volumes to mount source:target
+#      - osm-data-tile3:/var/lib/postgresql/10/main
+#      - /media/yonatanz/yz/data/osm/ny_ill_isr.osm.pbf:/data.osm.pbf
+#    networks:
+#      - tile_network3
+#  osm-tile-normal:
+#    image: osm-tile-server:0.1
+#    command: import_run project.mml
+#    container_name: osm-tile-normal
+##    depends_on:
+##      osm-postgis-server:
+##        condition: service_healthy
+##      osm-tile-landcover:
+##        condition: service_healthy
+#    environment: # env variables
+#      - THREADS=12
+#    ports: # Ports we wish to expose source:target
+#      - 8104:80
+#    volumes: # Which Bind mounts or Volumes to mount source:target
+#      - osm-data-tile4:/var/lib/postgresql/10/main
+#      - /media/yonatanz/yz/data/osm/ny_ill_isr.osm.pbf:/data.osm.pbf
+#    networks:
+#      - tile_network4
 volumes:
   osm-data-postgis:
   osm-data-tile1:
