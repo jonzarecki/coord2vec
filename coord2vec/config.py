@@ -31,6 +31,9 @@ SMALL_TEST_POLYGON = Polygon([])
 ENTROPY_THRESHOLD = 1.5
 HALF_TILE_LENGTH = 50
 
+
+BUILDINGS_FEATURES_TABLE = "building_features"
+
 STEP_SIZE = 20
 # Oracle config
 SCORES_TABLE = 'building_scores'
