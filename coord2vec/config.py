@@ -3,6 +3,11 @@ import os
 from shapely.geometry import Polygon
 
 
+postgis_server_ip = "localhost"
+postgis_port = 15432
+ors_server_ip = "localhost"
+ors_server_port = 8100
+
 COORD2VEC_DIR_PATH = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.dirname(COORD2VEC_DIR_PATH)
 USER_ROOT_DIR = os.path.dirname(os.path.dirname(PROJECT_ROOT))

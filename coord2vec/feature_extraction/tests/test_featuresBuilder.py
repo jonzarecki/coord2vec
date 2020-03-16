@@ -22,16 +22,16 @@ class TestFeaturesBuilder(TestCase):
         # cls.hatlalim_gdf = GeoDataFrame(pd.DataFrame({'geom': [hatlalim_rd_raanana]}), geometry='geom')
 
     def test_extract(self):
-        results = self.builder.extract(self.gdf)
+        results = self.builder.transform(self.gdf.geometry)
         self.assertEqual(results.shape[0], self.gdf.shape[0])
-        self.assertEqual(results.shape[1], len(self.builder.features_names))
+        self.assertEqual(results.shape[1], len(self.builder.all_feat_names))
 
-    def test_extract_coordinates(self):
-        results = self.builder.extract_coordinates([(34.8576548, 32.1869038)])
-        self.assertEqual(results.shape[0], 1)
-        self.assertEqual(results.shape[1], len(self.builder.features_names))
-
-    def test_extract_multiple_coordinates(self):
-        results = self.builder.extract_coordinates([(34.8576548, 32.1869038), (34.8576548, 32.1869038)])
-        self.assertEqual(results.shape[0], 2)
-        self.assertEqual(results.shape[1], len(self.builder.features_names))
+    # def test_extract_coordinates(self):
+    #     results = self.builder.transform([(34.8576548, 32.1869038)])
+    #     self.assertEqual(results.shape[0], 1)
+    #     self.assertEqual(results.shape[1], len(self.builder.features_names))
+    #
+    # def test_extract_multiple_coordinates(self):
+    #     results = self.builder.extract_coordinates([(34.8576548, 32.1869038), (34.8576548, 32.1869038)])
+    #     self.assertEqual(results.shape[0], 2)
+    #     self.assertEqual(results.shape[1], len(self.builder.features_names))

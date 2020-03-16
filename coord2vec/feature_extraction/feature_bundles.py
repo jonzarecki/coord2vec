@@ -19,7 +19,6 @@ from coord2vec.feature_extraction.features.osm_features.total_length import Tota
 from coord2vec.feature_extraction.features.other_features.area_of_self import AreaOfSelf
 from coord2vec.feature_extraction.features_builders import FeaturesBuilder
 from coord2vec.feature_extraction.osm.base_postgres_feature import BasePostgresFeature
-from coord2vec.feature_extraction.osm.mn_tag_filters import *
 from coord2vec.feature_extraction.osm.osm_tag_filters import *
 
 from coord2vec.feature_extraction.sparse import SparseFilter
@@ -34,7 +33,8 @@ def relevant_feat_types(f_type: str):
     if "POLYGON" in f_type_upper:
         l += [AreaOf, AreaOfNearest]
     if "RARE" in f_type_upper:
-        l.append(OSMRoute)
+        pass  # ors is not up in server yet
+        # l.append(OSMRoute)
 
     return l
 
@@ -51,7 +51,7 @@ karka_bundle_features = [
 
     # BUILDING
     (BUILDING, OSM_POLYGON_TABLE, "building", all_radii_up_to(50, 250), relevant_feat_types("polygon_area"), 1),
-    (BUILDING, OSM_POLYGON_TABLE, "building", all_radii_up_to(0, 250), [Heights], 2),
+    # (BUILDING, OSM_POLYGON_TABLE, "building", all_radii_up_to(0, 250), [Heights], 2),  # doesn't work for normal osm
     (BUILDING, OSM_POLYGON_TABLE, "building", all_radii_up_to(max_radius=0), [AreaOf], 3),
     # (JUNCTIONS, JUNCTIONS_TABLE, "junction", all_radii_up_to(max_radius=250), [OSMRoute]),
 ]

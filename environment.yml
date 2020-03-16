@@ -66,3 +66,4 @@ dependencies:
     - xlrd
     - opencv-python
     - shap
+    - future
