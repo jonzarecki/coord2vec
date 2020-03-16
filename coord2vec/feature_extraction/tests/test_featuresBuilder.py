@@ -19,7 +19,6 @@ class TestFeaturesBuilder(TestCase):
         near_levinshtein_house = wkt.loads('POINT (34.8576548 32.1869038)')
         hatlalim_rd_raanana = wkt.loads('POINT (34.8583825 32.1874658)')
         cls.gdf = GeoDataFrame(pd.DataFrame({'geom': [near_levinshtein_house, hatlalim_rd_raanana]}), geometry='geom')
-        example_features_builder =
         # cls.hatlalim_gdf = GeoDataFrame(pd.DataFrame({'geom': [hatlalim_rd_raanana]}), geometry='geom')
 
     def test_extract(self):
