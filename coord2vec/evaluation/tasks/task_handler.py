@@ -282,6 +282,7 @@ class TaskHandler(ABC):
         Returns:
             buildings_gs: A series of all the buildings
             buildings_y: their labels
+
             source_indices: (optional) if return_source==True return np.array in len of buildings_gs mapping to
                             source_index in 'polys'
         """
