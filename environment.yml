@@ -67,3 +67,5 @@ dependencies:
     - opencv-python
     - shap
     - future
+    - networkx
+    - catboost
