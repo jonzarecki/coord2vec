@@ -47,3 +47,6 @@ def clean_constructionTime_col(df):
     # cleaned_df['constructionTime'][cleaned_df['constructionTime'].apply(lambda time: not time.isnumeric())] = 0
     cleaned_df.loc[cleaned_df['constructionTime'].apply(lambda time: not time.isnumeric()), 'constructionTime'] = 0
     return cleaned_df
+
+
+ALL_FILTER_FUNCS_LIST = [clean_floor_col, clean_constructionTime_col]

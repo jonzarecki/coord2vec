@@ -10,10 +10,10 @@ from coord2vec.feature_extraction.feature_bundles import karka_bundle_features, 
 from coord2vec.feature_extraction.features_builders import FeaturesBuilder
 
 from coord2vec.Noam_Adir.pipeline.preprocess import get_csv_data
-from coord2vec.Noam_Adir.pipeline.preprocess import generic_clean_col
+from coord2vec.Noam_Adir.pipeline.preprocess import generic_clean_col, ALL_FILTER_FUNCS_LIST
 
 
-def extract_and_filter_csv_data(clean_funcs, use_full_dataset=True):
+def extract_and_filter_csv_data(clean_funcs=ALL_FILTER_FUNCS_LIST, use_full_dataset=True):
     csv_features = get_csv_data(use_full_dataset=use_full_dataset)
     cleaned_features = generic_clean_col(csv_features, clean_funcs)
     return cleaned_features

@@ -3,7 +3,6 @@ from unittest import TestCase
 from sklearn.linear_model import LinearRegression
 from catboost import CatBoostRegressor
 
-from coord2vec.Noam_Adir.pipeline.preprocess import clean_floor_col, clean_constructionTime_col
 from coord2vec.Noam_Adir.pipeline.base_pipeline import *
 
 
@@ -12,7 +11,7 @@ class TestPipeline(TestCase):
         self.features_bundle = karka_bundle_features
         self.use_full_dataset = False
         self.batch_size = 1000
-        self.clean_funcs = [clean_floor_col, clean_constructionTime_col]
+        self.clean_funcs = ALL_FILTER_FUNCS_LIST
         self.cleaned_features = extract_and_filter_csv_data(self.clean_funcs, use_full_dataset=self.use_full_dataset)
 
     def test_extract_and_filter_csv_data(self):
@@ -36,10 +35,9 @@ class TestPipeline(TestCase):
         use_full_dataset = False
         batch_size = 1000
         n_cat_iter = 150
-        clean_funcs = [clean_floor_col, clean_constructionTime_col]
         models = [LinearRegression(),
                   CatBoostRegressor(iterations=n_cat_iter, learning_rate=1, depth=3)]
-        cleaned_features = extract_and_filter_csv_data(clean_funcs, use_full_dataset=use_full_dataset)
+        cleaned_features = extract_and_filter_csv_data(use_full_dataset=use_full_dataset)
         all_features = extract_geographical_features(cleaned_features, batch_size=batch_size,
                                                      features_bundle=self.features_bundle)
         training_cache = train_models(models=models, all_features=all_features)
