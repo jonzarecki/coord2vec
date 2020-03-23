@@ -3,6 +3,7 @@ import pickle
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
+from catboost import CatBoostRegressor
 from sklearn.preprocessing import StandardScaler
 from torch import nn
 from torch.utils.data import DataLoader
@@ -76,10 +77,15 @@ class Autoencoder(pl.LightningModule):
         y = X
 
         # train_val_test split
-        self.X_train, self.X_test, self.y_train, self.y_test, self.coords_train, self.coords_test = train_test_split(
-            X, y, features['coord'])
-        self.X_train, self.X_val, self.y_train, self.y_val, self.coords_train, self.coords_val = train_test_split(
-            self.X_train, self.y_train, self.coords_train)
+        self.split_train_val_test(X, y, features['coord'], features['totalPrice'])
+
+    def split_train_val_test(self, X, y, coords, total_price):
+        self.X_train, self.X_test, self.y_train, self.y_test, \
+        self.coords_train, self.coords_test, self.tot_price_train, self.tot_price_test = train_test_split(
+            X, y, coords, total_price)
+        self.X_train, self.X_val, self.y_train, self.y_val, \
+        self.coords_train, self.coords_val, self.tot_price_train, self.tot_price_val = train_test_split(
+            self.X_train, self.y_train, self.coords_train, self.tot_price_train)
 
     def train_dataloader(self):
         feature_dataset = Feature_Dataset(self.X_train, self.y_train)
@@ -107,7 +113,6 @@ class Autoencoder(pl.LightningModule):
         logs = {'train_loss': loss}
         return {'loss': loss, 'log': logs}
 
-
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_hat, embedding_code = self.forward(x.float(), return_emb=True)
@@ -117,10 +122,16 @@ class Autoencoder(pl.LightningModule):
 
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        train_emb = torch.stack(self.emb_train_list)
-        self.emb_train_list = []
-        val_emb = torch.stack([x['val_emb'] for x in outputs])
-        print(f'train_emb = {train_emb.shape}')
-        print(f'val_emb = {val_emb.shape}')
-        tensorboard_logs = {'val_loss': avg_loss}
+        if len(self.emb_train_list) > 0:
+            train_emb = torch.cat(self.emb_train_list)
+            self.emb_train_list = []
+            val_emb = torch.cat([x['val_emb'] for x in outputs])
+            mse_catboost = train_models(
+                [CatBoostRegressor(verbose=False)],
+                train_emb.data.numpy(), self.tot_price_train,
+                val_emb.data.numpy(), self.tot_price_val
+            )[1][0]  # train_models return tuple of lists
+        else:
+            mse_catboost = 0
+        tensorboard_logs = {'val_loss': avg_loss, 'mse_catboost': mse_catboost}
         return {'avg_val_loss': avg_loss, 'log': tensorboard_logs}
