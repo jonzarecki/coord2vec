@@ -11,6 +11,8 @@ REGION_ENCODER_DIR_PATH = os.path.dirname(__file__)
 def get_config():
     dir_path = os.path.dirname(os.path.realpath(__file__))
     embed_path = '/media/yonatanz/yz/region-encoder/embedding/'
+    # data_dir = '/media/yonatanz/yz/data/region-encoder-data/chicago/'
+    # config_path = '/media/yonatanz/yz/data/region-encoder-data/chicago-config.json'
     data_dir = '/media/yonatanz/yz/data/region-encoder-data/nyc/'
     config_path = '/media/yonatanz/yz/data/region-encoder-data/nyc-config.json'
 

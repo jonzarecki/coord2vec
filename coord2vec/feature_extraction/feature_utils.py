@@ -16,6 +16,7 @@ from coord2vec.common.db.connectors import get_connection
 from coord2vec.common.db.sqlalchemy_utils import get_df, merge_to_table, add_sdo_geo_to_table, insert_into_table, \
     get_temp_table_name
 from coord2vec.common.geographic.visualization_utils import get_image_overlay
+from coord2vec.config import ors_server_ip, ors_server_port, STEP_SIZE
 from coord2vec.feature_extraction.feature_table import FEATURE_NAME, GEOM, GEOM_WKT, FEATURE_VALUE, \
     MODIFICATION_DATE, DTYPES, GEOM_WKT_HASH
 

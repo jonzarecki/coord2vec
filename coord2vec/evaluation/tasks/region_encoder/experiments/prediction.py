@@ -80,7 +80,7 @@ class PredictionModel(object):
 
         elif model == 'ridge':
 
-            model = Ridge(alpha=1.0, fit_intercept=True)
+            model = Ridge(alpha=1.0, fit_intercepot=True)
             model.fit(X=self.X[train_idx, :], y=self.y[train_idx])
             pred = model.predict(X=self.X[test_idx])
 

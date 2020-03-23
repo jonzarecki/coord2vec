@@ -13,6 +13,7 @@ tile_server_dns_noport = 'http://' + tile_server_ip + ':{p}/tile/{z}/{x}/{y}.png
 tile_server_ports = [8101, 8102, 8103]
 h20_port = 8198
 postgis_port = 15432
+ors_server_ip, ors_server_port = "localhost", 8100
 
 
 LONG_TERM_DIR = "/media/yonatanz/yz/"
@@ -39,14 +40,14 @@ TMP_EXPR_FILES_DIR = os.path.join(CURRENT_EXPR_DIR, "project_files")
 
 builder_name = None
 def get_builder():
-    from coord2vec.feature_extraction.features_builders import multi_build_builder, house_price_builder, \
-        house_price_builder_partial
+    # from coord2vec.feature_extraction.features_builders import multi_build_builder, house_price_builder, \
+    #     house_price_builder_partial
     global builder_name
 
     builder_name = "house_price_builder_partial"
     print(f"working with {builder_name}")
 
-    return house_price_builder_partial
+    return None#house_price_builder_partial
 
 def update_params(opt):
     global TENSORBOARD_DIR, CURRENT_EXPR_DIR, SAVED_MODEL_DIR, TMP_EXPR_FILES_DIR
@@ -67,7 +68,6 @@ TRUE_POSITIVE_RADIUS = 100
 IMG_WIDTH, IMG_HEIGHT = (224, 224)
 israel_range = [34.482724, 31.492354, 34.583301, 31.585196]
 SMALL_TEST_POLYGON = Polygon([])
-IMG_WIDTH, IMG_HEIGHT = (224, 224)
 israel_range = [34.482724, 31.492354, 34.583301, 31.585196]
 beijing_range = [116.205692, 39.747142, 116.632688, 40.041051]
 washington_range = [-122.550769, 47.685618, -122.209654, 47.552132]

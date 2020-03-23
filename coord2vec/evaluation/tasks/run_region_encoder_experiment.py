@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from coord2vec.common.multiproc_util import parmap
 from coord2vec.evaluation.tasks.region_encoder.grid.create_grid import RegionGrid
-from coord2vec.feature_extraction.features_builders import house_price_builder
+# from coord2vec.feature_extraction.features_builders import house_price_builder
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from coord2vec.evaluation.tasks.region_encoder.config import get_config
@@ -61,6 +61,7 @@ models: List[Model] = []
 if task == 'house_price':
     estimator = "rf"
     input_data = region_grid.load_housing_data(c['housing_data_file'])
+    input_data_m = region_grid.load_housing_data('/media/yonatanz/yz/data/region-encoder-data/nyc/zillow_house_price_manhattan.csv')
     # Initialize Models
     naive_mod = HousePriceModel(region_grid.idx_coor_map, c, n_epochs)
     models.append(Model(naive_mod, 'Naive'))

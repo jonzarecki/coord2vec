@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 from typing import List, Optional
 
-import cx_Oracle
+# import cx_Oracle
 import pandas as pd
 import sqlalchemy as sa
 from geoalchemy2 import WKTElement
