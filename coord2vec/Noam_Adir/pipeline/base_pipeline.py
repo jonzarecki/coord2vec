@@ -50,7 +50,7 @@ def extract_geographical_features(cleaned_features: pd.DataFrame, calculate_feat
         geo_results = builder.transform(gdf.geometry)
     else:
         for batch_start_ind in range(0, n_samples, batch_size):
-            batch_end_ind = batch_start_ind + batch_size if batch_start_ind+batch_size < n_samples else n_samples
+            batch_end_ind = batch_start_ind + batch_size if batch_start_ind + batch_size < n_samples else n_samples
             geo_results_list.append(builder.transform(gdf.geometry[batch_start_ind:batch_end_ind]))
         geo_results = pd.concat(geo_results_list)
         geo_results = geo_results.reset_index(drop=True)
@@ -59,16 +59,20 @@ def extract_geographical_features(cleaned_features: pd.DataFrame, calculate_feat
     return all_features
 
 
-def train_models(models, all_features: pd.DataFrame):
-    X = all_features.drop(columns=["coord", "coord_id", "totalPrice"]).values
-    y = all_features['totalPrice'].values
-    X_train, X_test, y_train, y_test = train_test_split(X, y)
+def train_models(models, X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray, y_test: np.ndarray):
     scores = []
     for model in models:
         model.fit(X_train, y_train)
         y_test_pred = model.predict(X_test)
         scores.append(mean_squared_error(y_test, y_test_pred))
-    return models, scores, y_test
+    return models, scores
+
+
+def extract_train_test_set_from_features(all_features):
+    X = all_features.drop(columns=["coord", "coord_id", "totalPrice"]).values
+    y = all_features['totalPrice'].values
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
+    return X_train, y_train, X_test, y_test
 
 
 def plot_scores(training_cache):
@@ -76,5 +80,3 @@ def plot_scores(training_cache):
     print("mean price - ", np.mean(y_test))
     print(f"MSE: linear regression - {scores[0]}, catboost - {scores[1]}")
     print(f"RMSE: linear regression - {np.sqrt(scores[0])}, catboost - {np.sqrt(scores[1])}")
-
-
