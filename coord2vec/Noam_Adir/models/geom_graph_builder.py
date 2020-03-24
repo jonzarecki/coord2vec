@@ -74,7 +74,8 @@ class GeomGraphBuilder:
                 if n_i > n_j:
                     distance = geom_i.distance(geom_j)
                     if distance <= radius:
-                        self.graph.add_edge(n_i, n_j, distance=distance)
+                        # self.graph.add_edge(n_i, n_j, distance=distance)
+                        self.graph.add_edge(n_i, n_j)
 
     def transform_geometries_to_palanar_points(self, geometries: List[BaseGeometry]) -> List[Tuple[float, float]]:
         points2d = []

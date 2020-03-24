@@ -1,3 +1,5 @@
+import pickle
+
 import pandas as pd
 
 
@@ -16,6 +18,12 @@ def get_csv_data(use_full_dataset=True) -> pd.DataFrame:
                    "totalPrice"]]
     # in features all csv exept: 'url', 'id', 'Lng', 'Lat', 'coord', "Cid", "tradeTime",
     return features
+
+
+def load_data_from_pickel(file_name, longtitude_name, latitude_name):
+    manhatan_df = pickle.load(open(file_name, "rb"))
+    manhatan_df["coord"] = manhatan_df.apply(lambda row: tuple(row[[longtitude_name, latitude_name]].values), axis=1)
+    return manhatan_df
 
 
 def generic_clean_col(df, clean_funcs):
@@ -50,3 +58,19 @@ def clean_constructionTime_col(df):
 
 
 ALL_FILTER_FUNCS_LIST = [clean_floor_col, clean_constructionTime_col]
+
+
+def parse_price(price):
+    price = price.lower()
+    if "m" in price:
+        return float(price[:price.index("m")]) * 1000000
+    return float(price)
+
+
+def clean_manhatan_sold_col(df):
+    cleaned_df = df.copy()
+    cleaned_df["sold"] = cleaned_df.apply(lambda row: parse_price(row["sold"]), axis=1)
+    return cleaned_df
+
+
+ALL_MANHATAN_FILTER_FUNCS_LIST = [clean_manhatan_sold_col]

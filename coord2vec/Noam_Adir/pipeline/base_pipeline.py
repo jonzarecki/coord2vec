@@ -59,9 +59,9 @@ def extract_geographical_features(cleaned_features: pd.DataFrame, calculate_feat
     return all_features
 
 
-def train_models(models, all_features: pd.DataFrame):
-    X = all_features.drop(columns=["coord", "coord_id", "totalPrice"]).values
-    y = all_features['totalPrice'].values
+def train_models(models, all_features: pd.DataFrame, drop_cols=["coord", "coord_id"], y_col="totalPrice"):
+    X = all_features.drop(columns=drop_cols).drop(columns=[y_col]).values
+    y = all_features[y_col].values
     X_train, X_test, y_train, y_test = train_test_split(X, y)
     scores = []
     for model in models:
