@@ -69,12 +69,16 @@ def extract_train_test_set_from_features(all_features, drop_cols, y_col):
 def train_models(models, all_features: pd.DataFrame, train_test_extraction_func=extract_train_test_set_from_features,
                  drop_cols=["coord", "coord_id"], y_col="totalPrice"):
     X_train, y_train, X_test, y_test = train_test_extraction_func(all_features, drop_cols=drop_cols, y_col=y_col)
+    return train_models_from_splitted_data(models, X_train, y_train, X_test, y_test)
+
+def train_models_from_splitted_data(models, X_train, y_train, X_test, y_test):
     scores = []
     for model in models:
         model.fit(X_train, y_train)
         y_test_pred = model.predict(X_test)
         scores.append(mean_squared_error(y_test, y_test_pred))
     return models, scores, y_test
+
 
 
 def plot_scores(training_cache):
