@@ -5,7 +5,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from itertools import product
 from autoencoder import Autoencoder
 
-num_epochs = 1
+num_epochs = 100
 num_train = 500
 
 
@@ -44,7 +44,7 @@ def main():
         comment = f'lr={lr}, wd={weight_decay}, emb_dim={emb_dim}, bsize={batch_size}'
         logger = TensorBoardLogger(save_dir=logs_path, name=comment)
         model = Autoencoder(learning_rate=lr, weight_decay=weight_decay, num_train=num_train,
-                            batch_size=batch_size, embedding_dim=emb_dim, use_all_data=True)
+                            batch_size=batch_size, embedding_dim=emb_dim, use_all_data=False)
         trainer = Trainer(max_epochs=num_epochs, logger=logger, gpus=0)
         trainer.fit(model)
         add_embedding_visualization_tensor_board(model, logger)
