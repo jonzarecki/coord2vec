@@ -1,3 +1,5 @@
+from typing import List, Tuple
+
 from geopandas import GeoDataFrame
 import pandas as pd
 import numpy as np
@@ -13,7 +15,16 @@ from coord2vec.Noam_Adir.pipeline.preprocess import get_csv_data
 from coord2vec.Noam_Adir.pipeline.preprocess import generic_clean_col, ALL_FILTER_FUNCS_LIST
 
 
-def extract_and_filter_csv_data(clean_funcs=ALL_FILTER_FUNCS_LIST, use_full_dataset=True):
+def extract_and_filter_csv_data(clean_funcs=ALL_FILTER_FUNCS_LIST, use_full_dataset=True) -> pd.DataFrame:
+    """
+    load anf filter data from csv, at the moment uses get_csv_data specific for Beijing dataset
+    Args:
+        clean_funcs: the filter functions to use on the csv raw data
+        use_full_dataset: parameter for the csv loading function
+
+    Returns: filtered DataFrame
+
+    """
     csv_features = get_csv_data(use_full_dataset=use_full_dataset)
     cleaned_features = generic_clean_col(csv_features, clean_funcs)
     return cleaned_features
@@ -29,7 +40,7 @@ def extract_geographical_features(cleaned_features: pd.DataFrame, calculate_feat
         batch_size: a batch size for the geographical features
 
     Returns: all_features df the same legth as clearned features, with the following extra columns
-                1."coord_id"
+                1."coord_id" - if the columns exist may change it
                 2. all the geographical features related with the coord
 
     """
@@ -59,7 +70,18 @@ def extract_geographical_features(cleaned_features: pd.DataFrame, calculate_feat
     return all_features
 
 
-def extract_train_test_set_from_features(all_features, drop_cols, y_col):
+def extract_train_test_set_from_features(all_features: pd.DataFrame, drop_cols: List[str], y_col: str) \
+        -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """
+    simple method to split DataFrame into train test splits, allow dropping of columns
+    Args:
+        all_features: the DataFrame of all the features, contains the label in y_col column
+        drop_cols: list o columns from the DataFrame to drop
+        y_col: the column in the features DataFrame of the label
+
+    Returns: tuple of 4 np.ndarry - (X_train, y_train, X_test, y_test)
+
+    """
     X = all_features.drop(columns=drop_cols).drop(columns=[y_col]).values
     y = all_features[y_col].values
     X_train, X_test, y_train, y_test = train_test_split(X, y)
@@ -68,6 +90,18 @@ def extract_train_test_set_from_features(all_features, drop_cols, y_col):
 
 def train_models(models, all_features: pd.DataFrame, train_test_extraction_func=extract_train_test_set_from_features,
                  drop_cols=["coord", "coord_id"], y_col="totalPrice"):
+    """
+    a function to train models on df with features and labels, defaults for Beijing dataset for backward compatibility
+    Args:
+        models: list if models with fit(X,y) and predict(X) methods
+        all_features: the data frame off the features and the labels
+        train_test_extraction_func: a function to extract from the data frame train and test sets
+        drop_cols: list of columns to drop from the dataframe
+        y_col: the name of the label column
+
+    Returns:
+
+    """
     X_train, y_train, X_test, y_test = train_test_extraction_func(all_features, drop_cols=drop_cols, y_col=y_col)
     return train_models_from_splitted_data(models, X_train, y_train, X_test, y_test)
 
@@ -82,6 +116,12 @@ def train_models_from_splitted_data(models, X_train, y_train, X_test, y_test):
 
 
 def plot_scores(training_cache):
+    """
+    print regression scores from the cache returned from the train_models function
+    Args:
+        training_cache: cache from train_models function
+
+    """
     models, scores, y_test = training_cache
     print("mean price - ", np.mean(y_test))
     print(f"MSE: linear regression - {scores[0]}, catboost - {scores[1]}")
