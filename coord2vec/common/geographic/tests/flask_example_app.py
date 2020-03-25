@@ -29,4 +29,4 @@ def index():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.one_run_of_hparams_tuning(debug=True)

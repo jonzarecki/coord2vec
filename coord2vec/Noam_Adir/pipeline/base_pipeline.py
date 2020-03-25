@@ -71,6 +71,7 @@ def train_models(models, all_features: pd.DataFrame, train_test_extraction_func=
     X_train, y_train, X_test, y_test = train_test_extraction_func(all_features, drop_cols=drop_cols, y_col=y_col)
     return train_models_from_splitted_data(models, X_train, y_train, X_test, y_test)
 
+
 def train_models_from_splitted_data(models, X_train, y_train, X_test, y_test):
     scores = []
     for model in models:
@@ -80,11 +81,8 @@ def train_models_from_splitted_data(models, X_train, y_train, X_test, y_test):
     return models, scores, y_test
 
 
-
 def plot_scores(training_cache):
     models, scores, y_test = training_cache
     print("mean price - ", np.mean(y_test))
     print(f"MSE: linear regression - {scores[0]}, catboost - {scores[1]}")
     print(f"RMSE: linear regression - {np.sqrt(scores[0])}, catboost - {np.sqrt(scores[1])}")
-
-
