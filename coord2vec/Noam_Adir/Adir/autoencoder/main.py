@@ -10,6 +10,8 @@ from tensorboard_vis import *
 
 
 def one_run_of_hparams_tuning(lr: float, weight_decay: float, emb_dim: float, batch_size: float):
+    num_epochs = 150
+    num_train = 10000
     hparams_dict = {'lr': lr,
                     'wd': weight_decay,
                     'emb_dim': emb_dim,
@@ -27,8 +29,6 @@ def one_run_of_hparams_tuning(lr: float, weight_decay: float, emb_dim: float, ba
 
 
 if __name__ == '__main__':
-    num_epochs = 150
-    num_train = 10000
     logs_path = '/mnt/adir_logs'
     parameters = {
         'lr': [1e-1, 1e-2],

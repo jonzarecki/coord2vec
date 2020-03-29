@@ -37,7 +37,7 @@ class Autoencoder(pl.LightningModule):
         return output, emb if return_emb else output
 
     def prepare_data(self):
-        features = load_from_pickle_features()
+        features = load_from_pickle_features("beijing_features.pickle")
         if not self.use_all_data:
             features = features[:self.num_train]
         X = features.drop(columns=["coord", "coord_id", "totalPrice"]).values.astype(float)

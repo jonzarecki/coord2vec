@@ -18,10 +18,10 @@ class Feature_Dataset(Dataset):
         return sample
 
 
-def save_to_pickle_features():
+def save_to_pickle_features(file_path):
     cleaned_csv_features = extract_and_filter_csv_data([clean_floor_col, clean_constructionTime_col])
     all_features = extract_geographical_features(cleaned_csv_features)
-    pickle_out_features = open("features.pickle", "wb")
+    pickle_out_features = open(file_path, "wb")
     pickle.dump(all_features, pickle_out_features)
     pickle_out_features.close()
 
@@ -29,8 +29,8 @@ def save_to_pickle_features():
 # save_to_pickle_features()
 
 
-def load_from_pickle_features():
-    pickle_in_features = open("features.pickle", "rb")
+def load_from_pickle_features(file_path):
+    pickle_in_features = open(file_path, "rb")
     features = pickle.load(pickle_in_features)
     # print(features)
     pickle_in_features.close()
