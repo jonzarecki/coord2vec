@@ -42,3 +42,8 @@ BUILDINGS_FEATURES_TABLE = "building_features"
 STEP_SIZE = 20
 # Oracle config
 SCORES_TABLE = 'building_scores'
+
+# tile_server_dns_noport = 'https://api.maptiler.com/tiles/satellite-mediumres/{z}/{x}/{y}.jpg?key=iS9gs1LsLOJfuF3dQvLd'
+tile_server_dns_noport = 'http://a.tile.openstreetmap.us/usgs_large_scale/{z}/{x}/{y}.jpg'
+tile_server_ports = [80]
+RADIUS_IN_METERS = 50

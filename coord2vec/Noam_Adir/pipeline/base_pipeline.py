@@ -1,18 +1,19 @@
 from typing import List, Tuple
 
-from geopandas import GeoDataFrame
-import pandas as pd
 import numpy as np
+import pandas as pd
+import parmap
+from geopandas import GeoDataFrame
 from shapely.geometry import Point
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
+from coord2vec.Noam_Adir.pipeline.preprocess import generic_clean_col, ALL_FILTER_FUNCS_LIST
+from coord2vec.Noam_Adir.pipeline.preprocess import get_csv_data
 from coord2vec.config import BUILDINGS_FEATURES_TABLE
 from coord2vec.feature_extraction.feature_bundles import karka_bundle_features, create_building_features
 from coord2vec.feature_extraction.features_builders import FeaturesBuilder
-
-from coord2vec.Noam_Adir.pipeline.preprocess import get_csv_data
-from coord2vec.Noam_Adir.pipeline.preprocess import generic_clean_col, ALL_FILTER_FUNCS_LIST
 
 
 def extract_and_filter_csv_data(clean_funcs=ALL_FILTER_FUNCS_LIST, use_full_dataset=True) -> pd.DataFrame:
@@ -113,6 +114,44 @@ def train_models_from_splitted_data(models, X_train, y_train, X_test, y_test):
         y_test_pred = model.predict(X_test)
         scores.append(mean_squared_error(y_test, y_test_pred))
     return models, scores, y_test
+
+
+def my_z_score_norm(train, test):
+    if len(train.shape) == 1:
+        train = train[:, None]
+    if len(test.shape) == 1:
+        test = test[:, None]
+    normalizer = StandardScaler()
+    normalizer.fit(train)
+    norm_train = normalizer.transform(train)
+    norm_test = normalizer.transform(test)
+    return norm_train, norm_test
+
+
+def train_models_from_generic_dict_with_norm(num_iter, models, X_dict: np.ndarray, y: np.ndarray):
+    N = y.shape[0]
+    acc_lst = []
+    indexes = np.arange(N)
+    train_ind, test_ind = train_test_split(indexes)
+    y_train, y_test = y[train_ind], y[test_ind]
+    y_norm_train, y_norm_test = my_z_score_norm(y_train, y_test)
+    for title, X in X_dict.items():
+        X_train, X_test = X[train_ind], X[test_ind]
+        X_norm_train, X_norm_test = my_z_score_norm(X_train, X_test)
+        args_tuple = (models, X_norm_train, y_norm_train, X_norm_test, y_norm_test)
+        acc = train_models_from_splitted_data(*args_tuple)[1][0]
+        acc_lst.append(acc)
+    return acc_lst
+
+
+# helper function
+def train_n_iter(models, X_dict: np.ndarray, y: np.ndarray, num_iter=1):
+    accs_per_model = parmap.map(train_models_from_generic_dict_with_norm,
+                                range(num_iter), models, X_dict, y, pm_processes=8, pm_pbar=True)
+    mean_acc_per_model = np.mean(np.array(accs_per_model), axis=0)
+    acc_dict = {title + f"_mean_acc_for_{num_iter}_iter": mean_acc_per_model[i]
+                for i, title in enumerate(X_dict.keys())}
+    return acc_dict
 
 
 def plot_scores(training_cache):
