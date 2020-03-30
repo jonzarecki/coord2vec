@@ -23,8 +23,8 @@ from sklearn.metrics import precision_recall_curve
 import geopandas as gpd
 from coord2vec.common.geographic.geo_map import GeoMap
 from coord2vec.common.geographic.geo_utils import meters2degrees
-from coord2vec.common.geographic.visualization_utils import get_image_overlay, LatLngCopy
-import seaborn as sns
+# from coord2vec.common.geographic.visualization_utils import get_image_overlay, LatLngCopy
+from coord2vec.common.geographic.visualization_utils import get_image_overlay
 
 from coord2vec.evaluation.evaluation_metrics.metrics import soft_precision_recall_curve
 
@@ -143,7 +143,7 @@ def bokeh_multiple_score_maps_folium(scores_df: pd.DataFrame,
     folium.LayerControl().add_to(geo_map.map)
     folium.plugins.MeasureControl().add_to(geo_map.map)
     folium.plugins.MousePosition(lng_first=True).add_to(geo_map.map)
-    LatLngCopy().add_to(geo_map.map)
+    # LatLngCopy().add_to(geo_map.map) #TODO uncommented this outside
 
     # save the folium html
     static_folder = os.path.join(os.path.dirname(__file__), 'bokeh_server', 'static')
@@ -229,10 +229,10 @@ def bokeh_scored_polygons_folium(poly_scores_list: List[pd.Series],
         colors = [rgb2hex(color) for color in cm(poly_score_df)[:, :3]]
         if use_image:
             geo_map.load_image_overlay_from_dataframe(poly_df, wkt_column_name="geos", fill_alpha=0.2, color=colors,
-                                                      name='scores', fill_color=colors, step=image_resolution, line_alpha=1.00)
+                                                      name=poly_score_df.name, fill_color=colors, step=image_resolution, line_alpha=1.00)
         else:
             geo_map.load_wkt_layer_from_dataframe(poly_df, wkt_column_name="geos", fill_alpha=0.2, color=colors,
-                                                  group_name='scores', fill_color=colors)
+                                                  group_name=poly_score_df.name, fill_color=colors)
 
     # add the polygons
     if train_geos is not None:
@@ -249,7 +249,7 @@ def bokeh_scored_polygons_folium(poly_scores_list: List[pd.Series],
     folium.LayerControl().add_to(geo_map.map)
     folium.plugins.MeasureControl().add_to(geo_map.map)
     folium.plugins.MousePosition(lng_first=True).add_to(geo_map.map)
-    LatLngCopy().add_to(geo_map.map)
+    # LatLngCopy().add_to(geo_map.map) #TODO commented this outside
 
     # save the folium html
     static_folder = os.path.join(os.path.dirname(__file__), 'bokeh_server', 'static')
