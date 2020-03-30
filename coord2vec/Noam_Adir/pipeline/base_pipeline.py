@@ -116,19 +116,45 @@ def train_models_from_splitted_data(models, X_train, y_train, X_test, y_test):
     return models, scores, y_test
 
 
-def my_z_score_norm(train, test):
+def my_z_score_norm(train: np.ndarray, test: np.ndarray = None):
+    """
+    operate a z_score normalization on train and test dataset.
+    Args:
+        train: array with shape (n_train, D) D is the dimension of the features.
+        test: array with shape (n_test, D) or None
+
+    Returns:
+        normalized train if test is None
+        else returns also normalized test according to train norm expectation and std
+
+    """
     if len(train.shape) == 1:
         train = train[:, None]
-    if len(test.shape) == 1:
-        test = test[:, None]
     normalizer = StandardScaler()
     normalizer.fit(train)
     norm_train = normalizer.transform(train)
-    norm_test = normalizer.transform(test)
-    return norm_train, norm_test
+    if test is not None:
+        if len(test.shape) == 1:
+            test = test[:, None]
+        norm_test = normalizer.transform(test)
+        return norm_train, norm_test
+    return norm_train
 
 
-def train_models_from_generic_dict_with_norm(num_iter, models, X_dict: np.ndarray, y: np.ndarray):
+def train_models_from_generic_dict_with_norm(num_iter: int, model, X_dict: np.ndarray, y: np.ndarray):
+    """
+    Train model on each dataset in X_dict.values() and check mse-accuracy on y
+    we'll call this training as experiment
+    Args:
+        num_iter: num of times we want to execute the experiment
+        (used only from wraps function that run these experiments paralleled)
+        model: a model we want to train
+        X_dict: {name_of_dataset: dataset} for each dataset we want to train on
+        y: target dataset on which we are compute the mse accuracy
+
+    Returns:
+        acc_lst list of accuracies per dataset in X_dict.values() on y
+    """
     N = y.shape[0]
     acc_lst = []
     indexes = np.arange(N)
@@ -138,16 +164,27 @@ def train_models_from_generic_dict_with_norm(num_iter, models, X_dict: np.ndarra
     for title, X in X_dict.items():
         X_train, X_test = X[train_ind], X[test_ind]
         X_norm_train, X_norm_test = my_z_score_norm(X_train, X_test)
-        args_tuple = (models, X_norm_train, y_norm_train, X_norm_test, y_norm_test)
+        args_tuple = ([model], X_norm_train, y_norm_train, X_norm_test, y_norm_test)
         acc = train_models_from_splitted_data(*args_tuple)[1][0]
         acc_lst.append(acc)
     return acc_lst
 
 
 # helper function
-def train_n_iter(models, X_dict: np.ndarray, y: np.ndarray, num_iter=1):
+def train_n_iter(model, X_dict: np.ndarray, y: np.ndarray, num_iter=1):
+    """
+    Train model on each dataset in X_dict.values() and check mse-accuracy on y num_iter times in parallel
+    Args:
+        model: a model we want to train
+        X_dict: {name_of_dataset: dataset} for each dataset we want to train on
+        y: target dataset on which we are compute the mse accuracy
+        num_iter: number of times we do the experiment.
+
+    Returns:
+        acc_dict {name of dataset: mean accuracy over num iter times on dataset}
+    """
     accs_per_model = parmap.map(train_models_from_generic_dict_with_norm,
-                                range(num_iter), models, X_dict, y, pm_processes=8, pm_pbar=True)
+                                range(num_iter), model, X_dict, y, pm_processes=8, pm_pbar=True)
     mean_acc_per_model = np.mean(np.array(accs_per_model), axis=0)
     acc_dict = {title + f"_mean_acc_for_{num_iter}_iter": mean_acc_per_model[i]
                 for i, title in enumerate(X_dict.keys())}
