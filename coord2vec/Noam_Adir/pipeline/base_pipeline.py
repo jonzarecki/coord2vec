@@ -101,13 +101,25 @@ def train_models(models, all_features: pd.DataFrame, train_test_extraction_func=
         y_col: the name of the label column
 
     Returns:
-
+        models, scores, y_test
     """
     X_train, y_train, X_test, y_test = train_test_extraction_func(all_features, drop_cols=drop_cols, y_col=y_col)
     return train_models_from_splitted_data(models, X_train, y_train, X_test, y_test)
 
 
 def train_models_from_splitted_data(models, X_train, y_train, X_test, y_test):
+    """
+    train each model on X_train, y_train and return mse accuracies on X_test, y_test as scores
+    Args:
+        models: models
+        X_train: (n_train, D)
+        y_train: (n_train, )
+        X_test: (n_test, D)
+        y_test: (n_test, )
+
+    Returns:
+        models, scores, y_test
+    """
     scores = []
     for model in models:
         model.fit(X_train, y_train)
@@ -141,10 +153,11 @@ def my_z_score_norm(train: np.ndarray, test: np.ndarray = None):
     return norm_train
 
 
-def train_models_from_generic_dict_with_norm(num_iter: int, model, X_dict: np.ndarray, y: np.ndarray):
+def train_models_from_generic_dict_with_norm(
+        num_iter: int, model, X_dict: dict[str, np.ndarray], y: np.ndarray) -> List[float]:
     """
     Train model on each dataset in X_dict.values() and check mse-accuracy on y
-    we'll call this training as experiment
+    we'll call this training experiment
     Args:
         num_iter: num of times we want to execute the experiment
         (used only from wraps function that run these experiments paralleled)
@@ -171,7 +184,7 @@ def train_models_from_generic_dict_with_norm(num_iter: int, model, X_dict: np.nd
 
 
 # helper function
-def train_n_iter(model, X_dict: np.ndarray, y: np.ndarray, num_iter=1):
+def train_n_iter(model, X_dict: dict[str, np.ndarray], y: np.ndarray, num_iter=1) -> dict[str, float]:
     """
     Train model on each dataset in X_dict.values() and check mse-accuracy on y num_iter times in parallel
     Args:
@@ -196,7 +209,6 @@ def plot_scores(training_cache):
     print regression scores from the cache returned from the train_models function
     Args:
         training_cache: cache from train_models function
-
     """
     models, scores, y_test = training_cache
     print("mean price - ", np.mean(y_test))
