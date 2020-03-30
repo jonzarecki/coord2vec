@@ -32,8 +32,7 @@ class BuildingTaskDashboard:
         self.model_results = self.full_results[self.model_idx]
         self.geos_train, self.X_train_df, self.y_train, self.train_probas, \
         self.geos_test, self.X_test_df, self.y_test, self.test_probas, \
-        self.models, self.model_names, self.auc_scores = self._extract_model_results(self.full_results, self.model_idx,
-                                                                                     self.kfold)
+        self.models, self.model_names, self.auc_scores = self._extract_model_results(self.full_results)
 
         self.num_kfold = len(self.full_results[0]['train_idx'])
         self.features_df = pd.concat([self.X_train_df, self.X_test_df])

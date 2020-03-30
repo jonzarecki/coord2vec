@@ -4,24 +4,31 @@ from typing import List
 import numpy as np
 import pandas as pd
 import shap
-from bokeh.layouts import column
+from bokeh.layouts import column, row
 from bokeh.models import Div
 from shapely.geometry import Point
 from shapely import wkt
 from coord2vec.common.geographic.geo_utils import get_closest_geo
 from coord2vec.evaluation.visualizations.bokeh_plots import bokeh_multiple_pr_curves, bokeh_score_histogram, \
     feature_importance, bokeh_scored_polygons_folium
+from coord2vec.experiments.experiment_loader import load_separate_model_results
 
 
 class PilotDashboard:
     start_location = None
     folium_zoom = 14
 
-    def __init__(self, model_results_dir: str, pilot_results_dir: str):
+    def __init__(self, model_results_dir: str, pilot_results_dir: str, kfold_results_dir: str):
         # TODO change this when needed to load real results
         model_results_df = pd.read_csv(os.path.join(model_results_dir, '400_florentin.csv'))
         pilot_results_df = pd.read_csv(os.path.join(pilot_results_dir, 'pilot_florentin.csv'))
         self.combined_df = self._load_city(model_results_df, pilot_results_df)
+
+        self.full_results = load_separate_model_results(kfold_results_dir)['model_results']
+        self.model_results = self.full_results[self.model_idx]
+        self.geos_train, self.X_train_df, self.y_train, self.train_probas, \
+        self.geos_test, self.X_test_df, self.y_test, self.test_probas, \
+        self.models, self.model_names, self.auc_scores = self._extract_model_results(self.full_results)
 
         self.folium_name = 'pilot_dashboard'
         self.main_panel = self.bokeh_plot()
@@ -41,7 +48,8 @@ class PilotDashboard:
         # create precision recall curve
         # test_probas_df = pd.DataFrame(
         #     {model_name: test_proba for model_name, test_proba in zip(self.model_names, self.test_probas)})
-        # pr_curve = bokeh_multiple_pr_curves(test_probas_df, self.y_test.values)
+        pr_curve_df = self._create_pr_curve_data()
+        pr_curve = bokeh_multiple_pr_curves(pr_curve_df, self.y_test.values)
         #
         # # create feature histogram
         # self.feature_select = Select(title="Choose Feature: ", value=self.X_train_df.columns[0],
@@ -72,7 +80,6 @@ class PilotDashboard:
         scores_columns = ['inteligence_score', 'ground_score', 'gt']
         folium_series = self._create_folium_series(self.combined_df, scores_columns)
         # TODO add the cities once back to LOTR
-        print(folium_series)
         folium_fig = bokeh_scored_polygons_folium(folium_series,
                                                   [True] * len(folium_series), start_zoom=self.folium_zoom,
                                                   start_location=self.start_location, file_name=self.folium_name,
@@ -83,7 +90,7 @@ class PilotDashboard:
         # self.folium_column = column(row(self.model_select, self.kfold_select, self.run_button), folium_fig,
         #                             self.mean_auc)
         # self.importance_and_val_column = column(row(lon_text, lat_text), feature_importance_button, importance_fig)
-        return column(folium_fig)
+        return row(pr_curve, folium_fig)
 
         # return row(self.left_column, self.folium_column, self.importance_and_val_column)
 
@@ -166,35 +173,43 @@ class PilotDashboard:
         lat = float(lat) if lat != "" else 0
         return lat, lon
 
-    def _extract_model_results(self, full_results, model_idx, kfold):
-        model_results = full_results[model_idx]
-        train_idx, test_idx = model_results['train_idx'][kfold], model_results['test_idx'][kfold]
+    def _extract_model_results(self, full_results):
+        train_kfold, test_kfold = 0, 2
+        model_results = full_results[0]
+        train_idx, test_idx = model_results['train_idx'][train_kfold], model_results['test_idx'][test_kfold]
 
         # X and y
         X_train_df, X_test_df = model_results['X_df'].iloc[train_idx], model_results['X_df'].iloc[test_idx]
         y_train, y_test = model_results['y'][train_idx], model_results['y'][test_idx]
 
         # geos
-        geos_train_idx, geos_test_idx = model_results['geos_kfold_split'][kfold]
+        geos_train_idx, geos_test_idx = model_results['geos_kfold_split'][test_kfold]
         geos_train, geos_test = model_results['geos'][geos_train_idx], model_results['geos'][geos_test_idx]
 
         # probas
-        train_probas = [results['probas'][kfold][train_idx] for results in full_results]
-        test_probas = [results['probas'][kfold][test_idx] for results in full_results]
+        train_probas = [results['probas'][train_kfold][train_idx] for results in full_results]
+        test_probas = [results['probas'][test_kfold][test_idx] for results in full_results]
 
         # models
         model_names = [results['model_name'] for results in full_results]
-        models = [results['models'][kfold] for results in full_results]
+        models = [model_results['models'][train_kfold], model_results['models'][train_kfold]]
         scores = [results['auc_scores'] for results in full_results]
 
         return geos_train, X_train_df, y_train, train_probas, \
                geos_test, X_test_df, y_test, test_probas, \
                models, model_names, scores
 
+    def _create_pr_curve_data(self):
+        probas_df = self.combined_df[['geometry', 'score']].set_index('geometry').rename(columns={'score': 'human'})
+        probas_df['train'] = probas_df.join(self.train_probas, how='inner').iloc[:, -1]
+        probas_df['test'] = probas_df.join(self.test_probas, how='inner').iloc[:, -1]
+        return probas_df
+
     def _create_folium_series(self, combined_df: pd.DataFrame, scores_columns: List[str]):
         new_df = combined_df.reset_index().set_index('geometry')
         folium_series = [new_df['score'] - new_df[score_col] for score_col in scores_columns]
-        folium_series = [pd.Series(data=series, index=new_df.index, name=score_col) for series, score_col in zip(folium_series, scores_columns)]
+        folium_series = [pd.Series(data=series, index=new_df.index, name=score_col) for series, score_col in
+                         zip(folium_series, scores_columns)]
         folium_series = [series.dropna() for series in folium_series]
         folium_series = [series - series.min() / (series.max() - series.min()) for series in folium_series]
         return folium_series

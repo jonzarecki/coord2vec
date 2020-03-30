@@ -7,6 +7,9 @@ import numpy
 from bokeh.io import curdoc
 from bokeh.models.widgets import Panel, Tabs
 
+from coord2vec.evaluation.visualizations.bokeh_server.building_dashboard import BuildingTaskDashboard
+from coord2vec.evaluation.visualizations.bokeh_server.feature_dashboard import FeatureDashboard
+
 file_path = os.path.realpath(__file__)
 root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(file_path)))))
 sys.path.append(root_path)
