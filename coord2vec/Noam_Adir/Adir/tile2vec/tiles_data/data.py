@@ -1,24 +1,23 @@
 import pickle
 from os.path import join
 
-# from coord2vec.Noam_Adir.pipeline.base_pipeline import extract_geographical_features
-# from coord2vec.Noam_Adir.pipeline.preprocess import load_data_from_pickel, generic_clean_col, \
-#     ALL_MANHATTAN_FILTER_FUNCS_LIST
-# from coord2vec.config import tile_server_dns_noport, tile_server_ports
-# from coord2vec.image_extraction.tile_image import generate_static_maps
-# from coord2vec.image_extraction.tile_image import render_single_tile
-# from coord2vec.image_extraction.tile_utils import build_tile_extent
+from coord2vec.Noam_Adir.pipeline.base_pipeline import *
+from coord2vec.Noam_Adir.pipeline.preprocess import load_data_from_pickel, generic_clean_col, \
+    ALL_MANHATTAN_FILTER_FUNCS_LIST
+from coord2vec.config import tile_server_dns_noport, tile_server_ports
+from coord2vec.image_extraction.tile_image import generate_static_maps
+from coord2vec.image_extraction.tile_image import render_single_tile
+from coord2vec.image_extraction.tile_utils import build_tile_extent
 from tile2vec_utils import *
 
 
 def long_get_manhattan_df_from_pickle():
-    # pickle_folder = '/data/home/morpheus/coord2vec_Adir/coord2vec/Noam_Adir/Adir/tile2vec'
-    pickle_folder = ''
-    pickle_file_name = 'manhattan_house_prices.pkl'
-    manhattan_df = load_data_from_pickel(f"{join(pickle_folder, pickle_file_name)}", "lon", "lat")
+    pickle_file_name = r'/data/home/morpheus/coord2vec_Adir/coord2vec/Noam_Adir/Adir/tile2vec/tiles_data/manhattan_house_prices.pkl'
+    manhattan_df = load_from_pickle_features_manhattan(f"{pickle_file_name}", "lon", "lat")
     manhattan_df = generic_clean_col(manhattan_df, ALL_MANHATTAN_FILTER_FUNCS_LIST)
     cleaned_features = manhattan_df[['sold', 'priceSqft', 'numBedrooms', 'numBathrooms', 'sqft', 'coord']]
     all_features = extract_geographical_features(cleaned_features)
+
     # print(all_features)
     return all_features
 
@@ -28,8 +27,7 @@ def save_to_pickle_features_manhattan(file_path, all_features):
     pickle.dump(all_features, pickle_out_features)
     pickle_out_features.close()
 
-
-# save_to_pickle_features_manhattan('cleaned_manhattan_features_df', features)
+# save_to_pickle_features_manhattan('cleaned_manhattan_features_df', long_get_manhattan_df_from_pickle())
 
 def load_from_pickle_features_manhattan(file_path):
     pickle_in_features = open(file_path, "rb")
@@ -39,7 +37,8 @@ def load_from_pickle_features_manhattan(file_path):
 
 
 def get_manhattan_df_from_cleaned_pickle():
-    all_features = load_from_pickle_features_manhattan('cleaned_manhattan_features_df')
+    file_path = r'/data/home/morpheus/coord2vec_Adir/coord2vec/Noam_Adir/Adir/tile2vec/tiles_data/cleaned_manhattan_features_df'
+    all_features = load_from_pickle_features_manhattan(file_path)
     return all_features
 
 

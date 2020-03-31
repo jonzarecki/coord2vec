@@ -5,7 +5,7 @@ import pandas as pd
 import parmap
 from geopandas import GeoDataFrame
 from shapely.geometry import Point
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
@@ -124,16 +124,17 @@ def train_models_from_splitted_data(models, X_train, y_train, X_test, y_test):
     for model in models:
         model.fit(X_train, y_train)
         y_test_pred = model.predict(X_test)
-        scores.append(mean_squared_error(y_test, y_test_pred))
+        scores.append(mean_absolute_error(y_test, y_test_pred))
     return models, scores, y_test
 
 
-def my_z_score_norm(train: np.ndarray, test: np.ndarray = None):
+def my_z_score_norm(train: np.ndarray, test: np.ndarray = None, return_scalers=False):
     """
     operate a z_score normalization on train and test dataset.
     Args:
         train: array with shape (n_train, D) D is the dimension of the features.
         test: array with shape (n_test, D) or None
+        return_scalers: bool - True means return the norm scalers
 
     Returns:
         normalized train if test is None
@@ -149,12 +150,14 @@ def my_z_score_norm(train: np.ndarray, test: np.ndarray = None):
         if len(test.shape) == 1:
             test = test[:, None]
         norm_test = normalizer.transform(test)
-        return norm_train, norm_test
-    return norm_train
+        if not return_scalers:
+            return norm_train, norm_test
+        else:
+            return norm_train, norm_test, normalizer
+    return norm_train if not return_scalers else norm_train, normalizer
 
 
-def train_models_from_generic_dict_with_norm(
-        num_iter: int, model, X_dict: dict[str, np.ndarray], y: np.ndarray) -> List[float]:
+def train_models_from_generic_dict_with_norm(num_iter: int, model, X_dict: dict, y: np.ndarray) -> List[float]:
     """
     Train model on each dataset in X_dict.values() and check mse-accuracy on y
     we'll call this training experiment
@@ -162,7 +165,7 @@ def train_models_from_generic_dict_with_norm(
         num_iter: num of times we want to execute the experiment
         (used only from wraps function that run these experiments paralleled)
         model: a model we want to train
-        X_dict: {name_of_dataset: dataset} for each dataset we want to train on
+        X_dict: (name_of_dataset: dataset) for each dataset we want to train on
         y: target dataset on which we are compute the mse accuracy
 
     Returns:
@@ -171,34 +174,37 @@ def train_models_from_generic_dict_with_norm(
     N = y.shape[0]
     acc_lst = []
     indexes = np.arange(N)
+    np.random.seed()
+    np.random.shuffle(indexes)
     train_ind, test_ind = train_test_split(indexes)
     y_train, y_test = y[train_ind], y[test_ind]
-    y_norm_train, y_norm_test = my_z_score_norm(y_train, y_test)
+    # y_norm_train, y_norm_test, normalizer = my_z_score_norm(y_train, y_test, return_scalers=True)
     for title, X in X_dict.items():
         X_train, X_test = X[train_ind], X[test_ind]
         X_norm_train, X_norm_test = my_z_score_norm(X_train, X_test)
-        args_tuple = ([model], X_norm_train, y_norm_train, X_norm_test, y_norm_test)
+        args_tuple = ([model], X_norm_train, y_train, X_norm_test, y_test)
         acc = train_models_from_splitted_data(*args_tuple)[1][0]
         acc_lst.append(acc)
     return acc_lst
 
 
 # helper function
-def train_n_iter(model, X_dict: dict[str, np.ndarray], y: np.ndarray, num_iter=1) -> dict[str, float]:
+def train_n_iter(model, X_dict: dict, y: np.ndarray, num_iter=1) -> dict:
     """
     Train model on each dataset in X_dict.values() and check mse-accuracy on y num_iter times in parallel
     Args:
         model: a model we want to train
-        X_dict: {name_of_dataset: dataset} for each dataset we want to train on
+        X_dict: (name_of_dataset: dataset) for each dataset we want to train on
         y: target dataset on which we are compute the mse accuracy
         num_iter: number of times we do the experiment.
 
     Returns:
-        acc_dict {name of dataset: mean accuracy over num iter times on dataset}
+        acc_dict (name of dataset: mean accuracy over num iter times on dataset)
     """
+
     accs_per_model = parmap.map(train_models_from_generic_dict_with_norm,
                                 range(num_iter), model, X_dict, y, pm_processes=8, pm_pbar=True)
-    mean_acc_per_model = np.mean(np.array(accs_per_model), axis=0)
+    mean_acc_per_model = np.mean(np.array(accs_per_model), axis=0).astype(int)  # no norm for y
     acc_dict = {title + f"_mean_acc_for_{num_iter}_iter": mean_acc_per_model[i]
                 for i, title in enumerate(X_dict.keys())}
     return acc_dict
@@ -214,3 +220,5 @@ def plot_scores(training_cache):
     print("mean price - ", np.mean(y_test))
     print(f"MSE: linear regression - {scores[0]}, catboost - {scores[1]}")
     print(f"RMSE: linear regression - {np.sqrt(scores[0])}, catboost - {np.sqrt(scores[1])}")
+
+

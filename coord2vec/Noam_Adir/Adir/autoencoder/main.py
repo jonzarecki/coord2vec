@@ -6,7 +6,7 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import TensorBoardLogger
 
 from autoencoder.autoencoder import Autoencoder
-from tensorboard_vis import *
+from autoencoder.tensorboard_vis import *
 
 
 def one_run_of_hparams_tuning(lr: float, weight_decay: float, emb_dim: float, batch_size: float):
@@ -29,7 +29,7 @@ def one_run_of_hparams_tuning(lr: float, weight_decay: float, emb_dim: float, ba
 
 
 if __name__ == '__main__':
-    logs_path = '/mnt/adir_logs'
+    logs_path = '/mnt/adir_logs/autoencoder'
     parameters = {
         'lr': [1e-1, 1e-2],
         'weight_decay': [1e-8, 1e-7],
