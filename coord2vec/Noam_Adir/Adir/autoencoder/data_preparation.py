@@ -1,6 +1,6 @@
 from torch.utils.data import Dataset
-from preprocess import *
-from base_pipeline import *
+from coord2vec.Noam_Adir.pipeline.preprocess import *
+from coord2vec.Noam_Adir.pipeline.base_pipeline import *
 
 class Feature_Dataset(Dataset):
 

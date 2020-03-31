@@ -1,9 +1,12 @@
 import pickle
+from typing import Tuple
 
 import pandas as pd
 
+from coord2vec.Noam_Adir.pipeline.utils import get_non_repeating_coords
 
-def get_csv_data(use_full_dataset=True) -> pd.DataFrame:
+
+def get_csv_data(use_full_dataset=True) -> Tuple[pd.DataFrame, str]:
     """
     load data to data frame of Beijing house pricing
     Args:
@@ -25,7 +28,8 @@ def get_csv_data(use_full_dataset=True) -> pd.DataFrame:
                    "ladderRatio", "elevator", "fiveYearsProperty", "subway", "district", "communityAverage", "coord",
                    "totalPrice"]]
     # in features all csv exept: 'url', 'id', 'Lng', 'Lat', 'coord', "Cid", "tradeTime",
-    return features
+    y_col = "totalPrice"
+    return features, y_col
 
 
 def load_data_from_pickel(file_name: str, longitude_name: str, latitude_name: str) -> pd.DataFrame:
@@ -42,6 +46,30 @@ def load_data_from_pickel(file_name: str, longitude_name: str, latitude_name: st
     df = pickle.load(open(file_name, "rb"))
     df["coord"] = df.apply(lambda row: tuple(row[[longitude_name, latitude_name]].values), axis=1)
     return df
+
+
+def get_manhattan_data(use_full_dataset=True, non_repeating_coord=True, n_sample=10) -> Tuple[pd.DataFrame, str]:
+    """
+
+    Args:
+        use_full_dataset: if True returns all the rows in the dataset else sample according to n_sample
+        non_repeating_coord: if True returns DataFrame with unique rows and a columns named coord_id with id
+        n_sample: if not using the full dataset this is the number of rows samples
+
+    Returns: tuple of the dataframe with the data features and some extra columns, and the name of the label column
+        the extra columns are: "coord", y_col and possibly "coord_id"
+
+    """
+    pickle_folder = ""
+    pickle_file_name = "manhattan_house_prices.pkl"
+    y_col = "sold"
+    manhattan_df = load_data_from_pickel(f"{pickle_folder}{pickle_file_name}", "lon", "lat")
+    features = manhattan_df[['sold', 'priceSqft', 'numBedrooms', 'numBathrooms', 'sqft', 'coord']]
+    if non_repeating_coord:
+        features = get_non_repeating_coords(features)
+    if not use_full_dataset:
+        features = features.sample(n=n_sample, axis=0)
+    return features, y_col
 
 
 def generic_clean_col(df: pd.DataFrame, clean_funcs) -> pd.DataFrame:

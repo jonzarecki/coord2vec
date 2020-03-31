@@ -9,26 +9,45 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from coord2vec.Noam_Adir.pipeline.preprocess import generic_clean_col, ALL_FILTER_FUNCS_LIST
-from coord2vec.Noam_Adir.pipeline.preprocess import get_csv_data
+
 from coord2vec.config import BUILDINGS_FEATURES_TABLE
 from coord2vec.feature_extraction.feature_bundles import karka_bundle_features, create_building_features
 from coord2vec.feature_extraction.features_builders import FeaturesBuilder
 
+from coord2vec.Noam_Adir.pipeline.preprocess import get_csv_data, get_manhattan_data
+from coord2vec.Noam_Adir.pipeline.preprocess import generic_clean_col, ALL_FILTER_FUNCS_LIST, ALL_MANHATTAN_FILTER_FUNCS_LIST
 
-def extract_and_filter_csv_data(clean_funcs=ALL_FILTER_FUNCS_LIST, use_full_dataset=True) -> pd.DataFrame:
+
+def extract_and_filter_csv_data(clean_funcs=ALL_FILTER_FUNCS_LIST,
+                                use_full_dataset=True) -> Tuple[pd.DataFrame, str]:
     """
     load anf filter data from csv, at the moment uses get_csv_data specific for Beijing dataset
     Args:
         clean_funcs: the filter functions to use on the csv raw data
         use_full_dataset: parameter for the csv loading function
 
-    Returns: filtered DataFrame
+    Returns: tuple of : filtered DataFrame and the label column name
 
     """
-    csv_features = get_csv_data(use_full_dataset=use_full_dataset)
+    csv_features, y_col = get_csv_data(use_full_dataset=use_full_dataset)
     cleaned_features = generic_clean_col(csv_features, clean_funcs)
-    return cleaned_features
+    return cleaned_features, y_col
+
+
+def extract_and_filter_manhattan_data(clean_funcs=ALL_MANHATTAN_FILTER_FUNCS_LIST,
+                                      use_full_dataset=True) -> Tuple[pd.DataFrame, str]:
+    """
+    apply filter functions to the manhatta data loaded from pickle
+    Args:
+        clean_funcs: the functions to apply
+        use_full_dataset: if True gets all the data else return according to get_manhattan_data
+
+    Returns: tuple of : filtered DataFrame and the label column name
+
+    """
+    pickle_features, y_col = get_manhattan_data(use_full_dataset=use_full_dataset, non_repeating_coord=True)
+    cleaned_features = generic_clean_col(pickle_features, clean_funcs)
+    return cleaned_features, y_col
 
 
 def extract_geographical_features(cleaned_features: pd.DataFrame, calculate_feats_in_batchs=True,
@@ -215,10 +234,9 @@ def plot_scores(training_cache):
     print regression scores from the cache returned from the train_models function
     Args:
         training_cache: cache from train_models function
+
     """
     models, scores, y_test = training_cache
     print("mean price - ", np.mean(y_test))
     print(f"MSE: linear regression - {scores[0]}, catboost - {scores[1]}")
     print(f"RMSE: linear regression - {np.sqrt(scores[0])}, catboost - {np.sqrt(scores[1])}")
-
-
