@@ -9,7 +9,7 @@ class GraphAttentionLayer(nn.Module):
     Simple GAT layer, similar to https://arxiv.org/abs/1710.10903
     """
 
-    def __init__(self, in_features, out_features, dropout, alpha, concat=True):
+    def __init__(self, in_features, out_features, dropout, alpha, dtype=torch.float, concat=True):
         super(GraphAttentionLayer, self).__init__()
         self.dropout = dropout
         self.in_features = in_features
@@ -17,9 +17,9 @@ class GraphAttentionLayer(nn.Module):
         self.alpha = alpha
         self.concat = concat
 
-        self.W = nn.Parameter(torch.zeros(size=(in_features, out_features)))
+        self.W = nn.Parameter(torch.zeros(size=(in_features, out_features), dtype=dtype))
         nn.init.xavier_uniform_(self.W.data, gain=1.414)
-        self.a = nn.Parameter(torch.zeros(size=(2*out_features, 1)))
+        self.a = nn.Parameter(torch.zeros(size=(2*out_features, 1), dtype=dtype))
         nn.init.xavier_uniform_(self.a.data, gain=1.414)
 
         self.leakyrelu = nn.LeakyReLU(self.alpha)
@@ -79,17 +79,18 @@ class SpGraphAttentionLayer(nn.Module):
     Sparse version GAT layer, similar to https://arxiv.org/abs/1710.10903
     """
 
-    def __init__(self, in_features, out_features, dropout, alpha, concat=True):
+    def __init__(self, in_features, out_features, dropout, alpha, dtype=torch.float32, concat=True):
         super(SpGraphAttentionLayer, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
         self.alpha = alpha
         self.concat = concat
+        self.dtype = dtype
 
-        self.W = nn.Parameter(torch.zeros(size=(in_features, out_features)))
+        self.W = nn.Parameter(torch.zeros(size=(in_features, out_features), dtype=dtype))
         nn.init.xavier_normal_(self.W.data, gain=1.414)
                 
-        self.a = nn.Parameter(torch.zeros(size=(1, 2*out_features)))
+        self.a = nn.Parameter(torch.zeros(size=(1, 2*out_features), dtype=dtype))
         nn.init.xavier_normal_(self.a.data, gain=1.414)
 
         self.dropout = nn.Dropout(dropout)
@@ -110,11 +111,11 @@ class SpGraphAttentionLayer(nn.Module):
         edge_h = torch.cat((h[edge[0, :], :], h[edge[1, :], :]), dim=1).t()
         # edge: 2*D x E
 
-        edge_e = torch.exp(-self.leakyrelu(self.a.mm(edge_h).squeeze()))
+        edge_e = torch.exp(self.leakyrelu(self.a.mm(edge_h).squeeze()))
         assert not torch.isnan(edge_e).any()
         # edge_e: E
 
-        e_rowsum = self.special_spmm(edge, edge_e, torch.Size([N, N]), torch.ones(size=(N,1), device=dv))
+        e_rowsum = self.special_spmm(edge, edge_e, torch.Size([N, N]), torch.ones(size=(N,1), dtype=self.dtype, device=dv))
         # e_rowsum: N x 1
 
         edge_e = self.dropout(edge_e)

@@ -1,6 +1,6 @@
 from torch.utils.data import Dataset
-from coord2vec.Noam_Adir.pipeline.preprocess import *
-from coord2vec.Noam_Adir.pipeline.base_pipeline import *
+from coord2vec.Noam_Adir.pipeline.preprocess import clean_floor_col, clean_constructionTime_col
+from coord2vec.Noam_Adir.pipeline.base_pipeline import extract_geographical_features, extract_and_filter_csv_data
 
 class Feature_Dataset(Dataset):
 

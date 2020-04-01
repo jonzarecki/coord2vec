@@ -1,3 +1,5 @@
+import os
+import pickle
 from typing import List, Tuple
 
 import numpy as np
@@ -9,13 +11,37 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-
+from coord2vec.Noam_Adir.pipeline.utils import get_non_repeating_coords
 from coord2vec.config import BUILDINGS_FEATURES_TABLE
 from coord2vec.feature_extraction.feature_bundles import karka_bundle_features, create_building_features
 from coord2vec.feature_extraction.features_builders import FeaturesBuilder
 
 from coord2vec.Noam_Adir.pipeline.preprocess import get_csv_data, get_manhattan_data
 from coord2vec.Noam_Adir.pipeline.preprocess import generic_clean_col, ALL_FILTER_FUNCS_LIST, ALL_MANHATTAN_FILTER_FUNCS_LIST
+
+
+def get_data(dataset="manhattan", use_all_data=True):
+    if dataset == "manhattan":
+        if not use_all_data:
+            debug_cache_filename = "small_data_manhattan.pickle"
+        else:
+            debug_cache_filename = "full_data_manhattan.pickle"
+        if os.path.isfile(debug_cache_filename):
+            features, y_col = pickle.load(open(debug_cache_filename, "rb"))
+        else:
+            features, y_col = extract_and_filter_manhattan_data(use_full_dataset=use_all_data)
+            features = extract_geographical_features(features)
+            pickle.dump((features, y_col), open(debug_cache_filename, "wb"))
+    else:  # dataset == "beijing":
+        all_features, y_col = extract_and_filter_csv_data(use_full_dataset=use_all_data)
+        all_features = extract_geographical_features(all_features)
+        features = get_non_repeating_coords(all_features)
+
+    features = features.set_index("coord_id").sort_index()
+    X = features.drop(columns=["coord", y_col]).values.astype(float)
+    y = features[y_col].values.astype(float)[:, None]
+    coords = features["coord"]
+    return coords, X, y
 
 
 def extract_and_filter_csv_data(clean_funcs=ALL_FILTER_FUNCS_LIST,
