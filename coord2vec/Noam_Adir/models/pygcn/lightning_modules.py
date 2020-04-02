@@ -51,7 +51,8 @@ class LitGCN(pl.LightningModule):
         self.epoch_debug_counter = 0
 
         self.gc1 = GraphConvolution(nfeat, self.hparams.hidden)
-        self.gc2 = GraphConvolution(self.hparams.hidden, nclass)
+        self.gc2 = GraphConvolution(self.hparams.hidden, self.hparams.hidden)
+        self.gc3 = GraphConvolution(self.hparams.hidden, nclass)
 
         self.optimizer = optimizer(self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay)
 
@@ -60,7 +61,9 @@ class LitGCN(pl.LightningModule):
 
         x = F.relu(self.gc1(x, adj))
         x = F.dropout(x, self.dropout, training=self.training)
-        x = self.gc2(x, adj)
+        x = F.relu(self.gc2(x, adj))
+        x = F.dropout(x, self.dropout, training=self.training)
+        x = self.gc3(x, adj)
         if self.task == "class":
             return F.log_softmax(x, dim=1)
         else:
@@ -106,11 +109,18 @@ class LitGCN(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         self.train()
         X, y = batch
-        y_pred = self.forward(X, self.adj)[self.idx_train]
-        loss = self.loss_fn(y_pred, y.float()[self.idx_train])
-        y_pred_val = self.forward(X, self.adj)[self.idx_val]
-        val_loss = self.loss_fn(y_pred_val, y.float()[self.idx_val])
-        tensorboard_logs = {'train_loss': loss, 'val_loss': val_loss}
+        y_pred = self.forward(X, self.adj)
+        loss = self.loss_fn(y_pred[self.idx_train], y[self.idx_train])
+        y_pred_val, t_true_val = y_pred[self.idx_val].detach(), y[self.idx_val].detach()
+        val_mse = F.mse_loss(y_pred_val, t_true_val)
+        val_r2 = r2_score(y_pred=y_pred_val, y_true=t_true_val)
+        val_mae = mean_absolute_error(y_pred=y_pred_val, y_true=t_true_val)
+        val_rmse = np.sqrt(val_mse)
+        tensorboard_logs = {'train_loss': loss,
+                            'val_mse': val_mse,
+                            'val_r2': val_r2,
+                            'val_mae': val_mae,
+                            'val_rmse': val_rmse}
         return {'loss': loss, 'log': tensorboard_logs}
 
     def evaluate(self):
@@ -134,12 +144,12 @@ class LitGCN(pl.LightningModule):
         parser.add_argument('--fastmode', action='store_true', default=False, help='Validate during training pass.')
         parser.add_argument('--seed', type=int, default=42, help='Random seed.')
         parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
-        parser.add_argument('--hidden', type=int, default=32, help='Number of hidden units.')
+        parser.add_argument('--hidden', type=int, default=16, help='Number of hidden units.')
         parser.add_argument('--dropout', type=float, default=0.5, help='Dropout rate (1 - keep probability).')
 
         # training specific (for this model)
-        parser.add_argument('--epochs', type=int, default=5000, help='Number of epochs to train.')
-        parser.add_argument('--lr', type=float, default=0.01, help='Initial learning rate.')
+        parser.add_argument('--epochs', type=int, default=10000, help='Number of epochs to train.')
+        parser.add_argument('--lr', type=float, default=0.05, help='Initial learning rate.')
 
         return parser
 
