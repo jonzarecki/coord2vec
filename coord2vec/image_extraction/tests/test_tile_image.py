@@ -14,15 +14,15 @@ class TestTileImage(unittest.TestCase):
                                                                                              str(tile_server_ports[0])))
         cls.center = [36.1070, 36.7855]
         cls.s = generate_static_maps(tile_server_dns_noport, tile_server_ports)
-        cls.ext = build_tile_extent(cls.center, radius_in_meters=50)
+        cls.ext = build_tile_extent(cls.center, radius_in_meters=70)
 
     def test_rendering_single_image_works(self):
-        self.skipTest("Image rendering is obsolete")
+        # self.skipTest("Image rendering is obsolete")
         image = np.array(render_single_tile(self.m, self.ext))
         # self.assertTupleEqual((IMG_HEIGHT, IMG_WIDTH, 3), image.shape)
         import matplotlib.pyplot as plt
         plt.imshow(image)
-        # plt.show()
+        plt.show()
 
     def test_rendering_multi_channel_image_works(self):
         self.skipTest("Image rendering is obsolete")

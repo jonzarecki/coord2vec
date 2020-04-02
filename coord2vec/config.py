@@ -28,7 +28,7 @@ TRAIN_SAMPLE_NUM = 50_000
 NEG_RATIO = 1.5
 TRUE_POSITIVE_RADIUS = 100
 
-IMG_WIDTH, IMG_HEIGHT = (224, 224)
+IMG_WIDTH, IMG_HEIGHT = (128, 128)
 israel_range = [34.482724, 31.492354, 34.583301, 31.585196]
 SMALL_TEST_POLYGON = Polygon([])
 # beijing_range = [39.747142, 116.205692, 40.041051, 116.632688]
@@ -44,6 +44,7 @@ STEP_SIZE = 20
 SCORES_TABLE = 'building_scores'
 
 # tile_server_dns_noport = 'https://api.maptiler.com/tiles/satellite-mediumres/{z}/{x}/{y}.jpg?key=iS9gs1LsLOJfuF3dQvLd'
-tile_server_dns_noport = 'http://a.tile.openstreetmap.us/usgs_large_scale/{z}/{x}/{y}.jpg'
+# tile_server_dns_noport = 'http://a.tile.openstreetmap.us/usgs_large_scale/{z}/{x}/{y}.jpg'
+tile_server_dns_noport = 'http://40.127.166.177:8103/tile/{z}/{x}/{y}.png'
 tile_server_ports = [80]
 RADIUS_IN_METERS = 50

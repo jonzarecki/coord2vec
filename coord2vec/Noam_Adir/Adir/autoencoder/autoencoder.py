@@ -5,8 +5,10 @@ from catboost import CatBoostRegressor
 from sklearn.preprocessing import StandardScaler
 from torch import nn
 from torch.utils.data import DataLoader
+import sys
 
-from autoencoder.data_preparation import *
+# sys.path.append('/data/home/morpheus/coord2vec_Adir/coord2vec/Noam_Adir/Adir')
+from coord2vec.Noam_Adir.Adir.autoencoder.data_preparation import *
 
 
 class Autoencoder(pl.LightningModule):

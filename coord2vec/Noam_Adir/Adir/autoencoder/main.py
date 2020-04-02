@@ -5,8 +5,8 @@ import parmap
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import TensorBoardLogger
 
-from autoencoder.autoencoder import Autoencoder
-from autoencoder.tensorboard_vis import *
+from coord2vec.Noam_Adir.Adir.autoencoder.autoencoder import Autoencoder
+from coord2vec.Noam_Adir.Adir.autoencoder.tensorboard_vis import *
 
 
 def one_run_of_hparams_tuning(lr: float, weight_decay: float, emb_dim: float, batch_size: float):

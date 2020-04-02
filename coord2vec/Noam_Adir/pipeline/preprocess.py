@@ -64,7 +64,7 @@ def get_manhattan_data(use_full_dataset=True, non_repeating_coord=True, n_sample
     pickle_file_name = "manhattan_house_prices.pkl"
     y_col = "sold"
     manhattan_df = load_data_from_pickel(f"{pickle_folder}{pickle_file_name}", "lon", "lat")
-    features = manhattan_df[['sold', 'priceSqft', 'numBedrooms', 'numBathrooms', 'sqft', 'coord']]
+    features = manhattan_df[['sold', 'numBedrooms', 'numBathrooms', 'sqft', 'coord']]
     if non_repeating_coord:
         features = get_non_repeating_coords(features)
     if not use_full_dataset:

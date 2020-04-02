@@ -5,3 +5,5 @@ conda activate coord2vec
 jupyter notebook --ip=0.0.0.0 --port=8110
 
 tensorboard --logdir /mnt/adir_logs --port=8112 --host 0.0.0.0
+
+docker run -d -e THREADS=24 -p 8103:80 --rm -v /home/morpheus/new-york-latest.osm.pbf:/data.osm.pbf                     --name tile-landcover -it osm-tile-server:0.1 import_run project.mml

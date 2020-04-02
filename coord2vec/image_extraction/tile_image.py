@@ -25,7 +25,8 @@ def render_single_tile(m: StaticMap, ext: list) -> Image:
                [ext[2], ext[1]]]
     polygon = Polygon(ex_poly, 'blue', 'black', True)
     m.add_polygon(polygon)
-    m.zoom = m._calculate_zoom()
+    m.zoom = 14
+    # m.zoom = m._calculate_zoom()
     # m.add_marker()
     # get extent of all lines
     extent = ext
