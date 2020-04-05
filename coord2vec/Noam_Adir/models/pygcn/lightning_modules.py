@@ -52,7 +52,8 @@ class LitGCN(pl.LightningModule):
 
         self.gc1 = GraphConvolution(nfeat, self.hparams.hidden)
         self.gc2 = GraphConvolution(self.hparams.hidden, self.hparams.hidden)
-        self.gc3 = GraphConvolution(self.hparams.hidden, nclass)
+        self.gc3 = GraphConvolution(self.hparams.hidden, self.hparams.hidden)
+        self.gc4 = GraphConvolution(self.hparams.hidden, nclass)
 
         self.optimizer = optimizer(self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay)
 
@@ -63,7 +64,9 @@ class LitGCN(pl.LightningModule):
         x = F.dropout(x, self.dropout, training=self.training)
         x = F.relu(self.gc2(x, adj))
         x = F.dropout(x, self.dropout, training=self.training)
-        x = self.gc3(x, adj)
+        x = F.relu(self.gc3(x, adj))
+        x = F.dropout(x, self.dropout, training=self.training)
+        x = self.gc4(x, adj)
         if self.task == "class":
             return F.log_softmax(x, dim=1)
         else:
@@ -81,9 +84,12 @@ class LitGCN(pl.LightningModule):
         graph_builder = GeomGraphBuilder(geometries=all_geometries, method="DT")
         graph_builder.construct_vertices()
         adj = nx.to_scipy_sparse_matrix(graph_builder.graph)
+        assert GeoSeries([geom for n, geom in graph_builder.graph.nodes(data="geometry")]).geom_almost_equals(all_geometries).all()
         # normalize
         X, self.X_normalizer = my_z_score_norm(X, return_scalers=True)
-        adj = normalize_adj(adj + sp.eye(adj.shape[0]))
+        adj = normalize_adj(adj + self.hparams.self_attention * sp.eye(adj.shape[0]))
+        # # debuding
+        # adj = normalize_adj(sp.eye(adj.shape[0]))
 
         adj = sparse_mx_to_torch_sparse_tensor(adj)
         X = torch.tensor(X, requires_grad=False, dtype=self.dtype)
@@ -144,12 +150,13 @@ class LitGCN(pl.LightningModule):
         parser.add_argument('--fastmode', action='store_true', default=False, help='Validate during training pass.')
         parser.add_argument('--seed', type=int, default=42, help='Random seed.')
         parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
-        parser.add_argument('--hidden', type=int, default=16, help='Number of hidden units.')
+        parser.add_argument('--hidden', type=int, default=32, help='Number of hidden units.')
         parser.add_argument('--dropout', type=float, default=0.5, help='Dropout rate (1 - keep probability).')
+        parser.add_argument('--self-attention', type=float, default=10, help='control the relative weight of the node represntation')
 
         # training specific (for this model)
-        parser.add_argument('--epochs', type=int, default=10000, help='Number of epochs to train.')
-        parser.add_argument('--lr', type=float, default=0.05, help='Initial learning rate.')
+        parser.add_argument('--epochs', type=int, default=3000, help='Number of epochs to train.')
+        parser.add_argument('--lr', type=float, default=5e-3, help='Initial learning rate.')
 
         return parser
 

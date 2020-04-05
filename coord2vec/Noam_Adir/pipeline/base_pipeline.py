@@ -7,7 +7,7 @@ import pandas as pd
 import parmap
 from geopandas import GeoDataFrame
 from shapely.geometry import Point
-from sklearn.metrics import mean_squared_error, mean_absolute_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
@@ -169,7 +169,13 @@ def train_models_from_splitted_data(models, X_train, y_train, X_test, y_test):
     for model in models:
         model.fit(X_train, y_train)
         y_test_pred = model.predict(X_test)
-        scores.append(mean_absolute_error(y_test, y_test_pred))
+        model_metrics = {"mae": mean_absolute_error(y_true=y_test, y_pred=y_test_pred),
+                         "mse": mean_squared_error(y_true=y_test, y_pred=y_test_pred),
+                         "rmse": np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred)),
+                         "r2": r2_score(y_true=y_test, y_pred=y_test_pred)}
+
+        scores.append(model_metrics)
+
     return models, scores, y_test
 
 
@@ -264,5 +270,9 @@ def plot_scores(training_cache):
     """
     models, scores, y_test = training_cache
     print("mean price - ", np.mean(y_test))
-    print(f"MSE: linear regression - {scores[0]}, catboost - {scores[1]}")
-    print(f"RMSE: linear regression - {np.sqrt(scores[0])}, catboost - {np.sqrt(scores[1])}")
+    for model, model_score in zip(models, scores):
+        print("model: ", model)
+        for metric, value in model_score.items():
+            print(f"{metric}: {value}")
+    # print(f"MSE: linear regression - {scores[0]}, catboost - {scores[1]}")
+    # print(f"RMSE: linear regression - {np.sqrt(scores[0])}, catboost - {np.sqrt(scores[1])}")
