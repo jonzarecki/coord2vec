@@ -36,9 +36,9 @@ class FeaturesBuilder(TransformerMixin):
 
     def transform_batch(self, input_gs: GeoSeries, use_cache: bool = True) -> pd.DataFrame:
         """
-        extract the desired features on desired geometries
+        extract the desired features on desired geometries on a batch
         Args:
-            input_gs: a GeoSeries with the desired geometries
+            input_gs: a batch of GeoSeries with the desired geometries
             use_cache: if set and self.cache_table is filled will load/save the features to the cache
 
         Returns:
