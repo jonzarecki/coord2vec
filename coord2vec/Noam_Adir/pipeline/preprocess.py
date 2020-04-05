@@ -21,7 +21,6 @@ def get_csv_data(use_full_dataset=True) -> Tuple[pd.DataFrame, str]:
     else:
         small_or_medium = "medium"
         csv_path = f"{server_csv_folder_path}/Housing price in Beijing {small_or_medium}.csv"
-    df = pd.read_csv(csv_path, engine='python')
     df['coord'] = df.apply(lambda row: tuple(row[['Lng', 'Lat']].values), axis=1)
     features = df[["DOM", "followers", "square", "livingRoom", "drawingRoom", "kitchen", "bathRoom",
                    "floor", "buildingType", "constructionTime", "renovationCondition", "buildingStructure",
@@ -34,7 +33,8 @@ def get_csv_data(use_full_dataset=True) -> Tuple[pd.DataFrame, str]:
 
 def load_data_from_pickel(file_name: str, longitude_name: str, latitude_name: str) -> pd.DataFrame:
     """
-    load geographic data from pickle assumes every row has a longitude col and a latitude col
+    load geographic data from pickle assumes every row has a
+    df = pd.read_csv(csv_path, engine='python')longitude col and a latitude col
     Args:
         file_name: the pickle file name to load
         longitude_name: the name of longitude column in df

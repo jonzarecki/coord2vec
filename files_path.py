@@ -1,6 +1,6 @@
 import os
 
-COORD2VEC_ABS_PATH = os.getcwd()
+COORD2VEC_ABS_PATH = os.path.dirname(__file__)
 
 
 def join_abs_path(rel_path):

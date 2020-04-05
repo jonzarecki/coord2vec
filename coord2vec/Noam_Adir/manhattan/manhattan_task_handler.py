@@ -12,7 +12,8 @@ from files_path import *
 
 class Manhattan_Task_Handler(TaskHandler):
 
-    def get_dataset(self) -> Tuple[np.ndarray, pd.DataFrame, np.ndarray]:
+
+    def get_dataset(self, all_dataset: bool) -> Tuple[np.ndarray, pd.DataFrame, np.ndarray]:
         """
         get the non-geo data for the task from manhattan pickle
         Returns:
@@ -20,6 +21,7 @@ class Manhattan_Task_Handler(TaskHandler):
         """
         df = load_from_pickle_features(MANHATTAN_PKL_PATH)
         df = generic_clean_col(df, ALL_MANHATTAN_FILTER_FUNCS_LIST)
+        df = df if all_dataset else df[:5]
         coords = df.apply(lambda row: tuple(row[['lon', 'lat']].values), axis=1).values  # np.ndarray, dtype=object
         features_without_geo = df[['numBedrooms', 'numBathrooms', 'sqft']].astype(float)  # pd.DataFrame, dtype=float
         y = df['sold'].values.astype(float)  # np.ndarray, dtype=float
