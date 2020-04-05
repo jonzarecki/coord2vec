@@ -1,8 +1,9 @@
 import os
 import pickle
 import random
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Union, Dict
+from typing import List, Tuple, Union, Dict, Callable
 
 import geopandas as gpd
 import numpy as np
@@ -32,7 +33,7 @@ class TaskHandler(ABC):
     Abstract class for evaluation tasks
     """
 
-    def __init__(self, embedder: FeaturesBuilder, models: Dict[str, BaseEstimator],
+    def __init__(self, embedder: FeaturesBuilder, models: List[BaseEstimator],
                  bounding_geom: Union[List[Polygon], Polygon] = None):
         self.embedder = embedder
 
@@ -40,10 +41,13 @@ class TaskHandler(ABC):
         self.true_geos = None
 
         # self.models_dict = {model_name: Pipeline([('std', StandardScaler()), (model_name, model)]) for model_name, model in models.items()}
-        self.models_dict = models
+        # self.models_dict = models
+        self.models_dict = {model.__class__.__name__: model for model in models}
         self.positive_sampling = 1
         self.noise_sampling_to_positive = 0
-        self.models_dir = f"/repositories/cached_models/{self.__class__.__name__}"
+        # self.models_dir = f"/repositories/cached_models/{self.__class__.__name__}"
+        self.models_dir = f"./cached_models/{self.__class__.__name__}"  # todo check where to put the models_dir
+
         os.makedirs(self.models_dir, exist_ok=True)
 
     @abstractmethod
@@ -164,7 +168,9 @@ class TaskHandler(ABC):
                 model.fit(x, y_true)
             return model
 
-        models = parmap(fit_model, self.models_dict.values(), use_tqdm=True, desc="Fitting Models", unit="model", nprocs=32)
+        models = parmap(fit_model, self.models_dict.values(), use_tqdm=True, desc="Fitting Models", unit="model",
+                        nprocs=32)
+        self.models_dict = {model.__class__.__name__: model for model in models}
         # for name, model in tqdm(self.models_dict.items(), desc="Fitting Models", unit="model"):
         return models
 
@@ -230,12 +236,14 @@ class TaskHandler(ABC):
             results[model_name] = y_pred
         return pd.DataFrame(results, index=x.index)
 
-    def score_all_models(self, x: pd.DataFrame, y: Union[List, np.array], use_cache: bool = False) -> dict:
+    def score_all_models(self, x: pd.DataFrame, y: Union[List, np.array], use_cache: bool = False,
+                         measure_func: Callable = mean_absolute_error) -> dict:
         """
         score this task using all the different cached trained models_dict
         Args:
             x: a Table of of all the samples features
             y: list of all the true labels
+            measure_func: func the get y_true and y_pred and compute a metric or a loss on these results
         Returns:
             scores: dictionary from experiment to model score
         """
@@ -245,8 +253,9 @@ class TaskHandler(ABC):
             if use_cache:
                 with open(os.path.join(self.models_dir, model_name), 'rb') as f:
                     model = pickle.load(f)
-            precision, recall, _ = soft_precision_recall_curve(y, model.predict(x))
-            scores[model_name] = sklearn.metrics.auc(recall, precision)
+            # precision, recall, _ = soft_precision_recall_curve(y, model.predict(x))
+            # scores[model_name] = sklearn.metrics.auc(recall, precision)
+            scores[model_name] = measure_func(y, model.predict(x))
         return scores
 
     def transform_and_predict(self, gs: GeoSeries) -> pd.DataFrame:
@@ -298,14 +307,16 @@ class TaskHandler(ABC):
             import math
             chosen_pos_idxs = np.random.choice(pos_idxs, math.ceil(positive_sampling * len(pos_idxs)), replace=False)
 
-            all_idxs = [i for i in range(len(buildings_y)) if buildings_y[i] == 0 or i in chosen_pos_idxs]  # keeps order
+            all_idxs = [i for i in range(len(buildings_y)) if
+                        buildings_y[i] == 0 or i in chosen_pos_idxs]  # keeps order
             buildings_gs = buildings_gs[all_idxs]
             buildings_y = buildings_y[all_idxs]
             source_indices = source_indices[all_idxs]
 
         if 0. < noise_sampling_to_positive <= 1.:
             neg_idxs = [i for i in range(len(buildings_y)) if buildings_y[i] == 0]
-            chosen_noise_idxs = np.random.choice(neg_idxs, round(noise_sampling_to_positive * len(pos_idxs)), replace=False)
+            chosen_noise_idxs = np.random.choice(neg_idxs, round(noise_sampling_to_positive * len(pos_idxs)),
+                                                 replace=False)
 
             buildings_y[chosen_noise_idxs] = 1  # change to True
 
