@@ -1,11 +1,14 @@
 import numpy as np
 import pandas as pd
 from catboost import CatBoostRegressor
-from sklearn.metrics import mean_absolute_error
-from typing import Tuple, Any, List
+from typing import Tuple, Any, List, Dict
 from geopandas import GeoDataFrame, GeoSeries
 from shapely.geometry import Point
 from sklearn import neighbors
+from coord2vec.Noam_Adir.utils import norm_for_train_and_test
+from coord2vec.common.parallel.multiproc_util import parmap
+from sklearn.metrics import mean_absolute_error
+from sklearn.model_selection import train_test_split, KFold
 from sklearn import svm
 from sklearn import tree
 from sklearn.ensemble import AdaBoostRegressor
@@ -34,17 +37,6 @@ def create_full_df(unique_coords_array, features_without_geo, only_geo_features_
     return all_features, all_features_unique_coords
 
 
-# models = [svm.SVR()
-#     , neighbors.KNeighborsRegressor(n_neighbors=10)
-#     , LinearRegression()
-#     , tree.DecisionTreeRegressor()
-#     , GradientBoostingRegressor()
-#     , AdaBoostRegressor()
-#     , RandomForestRegressor()
-#     , CatBoostRegressor()
-#           ]
-
-
 def init_pipeline(models: List[Any]) -> dict:
     """
     example of usage in pipeline:
@@ -60,16 +52,15 @@ def init_pipeline(models: List[Any]) -> dict:
 
     Returns:
         pipeline_dict that contains
-        'task_handler': Manhattan_Task_Handler
-        , 'coords': coords
-        , 'unique_coords': unique_coords
-        , 'unique_coords_idx': indexes of unique coords (coords[unique_coords_idx] is equivalent to unique_coords)
-        , 'price': price (y_true)
-        , 'features_without_geo': features_without_geo
-        , 'only_geo_features_unique_coords': only_geo_features_unique_coords
-        , 'all_features': features_without_geo merge with only_geo_features
-        , 'all_features_unique_coords': all_features_unique_coords
-    }
+        'task_handler' (Manhattan_Task_Handler): Manhattan_Task_Handler
+        , 'coords' (ndarray): coords
+        , 'unique_coords' (ndarray): unique_coords
+        , 'unique_coords_idx' (ndarray): indexes of unique coords (coords[unique_coords_idx] is equivalent to unique_coords)
+        , 'price' (ndarray): price (y_true)
+        , 'features_without_geo' (DataFrame): features_without_geo
+        , 'only_geo_features_unique_coords' (DataFrame): only_geo_features_unique_coords
+        , 'all_features' (DataFrame): features_without_geo merge with only_geo_features
+        , 'all_features_unique_coords' (DataFrame): all_features_unique_coords
     """
     # models_dict = {model.__class__.__name__: model for model in models}
 
@@ -80,7 +71,7 @@ def init_pipeline(models: List[Any]) -> dict:
     # create the task_handler
     task_handler = Manhattan_Task_Handler(embedder, models=models)
 
-    coords, features_without_geo, price = task_handler.get_dataset(all_dataset=False)
+    coords, features_without_geo, price = task_handler.get_dataset(all_dataset=True)
 
     # get the geo_features_unique_coords
     unique_coords_array, unique_idx = np.unique(coords, return_index=True)
@@ -105,9 +96,42 @@ def init_pipeline(models: List[Any]) -> dict:
     return pipeline_dict
 
 
+def fit_and_score_models_on_datasets(models: List[Any],
+                                     data_dict: Dict[str, Tuple[np.ndarray, np.ndarray]]) -> pd.DataFrame:
+    """
+    fit and score each model in models on each dataset in data_dict.values() and check mae-accuracy on y
+    each dataset is normalized in this function
+    Args:
+        models: list of models
+        data_dict: (name_of_dataset: (dataset, target)) for each dataset we want to train on
+
+    Returns:
+        data frame of mae-scores whose columns are dataset na mes and its index is model names
+    """
+
+    # helper function for parallelize (this also normalize the data)
+    def fit_and_score(data_name_and_data_tuple):
+        data_name, data = data_name_and_data_tuple
+        X, y = data
+        X_train, X_test, y_train, y_test = train_test_split(X, y)
+        X_norm_train, X_norm_test = norm_for_train_and_test(X_train, X_test)
+        task_handler = Manhattan_Task_Handler(embedder=None, models=models)
+        task_handler.fit_all_models(X_norm_train, y_train)
+        scores = task_handler.score_all_models(X_norm_test, y_test, measure_func=mean_absolute_error)
+        return {data_name: scores}
+
+    scores_lst = parmap(fit_and_score, data_dict.items(), use_tqdm=True, desc="Fit and score per dataset",
+                        unit="dataset", nprocs=32)
+    # union all the dicts in scores_lst to one dict
+    scores_dct = {k: v for d in scores_lst for k, v in d.items()}
+    df_scores = pd.DataFrame(scores_dct)
+    return df_scores
+
+
 # print("\n".join([f'{k} = pipeline_dict["{k}"]' for k, v in pipeline_dict.items()]))
 
-if __name__ == "__main__":
+
+def test_init_pipeline():
     models = [svm.SVR(), LinearRegression()]
     pipeline_dict = init_pipeline(models)
 
@@ -123,3 +147,28 @@ if __name__ == "__main__":
 
     task_handler.fit_all_models(all_features, price)
     print(task_handler.score_all_models(all_features, price, measure_func=mean_absolute_error))
+
+
+def test_fit_and_score_models_on_datasets():
+    models = [svm.SVR(), LinearRegression(), CatBoostRegressor(verbose=False)]
+    pipeline_dict = init_pipeline(models)
+
+    price = pipeline_dict["price"]
+    features_without_geo = pipeline_dict["features_without_geo"].values
+    all_features = pipeline_dict["all_features"].values
+
+    data_dict = {'features_without_geo': (features_without_geo, price), 'all_features': (all_features, price)}
+    print(fit_and_score_models_on_datasets(models, data_dict))
+
+
+if __name__ == "__main__":
+    models = [svm.SVR()
+        , neighbors.KNeighborsRegressor(n_neighbors=10)
+        , LinearRegression()
+        , tree.DecisionTreeRegressor()
+        , GradientBoostingRegressor()
+        , AdaBoostRegressor()
+        , RandomForestRegressor()
+        , CatBoostRegressor()
+              ]
+    test_fit_and_score_models_on_datasets()
