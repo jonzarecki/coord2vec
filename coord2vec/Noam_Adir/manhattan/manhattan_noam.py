@@ -1,5 +1,6 @@
 import pandas as pd
 
+from tqdm import tqdm
 from sklearn import svm
 from sklearn.linear_model import LinearRegression
 from catboost import CatBoostRegressor
@@ -14,9 +15,11 @@ if __name__ == "__main__":
     catboost_lr = 1
     catboost_depth = 3
 
-    models = [svm.SVR(),
-              LinearRegression(),
-              CatBoostRegressor(iterations=n_catboost_iter, learning_rate=catboost_lr, depth=catboost_depth)]
+    models = [CatBoostRegressor(iterations=n_catboost_iter, learning_rate=catboost_lr, depth=catboost_depth, verbose=False),
+              svm.SVR(),
+              LinearRegression()
+              ]
+
     metrics = {"r2": r2_score,
                "mse": mean_squared_error,
                "mae": mean_absolute_error}
@@ -36,7 +39,10 @@ if __name__ == "__main__":
     train_features, test_features, train_price, test_price = train_test_split(all_features, price)
     train_features, test_features = my_z_score_norm(train_features.values, test=test_features.values)
     train_features, test_features = pd.DataFrame(train_features), pd.DataFrame(test_features)
-    task_handler.fit_all_models(train_features, train_price)
+    # task_handler.fit_all_models(train_features, train_price)
+    print("trainig models")
+    for model_name, model in tqdm(task_handler.models_dict.items()):
+        model.fit(train_features, train_price)
     scores_1 = task_handler.score_all_model_multi_metrics(test_features, test_price, measure_funcs=metrics)
     print(scores_1)
     all_building_scores = pd.DataFrame(scores_1)
@@ -44,7 +50,13 @@ if __name__ == "__main__":
     # results on all the building in manhattan
     train_features, test_features, train_price, test_price = train_test_split(all_features_unique_coords,
                                                                               price[unique_coords_idx])
-    task_handler.fit_all_models(train_features, train_price)
+    train_features, test_features = my_z_score_norm(train_features.values, test=test_features.values)
+    train_features, test_features = pd.DataFrame(train_features), pd.DataFrame(test_features)
+    # task_handler.fit_all_models(train_features, train_price)
+    print("trainig models")
+    for model_name, model in tqdm(task_handler.models_dict.items()):
+        # print(f"training {model_name}")
+        model.fit(train_features, train_price)
     scores_2 = task_handler.score_all_model_multi_metrics(test_features, test_price, measure_funcs=metrics)
     unique_building_scores = pd.DataFrame(scores_2)
     print(scores_2)

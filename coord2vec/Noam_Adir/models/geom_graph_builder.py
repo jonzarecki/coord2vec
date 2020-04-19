@@ -129,6 +129,9 @@ class GeomGraphBuilder:
                         # self.graph.add_edge(n_i, n_j, distance=distance)
                         self.graph.add_edge(n_i, n_j)
 
+    def get_adj_as_scipy_sparse_matrix(self):
+        return nx.to_scipy_sparse_matrix(self.graph)
+
     @staticmethod
     def transform_geometries_to_palanar_points(geometries: List[BaseGeometry]) -> List[Tuple[float, float]]:
         """

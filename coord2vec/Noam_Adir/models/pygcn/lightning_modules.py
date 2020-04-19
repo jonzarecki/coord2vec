@@ -8,6 +8,7 @@ import torch.nn.functional as F
 import networkx as nx
 import scipy.sparse as sp
 import numpy as np
+from argparse import Namespace
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from torch import nn
 from torch.utils.data import DataLoader
@@ -27,16 +28,27 @@ from coord2vec.Noam_Adir.models.pyGAT.utils import normalize_adj
 
 
 class LitGCN(pl.LightningModule):
-    def __init__(self, nclass, hparams, loss_fn=F.mse_loss, use_all_data=False, optimizer=torch.optim.Adam):
+    def __init__(self, X: np.ndarray, y: np.ndarray, adj, train_idx: np.array, nclass: int, hparams: Namespace,
+                 loss_fn=F.mse_loss, optimizer=torch.optim.Adam):
         """GCN in lightning."""
         super(LitGCN, self).__init__()
         self.hparams = hparams
         self.loss_fn = loss_fn
-        self.use_all_data = use_all_data
         self.task = "class" if nclass > 1 else "reg"
         self.dtype = torch.float64 if self.hparams.use_double_precision else torch.float32
 
-        self.adj, self.X, self.y, self.idx_train, self.idx_val, self.idx_test = self.load_data()
+        X, self.X_normalizer = my_z_score_norm(X, return_scalers=True)
+        self.adj = self.process_adj(adj)
+        self.X = torch.tensor(X, requires_grad=False, dtype=self.dtype)
+        if self.task == "reg":
+            self.y = torch.tensor(y, requires_grad=False, dtype=self.dtype)  # TODO genetalize to calssification
+        else:  # self.task == "class":
+            self.y = torch.LongTensor(np.where(y)[1])
+
+        idx_train, idx_val = train_test_split(train_idx)
+        self.idx_train = torch.LongTensor(idx_train)
+        self.idx_val = torch.LongTensor(idx_val)
+
         if self.hparams.cuda:
             self.cuda()
             self.X = self.X.cuda()
@@ -72,39 +84,13 @@ class LitGCN(pl.LightningModule):
         else:
             return x
 
-    def load_data(self):
-        dataset = "manhattan"
-        coords, X, y = get_data(dataset=dataset)
-
-        all_idx = range(len(y))
-        idx_train, idx_test = train_test_split(all_idx)
-        idx_train, idx_val = train_test_split(idx_train)
-        # adj
-        all_geometries = GeoSeries([Point(coord[0], coord[1]) for coord in coords])
-        graph_builder = GeomGraphBuilder(geometries=all_geometries, method="DT")
-        graph_builder.construct_vertices()
-        adj = nx.to_scipy_sparse_matrix(graph_builder.graph)
-        assert GeoSeries([geom for n, geom in graph_builder.graph.nodes(data="geometry")]).geom_almost_equals(all_geometries).all()
-        # normalize
-        X, self.X_normalizer = my_z_score_norm(X, return_scalers=True)
-        adj = normalize_adj(adj + self.hparams.self_attention * sp.eye(adj.shape[0]))
-        # # debuding
-        # adj = normalize_adj(sp.eye(adj.shape[0]))
-
-        adj = sparse_mx_to_torch_sparse_tensor(adj)
-        X = torch.tensor(X, requires_grad=False, dtype=self.dtype)
-        if self.task == "reg":
-            y = torch.tensor(y, requires_grad=False, dtype=self.dtype)  # TODO genetalize to calssification
-        else:  # self.task == "class":
-            y = torch.LongTensor(np.where(y)[1])
-
-        idx_train = torch.LongTensor(idx_train)
-        idx_val = torch.LongTensor(idx_val)
-        idx_test = torch.LongTensor(idx_test)
-
-        return adj, X, y, idx_train, idx_val, idx_test
 
     def train_dataloader(self):
+        feature_dataset = Feature_Dataset(self.X, self.y)
+        dataloader = DataLoader(feature_dataset, batch_size=len(self.y), shuffle=False)
+        return dataloader
+
+    def val_dataloader(self):
         feature_dataset = Feature_Dataset(self.X, self.y)
         dataloader = DataLoader(feature_dataset, batch_size=len(self.y), shuffle=False)
         return dataloader
@@ -115,29 +101,41 @@ class LitGCN(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         self.train()
         X, y = batch
-        y_pred = self.forward(X, self.adj)
+        y_pred = self.forward(X, self.adj).squeeze()
         loss = self.loss_fn(y_pred[self.idx_train], y[self.idx_train])
-        y_pred_val, t_true_val = y_pred[self.idx_val].detach(), y[self.idx_val].detach()
-        val_mse = F.mse_loss(y_pred_val, t_true_val)
-        val_r2 = r2_score(y_pred=y_pred_val, y_true=t_true_val)
-        val_mae = mean_absolute_error(y_pred=y_pred_val, y_true=t_true_val)
-        val_rmse = np.sqrt(val_mse)
-        tensorboard_logs = {'train_loss': loss,
-                            'val_mse': val_mse,
+        tensorboard_logs = {'train_loss': loss}
+        return {'loss': loss, 'log': tensorboard_logs}
+
+    def validation_step(self, batch, batch_idx):
+        self.eval()
+        X, y = batch
+        y_pred = self.forward(X, self.adj).squeeze()
+        y_pred_val, y_true_val = y_pred[self.idx_val].detach(), y[self.idx_val].detach()
+        loss = F.mse_loss(y_pred_val, y_true_val)
+        val_r2 = r2_score(y_pred=y_pred_val, y_true=y_true_val)
+        val_mae = mean_absolute_error(y_pred=y_pred_val, y_true=y_true_val)
+        val_rmse = np.sqrt(loss)
+        tensorboard_logs = {'val_loss': loss,
                             'val_r2': val_r2,
                             'val_mae': val_mae,
                             'val_rmse': val_rmse}
-        return {'loss': loss, 'log': tensorboard_logs}
+        return tensorboard_logs
 
-    def evaluate(self):
-        self.eval()
-        X, y_test = self.X, self.y.detach()[self.idx_test]
-        y_pred = self.forward(X, self.adj)[self.idx_test].detach()
-        mse_test = mean_squared_error(y_pred=y_pred, y_true=y_test)
-        mae_test = mean_absolute_error(y_pred=y_pred, y_true=y_test)
-        r2_test = r2_score(y_true=y_test, y_pred=y_pred)
-        rmse_test = np.sqrt(mse_test)
-        return mse_test, rmse_test, mae_test, r2_test
+    def validation_epoch_end(self, outputs):
+        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
+        avg_r2 = np.mean([x['val_r2'] for x in outputs])  # TODO
+        avg_mae = np.mean([x['val_mae'] for x in outputs])
+        avg_rmse = torch.stack([x['val_rmse'] for x in outputs]).mean()
+        tensorboard_logs = {'val_loss': avg_loss,
+                            'val_r2': avg_r2,
+                            'val_mae': avg_mae,
+                            'val_rmse': avg_rmse}
+        return {'avg_val_loss': avg_loss, 'log': tensorboard_logs}
+
+    def process_adj(self, adj):
+        adj = normalize_adj(adj + self.hparams.self_attention * sp.eye(adj.shape[0]))
+        return sparse_mx_to_torch_sparse_tensor(adj)
+
 
     @staticmethod
     def add_model_specific_args(parent_parser):
@@ -147,15 +145,15 @@ class LitGCN(pl.LightningModule):
         parser = ArgumentParser(parents=[parent_parser])
 
         # MODEL specific
-        parser.add_argument('--fastmode', action='store_true', default=False, help='Validate during training pass.')
+        # parser.add_argument('--fastmode', action='store_true', default=False, help='Validate during training pass.')
         parser.add_argument('--seed', type=int, default=42, help='Random seed.')
         parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
         parser.add_argument('--hidden', type=int, default=32, help='Number of hidden units.')
         parser.add_argument('--dropout', type=float, default=0.5, help='Dropout rate (1 - keep probability).')
-        parser.add_argument('--self-attention', type=float, default=10, help='control the relative weight of the node represntation')
+        parser.add_argument('--self-attention', type=float, default=1, help='control the relative weight of the node represntation')
 
         # training specific (for this model)
-        parser.add_argument('--epochs', type=int, default=3000, help='Number of epochs to train.')
+        # parser.add_argument('--epochs', type=int, default=3000, help='Number of epochs to train.')
         parser.add_argument('--lr', type=float, default=5e-3, help='Initial learning rate.')
 
         return parser

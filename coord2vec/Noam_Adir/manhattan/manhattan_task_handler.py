@@ -1,4 +1,5 @@
 import pickle
+from itertools import chain
 from typing import Tuple, Union, List, Dict, Callable
 
 import numpy as np
@@ -22,7 +23,7 @@ class Manhattan_Task_Handler(TaskHandler):
                  bounding_geom: Union[List[Polygon], Polygon] = None,
                  graph_models: Dict = None):
         self.graph_models_dict = {} if graph_models is None else graph_models
-        super(Manhattan_Task_Handler, self).__init__(embedder, models,bounding_geom=bounding_geom)
+        super(Manhattan_Task_Handler, self).__init__(embedder, models, bounding_geom=bounding_geom)
 
     def get_dataset(self, all_dataset: bool) -> Tuple[np.ndarray, pd.DataFrame, np.ndarray]:
         """
@@ -61,7 +62,9 @@ class Manhattan_Task_Handler(TaskHandler):
         if measure_funcs is None:
             measure_funcs = {"mse": mean_absolute_error}
         scores = {}
-        for model_name, model in tqdm(self.models_dict.items(), desc="Scoring Models", unit='model'):
+
+        for model_name, model in tqdm(chain(self.models_dict.items(), self.graph_models_dict),
+                                      desc="Scoring Models", unit='model'):
             if use_cache:
                 with open(os.path.join(self.models_dir, model_name), 'rb') as f:
                     model = pickle.load(f)
@@ -70,17 +73,40 @@ class Manhattan_Task_Handler(TaskHandler):
             for metric_name, metric in measure_funcs.items():
                 model_scores[metric_name] = metric(y_true=y, y_pred=y_pred)
             scores[model_name] = model_scores
+
+        return scores
+
+    def score_all_model_multi_metrics_idx(self, x: pd.DataFrame, y: Union[List, np.array], indexes, use_cache: bool = False,
+                                      measure_funcs: Dict[str, Callable] = None) -> dict:
+        if measure_funcs is None:
+            measure_funcs = {"mse": mean_absolute_error}
+        scores = {}
+
+        for model_name, model in tqdm(self.models_dict.items(), desc="Scoring Models", unit='model'):
+            y_pred = model.predict(x.iloc[indexes])
+            model_scores = {}
+            for metric_name, metric in measure_funcs.items():
+                model_scores[metric_name] = metric(y_true=y[indexes], y_pred=y_pred)
+            scores[model_name] = model_scores
+
+        for model_name, model in tqdm(self.graph_models_dict.items(), desc="Scoring Graph Models", unit='model'):
+            y_pred = model.predict_idx(indexes)
+            model_scores = {}
+            for metric_name, metric in measure_funcs.items():
+                model_scores[metric_name] = metric(y_true=y[indexes], y_pred=y_pred)
+            scores[model_name] = model_scores
+
         return scores
 
     def fit_all_models_with_idx(self, x: pd.DataFrame, y_true, train_idx):
-        self.fit_all_models(x[train_idx], y_true[train_idx])
+        x_defualt_idx = x.reset_index(drop=True)
+        for model_name, model in tqdm(self.models_dict.items(), desc="fitting Models", unit='model'):
+            model.fit(x_defualt_idx.iloc[train_idx], y_true[train_idx])
 
-        def fit_model(model):
+        for model_name, model in tqdm(self.graph_models_dict.items(), desc="fitting graph Models", unit='model'):
             model.fit(x, y_true, train_idx)
-            return model
 
-        models = parmap(fit_model, list(self.graph_models_dict.values()), use_tqdm=True,
-                        desc="Fitting Graph Models", unit="model", nprocs=32)
-        self.models_dict = {model.__class__.__name__: model for model in models}
-        return models
+    def add_graph_model(self, model):
+        self.graph_models_dict[model.__class__.__name__] = model
+
 
