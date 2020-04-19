@@ -76,9 +76,10 @@ class GraphModel:
 
     def predict_idx(self, pred_idx):
         """
-
+        The otput of the model of the nodes pred_idx are of in the last graph the model was trained on
         Args:
-            pred_idx: the indexes of the nodes in the graph to predict, the indexes of y
+            pred_idx: the indexes of the nodes in the last graph the model was trained on
+                in most cases pred_idx=test_idx
 
         Returns: numpy array of predictions the length of pred_inx
 
@@ -193,3 +194,9 @@ if __name__ == '__main__':
                                                             measure_funcs=metrics)
     scores_df = pd.DataFrame(scores)
     print(scores_df)
+
+    print("continue training graph model again on a new graph")
+    graph_model = list(task_handler.graph_models_dict.values())[0]
+    graph_model.fit(all_features_unique_coords, price, restart_fit=False)
+    scores = task_handler.score_all_model_multi_metrics_idx(all_features_unique_coords, price, test_idx,
+                                                            measure_funcs=metrics)

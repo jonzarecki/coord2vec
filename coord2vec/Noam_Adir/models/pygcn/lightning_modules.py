@@ -28,7 +28,7 @@ from coord2vec.Noam_Adir.models.pyGAT.utils import normalize_adj
 
 
 class LitGCN(pl.LightningModule):
-    def __init__(self, X: np.ndarray, y: np.ndarray, adj, train_idx: np.array, nclass: int, hparams: Namespace,
+    def __init__(self, hparams: Namespace, X: np.ndarray, y: np.ndarray, adj, train_idx: np.array, nclass: int,
                  loss_fn=F.mse_loss, optimizer=torch.optim.Adam):
         """GCN in lightning."""
         super(LitGCN, self).__init__()

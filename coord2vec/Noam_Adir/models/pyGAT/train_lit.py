@@ -38,6 +38,7 @@ if __name__ == '__main__':
     parser.add_argument('--use-double-precision', action='store_true', default=False, help='use-double-precision.')
     parser.add_argument('--save-path', default='manhattan_litGat.', help='the save path to the model save dict')
     parser.add_argument('--log-path', default='/data/home/morpheus/coord2vec_noam/coord2vec/Noam_Adir/tb_logs', help='tensorbord log path')
+    parser.add_argument('--epochs', type=int, default=400, help='Number of epochs to train.')
 
     # good practice to define LightningModule speficic params in the module
     parser = LitGAT.add_model_specific_args(parser)

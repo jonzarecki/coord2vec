@@ -168,7 +168,7 @@ class LitGAT(pl.LightningModule):
         # MODEL specific
         parser.add_argument('--fastmode', action='store_true', default=False, help='Validate during training pass.')
         parser.add_argument('--sparse', action='store_true', default=True, help='GAT with sparse version or not.')
-        parser.add_argument('--testFC', action='store_true', default=True, help='test pipeline with simple 2 layer FC')
+        parser.add_argument('--testFC', action='store_true', default=False, help='test pipeline with simple 2 layer FC')
         parser.add_argument('--seed', type=int, default=42, help='Random seed.')
         parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
         parser.add_argument('--hidden', type=int, default=32, help='Number of hidden units.')
@@ -178,8 +178,8 @@ class LitGAT(pl.LightningModule):
 
         # training specific (for this model)
         parser.add_argument('--lr', type=float, default=1e-2, help='Initial learning rate.')
-        parser.add_argument('--epochs', type=int, default=3000, help='Number of epochs to train.')
-        parser.add_argument('--patience', type=int, default=100, help='Patience')
+        # parser.add_argument('--epochs', type=int, default=3000, help='Number of epochs to train.')
+        # parser.add_argument('--patience', type=int, default=100, help='Patience')
 
         return parser
 
