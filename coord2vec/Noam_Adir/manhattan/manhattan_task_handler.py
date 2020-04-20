@@ -95,7 +95,7 @@ class Manhattan_Task_Handler(TaskHandler):
         """
         same as score_all_model_multi_metrics, only  and y are all the data and the indexes
             are the indexes to evaluate the metrics on
-        if graph model exist uses the adj graph from the last train, alows difrent feature to the nodes
+        if graph model exist uses the adj graph from the last train, allows different feature to the nodes
             but this behavior is not expected
         Args:
             x: all of the data
@@ -104,7 +104,8 @@ class Manhattan_Task_Handler(TaskHandler):
             use_cache:
             measure_funcs: a dictionary of meture function, keys are the name of the function
 
-        Returns:
+        Returns: a dictionary of dictionaries, outer keys ore the models names,
+                inner keys are the metrics names from measure_funcs.
 
         """
         if measure_funcs is None:
@@ -119,7 +120,8 @@ class Manhattan_Task_Handler(TaskHandler):
             scores[model_name] = model_scores
 
         for model_name, model in tqdm(self.graph_models_dict.items(), desc="Scoring Graph Models", unit='model'):
-            y_pred = model.predict_idx(indexes)
+            y_pred = model.predict_idx(x, indexes)
+            # y_pred = model.predict_idx_last_graph(indexes)
             model_scores = {}
             for metric_name, metric in measure_funcs.items():
                 model_scores[metric_name] = metric(y_true=y[indexes], y_pred=y_pred)

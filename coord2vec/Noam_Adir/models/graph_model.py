@@ -74,10 +74,12 @@ class GraphModel:
     def predict_proba(self, X: pd.DataFrame):
         pass  # TODO add functionality
 
-    def predict_idx_last_graph(self, pred_idx):
+    def predict_idx_last_graph(self, pred_idx, x: pd.DataFrame = None):
         """
         The output of the model of the nodes pred_idx are of in the last graph the model was trained on
         Args:
+            x: the features DataFrame default is using the same features from the last train,
+                if features are given the need to be the same shape as the last train feature shape
             pred_idx: the indexes of the nodes in the last graph the model was trained on
                 in most cases pred_idx=test_idx
 
@@ -89,6 +91,8 @@ class GraphModel:
             return
         adj = self.model.adj.detach()
         X_tensor = self.model.X.detach()
+        if x is not None and X_tensor.shape == x.shape:
+            X_tensor = torch.Tensor(x)
         pred_idx = torch.LongTensor(pred_idx)
         self.model.eval()
         return (self.model.forward(X_tensor, adj)[pred_idx]).detach().numpy()
