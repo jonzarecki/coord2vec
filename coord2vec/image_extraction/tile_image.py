@@ -25,7 +25,7 @@ def render_single_tile(m: StaticMap, ext: list) -> Image:
                [ext[2], ext[1]]]
     polygon = Polygon(ex_poly, 'blue', 'black', True)
     m.add_polygon(polygon)
-    m.zoom = 14
+    m.zoom = 15
     # m.zoom = m._calculate_zoom()
     # m.add_marker()
     # get extent of all lines
@@ -80,9 +80,9 @@ def render_multi_channel(static_maps: List[StaticMap], ext: list) -> np.array:
 
 
 if __name__ == '__main__':
-    m = StaticMap(IMG_WIDTH, IMG_HEIGHT, url_template=config.tile_server_dns_noport.replace('{p}', '8080'))
+    m = StaticMap(IMG_WIDTH, IMG_HEIGHT, url_template=config.LOC2VEC_URL_TEMPLATE.replace('{p}', '8080'))
     center = [34.7805, 32.1170]
-    s = generate_static_maps(config.tile_server_dns_noport, config.tile_server_ports)
+    s = generate_static_maps(config.LOC2VEC_URL_TEMPLATE, config.TILE_SERVER_PORTS)
     ext = [34.7855, 32.1070, 34.7855 + 0.001, 32.1070 + 0.001]
 
     image = render_single_tile(m, ext)

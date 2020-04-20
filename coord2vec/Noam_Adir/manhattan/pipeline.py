@@ -5,6 +5,8 @@ from typing import Tuple, Any, List, Dict
 from geopandas import GeoDataFrame, GeoSeries
 from shapely.geometry import Point
 from sklearn import neighbors
+from tqdm import tqdm
+
 from coord2vec.Noam_Adir.utils import norm_for_train_and_test
 from coord2vec.common.parallel.multiproc_util import parmap
 from sklearn.metrics import mean_absolute_error
@@ -120,10 +122,17 @@ def fit_and_score_models_on_datasets(models: List[Any],
         scores = task_handler.score_all_models(X_norm_test, y_test, measure_func=mean_absolute_error)
         return {data_name: scores}
 
-    scores_lst = parmap(fit_and_score, data_dict.items(), use_tqdm=True, desc="Fit and score per dataset",
-                        unit="dataset", nprocs=32)
-    # union all the dicts in scores_lst to one dict
+    scores_lst = []
+    for data_name, data in data_dict.items():
+        print(f'handle dataset {data_name}')
+        scores_lst.append(fit_and_score((data_name, data)))
     scores_dct = {k: v for d in scores_lst for k, v in d.items()}
+
+    # scores_lst = parmap(fit_and_score, data_dict.items(), use_tqdm=True, desc="Fit and score per dataset",
+    #                     unit="dataset", nprocs=32)
+    # # union all the dicts in scores_lst to one dict
+    # scores_dct = {k: v for d in scores_lst for k, v in d.items()}
+
     df_scores = pd.DataFrame(scores_dct)
     return df_scores
 

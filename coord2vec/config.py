@@ -45,6 +45,11 @@ SCORES_TABLE = 'building_scores'
 
 # tile_server_dns_noport = 'https://api.maptiler.com/tiles/satellite-mediumres/{z}/{x}/{y}.jpg?key=iS9gs1LsLOJfuF3dQvLd'
 # tile_server_dns_noport = 'http://a.tile.openstreetmap.us/usgs_large_scale/{z}/{x}/{y}.jpg'
-tile_server_dns_noport = 'http://40.127.166.177:8103/tile/{z}/{x}/{y}.png'
-tile_server_ports = [80]
+
+LOC2VEC_URL_TEMPLATE = 'http://40.127.166.177:8103/tile/{z}/{x}/{y}.png'
+LOC2VEC_IMG_WIDTH = 128
+LOC2VEC_IMG_HEIGHT = 128
+RGB = 3
+
+TILE_SERVER_PORTS = [80]
 RADIUS_IN_METERS = 50

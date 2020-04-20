@@ -4,7 +4,7 @@ import unittest
 
 import torch
 
-from coord2vec.config import TEST_CACHE_DIR, IMG_WIDTH, IMG_HEIGHT, tile_server_ports
+from coord2vec.config import TEST_CACHE_DIR, IMG_WIDTH, IMG_HEIGHT, TILE_SERVER_PORTS
 from coord2vec.models.data_loading.create_dataset_script import sample_and_save_dataset
 from coord2vec.models.data_loading.tile_features_loader import get_files_from_path, TileFeaturesDataset
 
@@ -25,7 +25,7 @@ class TestDataCreation(unittest.TestCase):
             self.assertFalse(any(torch.isnan(feats)), f"{feats}")
         else:
             self.assertFalse(np.isnan(feats).any(), f"{feats}")
-        self.assertTupleEqual((len(tile_server_ports), IMG_WIDTH, IMG_HEIGHT), image.shape)
+        self.assertTupleEqual((len(TILE_SERVER_PORTS), IMG_WIDTH, IMG_HEIGHT), image.shape)
 
     def test_no_nones_in_dataset(self):
         self.skipTest("Tiles not relevant at the moment")

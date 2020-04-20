@@ -247,16 +247,33 @@ class TaskHandler(ABC):
         Returns:
             scores: dictionary from experiment to model score
         """
-        scores = {}
-        normalized_x = self.normalize(x)
-        for model_name, model in tqdm(self.models_dict.items(), desc="Scoring Models", unit='model'):
+
+        # scores = {}
+        # normalized_x = self.normalize(x)
+        # for model_name, model in tqdm(self.models_dict.items(), desc="Scoring Models", unit='model'):
+        #     if use_cache:
+        #         with open(os.path.join(self.models_dir, model_name), 'rb') as f:
+        #             model = pickle.load(f)
+        #     # precision, recall, _ = soft_precision_recall_curve(y, model.predict(x))
+        #     # scores[model_name] = sklearn.metrics.auc(recall, precision)
+        #     scores[model_name] = measure_func(y, model.predict(x))
+        # return scores
+
+        def score_model(model_name_and_model_tuple):
+            model_name, model = model_name_and_model_tuple
             if use_cache:
                 with open(os.path.join(self.models_dir, model_name), 'rb') as f:
                     model = pickle.load(f)
             # precision, recall, _ = soft_precision_recall_curve(y, model.predict(x))
             # scores[model_name] = sklearn.metrics.auc(recall, precision)
-            scores[model_name] = measure_func(y, model.predict(x))
-        return scores
+            return {model_name: measure_func(y, model.predict(x))}
+
+        scores_lst = parmap(score_model, self.models_dict.items(), use_tqdm=True, desc="Scoring Models", unit='model',
+                            nprocs=32)
+        # union all the dicts in scores_lst to one dict
+        scores_dct = {k: v for d in scores_lst for k, v in d.items()}
+        # for name, model in tqdm(self.models_dict.items(), desc="Fitting Models", unit="model"):
+        return scores_dct
 
     def transform_and_predict(self, gs: GeoSeries) -> pd.DataFrame:
         """

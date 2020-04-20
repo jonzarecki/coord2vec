@@ -2,6 +2,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
 from catboost import CatBoostRegressor
+from sklearn.metrics import mean_absolute_error
 from sklearn.preprocessing import StandardScaler
 from torch import nn
 from torch.utils.data import DataLoader
@@ -94,15 +95,14 @@ class Autoencoder(pl.LightningModule):
             train_emb = torch.cat(self.emb_train_list)
             self.emb_train_list = []
             val_emb = torch.cat([x['val_emb'] for x in outputs])
-            mse_catboost = train_models_from_splitted_data(
-                [CatBoostRegressor(verbose=False)],
-                train_emb.data.numpy(), self.tot_price_train,
-                val_emb.data.numpy(), self.tot_price_val
-            )[1][0]  # train_models return tuple of lists
+            model = CatBoostRegressor(verbose=False)
+            model.fit(train_emb.data.numpy(), self.tot_price_train)
+            y_test_pred = model.predict(val_emb.data.numpy())
+            mae_catboost = mean_absolute_error(y_true=self.tot_price_val, y_pred=y_test_pred)
         else:
-            mse_catboost = 0
-        self.last_mse_catboost = mse_catboost
-        tensorboard_logs = {'val_loss': avg_loss, 'mse_catboost': mse_catboost}
+            mae_catboost = 0
+        self.last_mse_catboost = mae_catboost
+        tensorboard_logs = {'val_loss': avg_loss, 'mae_catboost': mae_catboost}
         return {'avg_val_loss': avg_loss, 'log': tensorboard_logs}
 
     def z_score_norm_on_X_and_total_price(self, X, totalPrice):

@@ -28,3 +28,7 @@ def clean_manhattan_sold_col(df):
 
 
 ALL_MANHATTAN_FILTER_FUNCS_LIST = [clean_manhattan_sold_col]
+
+
+
+

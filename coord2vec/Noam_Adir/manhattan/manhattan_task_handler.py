@@ -22,8 +22,8 @@ class Manhattan_Task_Handler(TaskHandler):
     def __init__(self, embedder: FeaturesBuilder, models: List[BaseEstimator],
                  bounding_geom: Union[List[Polygon], Polygon] = None,
                  graph_models: Dict = None):
+        super().__init__(embedder, models, bounding_geom=bounding_geom)
         self.graph_models_dict = {} if graph_models is None else graph_models
-        super(Manhattan_Task_Handler, self).__init__(embedder, models, bounding_geom=bounding_geom)
 
     def get_dataset(self, all_dataset: bool) -> Tuple[np.ndarray, pd.DataFrame, np.ndarray]:
         """
@@ -33,7 +33,7 @@ class Manhattan_Task_Handler(TaskHandler):
         """
         df = load_from_pickle_features(MANHATTAN_PKL_PATH)
         df = generic_clean_col(df, ALL_MANHATTAN_FILTER_FUNCS_LIST)
-        df = df if all_dataset else df[:5]
+        df = df[:16000] if all_dataset else df[:5]
         coords = df.apply(lambda row: tuple(row[['lon', 'lat']].values), axis=1).values  # np.ndarray, dtype=object
         features_without_geo = df[['numBedrooms', 'numBathrooms', 'sqft']].astype(float)  # pd.DataFrame, dtype=float
         y = df['sold'].values.astype(float)  # np.ndarray, dtype=float
@@ -76,8 +76,9 @@ class Manhattan_Task_Handler(TaskHandler):
 
         return scores
 
-    def score_all_model_multi_metrics_idx(self, x: pd.DataFrame, y: Union[List, np.array], indexes, use_cache: bool = False,
-                                      measure_funcs: Dict[str, Callable] = None) -> dict:
+    def score_all_model_multi_metrics_idx(self, x: pd.DataFrame, y: Union[List, np.array], indexes,
+                                          use_cache: bool = False,
+                                          measure_funcs: Dict[str, Callable] = None) -> dict:
         if measure_funcs is None:
             measure_funcs = {"mse": mean_absolute_error}
         scores = {}
@@ -108,5 +109,3 @@ class Manhattan_Task_Handler(TaskHandler):
 
     def add_graph_model(self, model):
         self.graph_models_dict[model.__class__.__name__] = model
-
-

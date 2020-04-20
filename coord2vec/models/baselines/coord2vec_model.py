@@ -292,7 +292,7 @@ class Coord2Vec(BaseEstimator, TransformerMixin):
         """
 
         # create tiles using the coords
-        s = generate_static_maps(config.tile_server_dns_noport, config.tile_server_ports)
+        s = generate_static_maps(config.LOC2VEC_URL_TEMPLATE, config.TILE_SERVER_PORTS)
 
         images = []
         for coord in coords:
