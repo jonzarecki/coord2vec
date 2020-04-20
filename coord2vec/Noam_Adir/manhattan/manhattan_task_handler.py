@@ -61,7 +61,7 @@ class Manhattan_Task_Handler(TaskHandler):
                                       measure_funcs: Dict[str, Callable] = None) -> dict:
         """
         allow scoring of all the models with multiple meture functions
-        if graph models exist it will create new graph from the data in X (expexted geometries as index)
+        if graph models exist in task handler it will create new graph from the data in X (expected geometries as index)
         Args:
             x: dataframe od features is graph models exist expected shapley.geometries as index
             y: the true labels of x
@@ -92,6 +92,21 @@ class Manhattan_Task_Handler(TaskHandler):
     def score_all_model_multi_metrics_idx(self, x: pd.DataFrame, y: Union[List, np.array], indexes,
                                           use_cache: bool = False,
                                           measure_funcs: Dict[str, Callable] = None) -> dict:
+        """
+        same as score_all_model_multi_metrics, only  and y are all the data and the indexes
+            are the indexes to evaluate the metrics on
+        if graph model exist uses the adj graph from the last train, alows difrent feature to the nodes
+            but this behavior is not expected
+        Args:
+            x: all of the data
+            y: all of the true labels
+            indexes: the indexes in x and y to evaluate the metrics on
+            use_cache:
+            measure_funcs: a dictionary of meture function, keys are the name of the function
+
+        Returns:
+
+        """
         if measure_funcs is None:
             measure_funcs = {"mse": mean_absolute_error}
         scores = {}
