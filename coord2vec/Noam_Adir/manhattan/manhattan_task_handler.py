@@ -59,6 +59,19 @@ class Manhattan_Task_Handler(TaskHandler):
 
     def score_all_model_multi_metrics(self, x: pd.DataFrame, y: Union[List, np.array], use_cache: bool = False,
                                       measure_funcs: Dict[str, Callable] = None) -> dict:
+        """
+        allow scoring of all the models with multiple meture functions
+        if graph models exist it will create new graph from the data in X (expexted geometries as index)
+        Args:
+            x: dataframe od features is graph models exist expected shapley.geometries as index
+            y: the true labels of x
+            use_cache:
+            measure_funcs: a dictionary of meture function, keys are the name of the function
+
+        Returns: a dictionary of dictionaries, outer keys ore the models names,
+                inner keys are the metrics names from measure_funcs.
+
+        """
         if measure_funcs is None:
             measure_funcs = {"mse": mean_absolute_error}
         scores = {}

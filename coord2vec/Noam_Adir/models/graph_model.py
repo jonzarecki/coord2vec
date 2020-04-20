@@ -74,14 +74,28 @@ class GraphModel:
     def predict_proba(self, X: pd.DataFrame):
         pass  # TODO add functionality
 
-    def predict_idx(self, pred_idx):
+    def predict_idx_last_graph(self, pred_idx):
         """
-        The otput of the model of the nodes pred_idx are of in the last graph the model was trained on
+        The output of the model of the nodes pred_idx are of in the last graph the model was trained on
         Args:
             pred_idx: the indexes of the nodes in the last graph the model was trained on
                 in most cases pred_idx=test_idx
 
         Returns: numpy array of predictions the length of pred_inx
+
+        """
+        if self.model is None:
+            print("model should be fitted before prediction")
+            return
+        adj = self.model.adj.detach()
+        X_tensor = self.model.X.detach()
+        pred_idx = torch.LongTensor(pred_idx)
+        self.model.eval()
+        return (self.model.forward(X_tensor, adj)[pred_idx]).detach().numpy()
+
+    def predict_idx(self, pred_idx):
+        """
+        deprecated, delete after integration
 
         """
         if self.model is None:
