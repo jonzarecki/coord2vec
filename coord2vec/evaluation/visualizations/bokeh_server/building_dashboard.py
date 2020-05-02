@@ -16,7 +16,7 @@ from coord2vec.feature_extraction.osm.osm_utils import extract_buildings_from_po
 
 
 class BuildingTaskDashboard:
-    start_location = None
+    start_location = [36.483, 36.475]
     folium_zoom = 14
 
     def __init__(self, task: TaskHandler, results_dir=BUILDING_RESULTS_DIR):
@@ -81,8 +81,8 @@ class BuildingTaskDashboard:
         self.lonlat_text_inputs = [lon_text, lat_text]
         feature_importance_button = Button(label='Calculate Feature Values')
         # feature_importance_button.js_on_click(log_current_map_position_js(self.folium_name))
-        feature_importance_button.on_click(self.sample_feature_importance_update)
-        importance_fig, _ = self.build_importance_figure(Point(0, 0))
+        # feature_importance_button.on_click(self.sample_feature_importance_update)
+        # importance_fig, _ = self.build_importance_figure(Point(0, 0))
 
         # create folium figure
         folium_fig = bokeh_scored_polygons_folium([self.all_probas_df],
@@ -95,7 +95,7 @@ class BuildingTaskDashboard:
         self.left_column = column(pr_curve, self.feature_select, hist)
         self.folium_column = column(row(self.model_select, self.kfold_select, self.run_button), folium_fig,
                                     self.mean_auc)
-        self.importance_and_val_column = column(row(lon_text, lat_text), feature_importance_button, importance_fig)
+        self.importance_and_val_column = column(row(lon_text, lat_text), feature_importance_button)#, importance_fig)
 
         return row(self.left_column, self.folium_column, self.importance_and_val_column)
 
