@@ -19,24 +19,17 @@ dependencies:
 # Deep Learning
 - pytorch=1.4.0
 - torchvision
-- cudatoolkit
+- cudatoolkit=9.2
 - ignite  # from the pytorch channel
 
 # Spatial packages
-#- rasterstats
 - geopy
-#- cartopy
 - geoalchemy2
 - geopandas
-#- rasterio
-#- contextily
-#- pysal
 - pyproj
 - folium
 - gdal
 - libgdal
-#- kealib
-#- geocoder
 - geojson
 - psycopg2
 
@@ -58,7 +51,6 @@ dependencies:
     - nbclean
     - imageio
     - tqdm
-    - auto-tqdm
     - staticmap
     - pathos
     - torchsummary
