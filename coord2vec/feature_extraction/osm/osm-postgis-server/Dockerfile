@@ -6,6 +6,7 @@ FROM ubuntu:19.04
 # Install dependencies
 RUN apt-get update
 RUN apt-get install -y libboost-all-dev git-core tar unzip wget bzip2 build-essential autoconf libtool libxml2-dev libgeos-dev libgeos++-dev libpq-dev libbz2-dev libproj-dev munin-node munin libprotobuf-c-dev protobuf-c-compiler libfreetype6-dev libtiff5-dev libicu-dev libgdal-dev libcairo-dev libcairomm-1.0-dev libagg-dev liblua5.2-dev ttf-unifont lua5.1 liblua5.1-dev libgeotiff-epsg
+RUN apt-get install -y osmium osmosis
 
 # Set up environment and renderer user
 ENV TZ=UTC
@@ -45,12 +46,16 @@ RUN echo 'host    all             all             0.0.0.0/0            trust' >>
 RUN sed -i -e 's/localhost/*/g' /etc/postgresql/11/main/postgresql.conf
 RUN sed -i -e 's/#listen_addresses/listen_addresses/g' /etc/postgresql/11/main/postgresql.conf
 
+RUN sed -i -e 's/md5/trust/g' /etc/postgresql/11/main/pg_hba.conf
+RUN sed -i -e 's/peer/trust/g' /etc/postgresql/11/main/pg_hba.conf
+
 RUN sed -i -e 's/shared_buffers = 128MB/shared_buffers = 2GB/g' /etc/postgresql/11/main/postgresql.conf
 RUN sed -i -e 's/#work_mem = 4MB/work_mem = 10GB/g' /etc/postgresql/11/main/postgresql.conf
 RUN sed -i -e 's/#maintenance_work_mem = 64MB/maintenance_work_mem = 1GB/g' /etc/postgresql/11/main/postgresql.conf
 RUN sed -i -e 's/#max_worker_processes = 8/max_worker_processes = 100/g' /etc/postgresql/11/main/postgresql.conf
-RUN sed -i -e 's/#max_parallel_workers_per_gather = 2/max_parallel_workers_per_gather = 16/g' /etc/postgresql/11/main/postgresql.conf
-RUN sed -i -e 's/#max_parallel_workers = 8/max_parallel_workers = 50/g' /etc/postgresql/11/main/postgresql.conf
+RUN sed -i -e 's/#max_parallel_workers_per_gather = 2/max_parallel_workers_per_gather = 24/g' /etc/postgresql/11/main/postgresql.conf
+RUN sed -i -e 's/#max_connections = 100/max_connections = 1000/g' /etc/postgresql/11/main/postgresql.conf
+
 
 # Start running
 USER root
