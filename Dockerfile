@@ -1,34 +1,42 @@
-FROM pytorch/pytorch:1.4-cuda10.1-cudnn7-runtime
-
-# run with nvidia-docker (command installed via apt)
+FROM nvidia/cuda:9.2-cudnn7-devel-ubuntu16.04
 
 # Set up environment and renderer user
 ENV TZ=UTC
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-
 # Install useful commands
-RUN apt-get update
-RUN apt-get install software-properties-common -y
+RUN apt-get update && apt-get install -y \
+      software-properties-common \
+      cmake \
+      git \
+      curl wget \
+      ca-certificates \
+      nano vim \
+      openssh-server
 
-# Install coord2vec environment
+# Install geoml environment
+RUN curl -o ~/miniconda.sh -O https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+    chmod +x ~/miniconda.sh && \
+    ~/miniconda.sh -b -p /opt/conda && \
+    rm ~/miniconda.sh
+
 WORKDIR /home/root
-RUN curl https://gist.githubusercontent.com/jonzarecki/bef39acdd631f6cbba6ce9b04b539138/raw/ef4e5542409259d871189978495bee271b75ad53/geo_envffile.yml > environment.yml
-RUN conda env create -f environment.yml
-RUN conda init bash
+COPY environment.yaml /opt/geoml_environment.yml
+ENV PATH /opt/conda/bin:$PATH
+ENV CONDA_AUTO_UPDATE_CONDA=false
+
+RUN conda env create -f /opt/geoml_environment.yml && conda clean -ya
+
 
 # Init coord2vec environment
-ENV PATH /opt/conda/envs/coord2vec/bin:$PATH
-RUN /bin/bash -c "source activate coord2vec"
+ENV CONDA_DEFAULT_ENV=geoml
+ENV CONDA_PREFIX=/opt/conda/envs/$CONDA_DEFAULT_ENV
+ENV PATH=$CONDA_PREFIX/bin:$PATH
+RUN /bin/bash -c "source activate $CONDA_DEFAULT_ENV"
 
 # Start running
 USER root
 WORKDIR /home/root
-# Init coord2vec environment
-#RUN echo "conda activate coord2vec" >> ~/.basrhc
-#ENV PATH /opt/conda/envs/coord2vec/bin:$PATH
-#RUN /bin/bash -c "source activate coord2vec"
-#RUN conda init bash
-#RUN conda activate coord2vec
+
 ENTRYPOINT ["/bin/bash"]
 CMD []

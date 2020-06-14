@@ -1,26 +1,31 @@
-name: coord2vec
+name: geoml
 channels:
 - pytorch
 - conda-forge
 - defaults
 
 dependencies:
+# python stuff
+- python=3.6.9
+- pytest
+- pip
+- argparse
+- conda-build
+
 # Core scientific python
 - numpy
-- matplotlib
-- python=3.6.7
-- seaborn
-- pip
 - scikit-learn
 - scikit-image
+- mkl
+- mkl-include
 - pytest
 - argparse
 
 # Deep Learning
 - pytorch=1.4.0
 - torchvision
-- cudatoolkit=9.2
-- ignite  # from the pytorch channel
+#- cudatoolkit=9.2
+- conda-forge::pytorch-lightning
 
 # Spatial packages
 - geopy
@@ -42,12 +47,14 @@ dependencies:
 - nb_conda
 
 # Web app / visualization
-- flask
+- matplotlib
+- seaborn
 - bokeh
 - holoviews
+- pyviz::panel
+- flask
 
 - pip:
-    - panel
     - nbclean
     - imageio
     - tqdm
