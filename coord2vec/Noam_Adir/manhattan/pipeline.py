@@ -171,13 +171,18 @@ def test_fit_and_score_models_on_datasets():
 
 
 if __name__ == "__main__":
-    models = [svm.SVR()
-        , neighbors.KNeighborsRegressor(n_neighbors=10)
-        , LinearRegression()
-        , tree.DecisionTreeRegressor()
-        , GradientBoostingRegressor()
-        , AdaBoostRegressor()
-        , RandomForestRegressor()
-        , CatBoostRegressor()
-              ]
-    test_fit_and_score_models_on_datasets()
+    # models = [svm.SVR()
+    #     , neighbors.KNeighborsRegressor(n_neighbors=10)
+    #     , LinearRegression()
+    #     , tree.DecisionTreeRegressor()
+    #     , GradientBoostingRegressor()
+    #     , AdaBoostRegressor()
+    #     , RandomForestRegressor()
+    #     , CatBoostRegressor()
+    #           ]
+    # test_fit_and_score_models_on_datasets()
+
+    models = [svm.SVR(), LinearRegression()]
+    pipeline_dict = init_pipeline(models)
+
+

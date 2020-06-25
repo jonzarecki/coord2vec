@@ -4,8 +4,8 @@ from PIL import Image
 from staticmap import StaticMap, Polygon
 from staticmap.staticmap import _lon_to_x, _lat_to_y
 
-from coord2vec import config
-from coord2vec.config import IMG_WIDTH, IMG_HEIGHT
+# from coord2vec import config
+# from coord2vec.config import IMG_WIDTH, IMG_HEIGHT
 
 
 def render_single_tile(m: StaticMap, ext: list) -> Image:
@@ -25,7 +25,7 @@ def render_single_tile(m: StaticMap, ext: list) -> Image:
                [ext[2], ext[1]]]
     polygon = Polygon(ex_poly, 'blue', 'black', True)
     m.add_polygon(polygon)
-    m.zoom = 15
+    m.zoom = 19
     # m.zoom = m._calculate_zoom()
     # m.add_marker()
     # get extent of all lines

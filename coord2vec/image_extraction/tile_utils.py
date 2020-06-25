@@ -1,8 +1,8 @@
 from typing import Tuple, List
 
 from PIL import Image
-import geopy
-import geopy.distance
+# import geopy
+# import geopy.distance
 import numpy as np
 from shapely.geometry import Polygon, Point
 

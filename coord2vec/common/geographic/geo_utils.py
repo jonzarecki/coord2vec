@@ -3,8 +3,8 @@ import logging
 from functools import partial
 from typing import List, Union, Tuple, Iterable
 
-import geopy
-import geopy.distance
+# import geopy
+# import geopy.distance
 import numpy as np
 import pyproj
 import shapely

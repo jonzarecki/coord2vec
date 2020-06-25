@@ -1,8 +1,8 @@
 from typing import List, Tuple
 import numpy as np
 from PIL import Image
-import geopy.distance
-import geopy
+# import geopy.distance
+# import geopy
 from staticmap import StaticMap, Polygon
 from staticmap.staticmap import _lon_to_x, _lat_to_y
 
@@ -30,7 +30,7 @@ def render_single_tile(m: StaticMap, ext: list) -> Image:
     polygon = Polygon(ex_poly, 'white', 'white', True)
     m.add_polygon(polygon)
     print("adir")
-    m.zoom = 14
+    m.zoom = 17
     # m.zoom = m._calculate_zoom()
     print(f"m_zoom = {m.zoom}")
 

@@ -1,22 +1,24 @@
-from functools import partial, lru_cache
+from functools import partial
+from typing import List, Union
 
 import folium
-# from geomet import wkt
-from cachetools import cached, LRUCache
-from shapely.wkt import loads
-from typing import List, Union
-from shapely import wkt
-from pandas import DataFrame
 import geopandas as gpd
 import numpy as np
-from folium.plugins import MarkerCluster
+# from geomet import wkt
+from cachetools import cached, LRUCache
+# from folium.plugins import MarkerCluster
 from folium.features import FeatureGroup
 from matplotlib import colors
-from tqdm import tqdm
+from pandas import DataFrame
+from shapely import wkt
+from shapely.geometry import Point
+from shapely.wkt import loads
 
 from coord2vec.common.geographic.folium_extensions import NoClickGeoJson
 from coord2vec.common.geographic.geo_utils import geoms2bbox, geom2image_projection, meters2degrees
-from coord2vec.common.parallel.multiproc_util import parmap
+
+
+# from tqdm import tqdm
 
 
 @cached(cache=LRUCache(maxsize=256), key=lambda *a: hash(hash(tuple(p)) for p in a))
@@ -205,7 +207,7 @@ class GeoMap:
                     row_formatted += "<b>{}</b>: {} <br/>".format(column, row[column])
             row_formatted += "<b>{}</b>: {} <br/>".format("GEOM CENTROID", shp_geom.centroid)
             feature = (folium.GeoJson if change_bounds_on_click else NoClickGeoJson)(
-                            geom_dict, style_function=partial(part_func, color_index=index))
+                geom_dict, style_function=partial(part_func, color_index=index))
             if pop_up:
                 popup = folium.Popup(row_formatted.replace("'", "\""))
                 popup.add_to(feature)
@@ -267,3 +269,18 @@ class GeoMap:
         to easily show the map just apply the object
         """
         return self.show()
+
+
+if __name__ == '__main__':
+    import geopandas as gpd
+    import pandas as pd
+    # a = pd.DataFrame()
+    gdf = gpd.GeoDataFrame({'geom': [Point(32.031886, 34.762031)]}, geometry='geom')
+    # print(b.to_json())
+    import folium
+
+    # Picked location between Sudbury and Somerville:
+    maploc = folium.Map(location=[42.377157, -71.236088], zoom_start=11, tiles="Stamen Toner")
+
+    folium.GeoJson(gdf).add_to(maploc)
+

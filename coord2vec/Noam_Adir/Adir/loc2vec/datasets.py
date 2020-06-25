@@ -8,7 +8,7 @@ from pathlib import Path
 # import time
 import pandas as pd
 import numpy as np
-
+import matplotlib
 from PIL import Image
 import torch
 # from torch import nn, optim
@@ -18,7 +18,8 @@ from torch.utils.data.dataset import Dataset
 from torchvision import transforms
 
 from coord2vec.Noam_Adir.Adir.loc2vec.lat2tile import deg2num
-from coord2vec.Noam_Adir.Adir.loc2vec.tile_image import render_single_tile
+from coord2vec.image_extraction.tile_image import render_single_tile
+from coord2vec.Noam_Adir.Adir.tile2vec.tile2vec_utils import display_grid, equalize_hist
 
 
 def get_files_from_path(pathstring):
@@ -85,14 +86,12 @@ class GeoTileDataset(Dataset):
     ten_crop = None
     pd = None
 
-    def __init__(self, path, transform, center_transform):
+    def __init__(self, transform, center_transform):
         # for us west
         # zoom, self.startx, self.starty = deg2num(14, 48.995395, -124.866258)
         # zoom, self.endx, self.endy = deg2num(14, 31.74734, -104.052404)
         self.SAMPLE_NUM = 50_000
 
-        self.df_files = get_files_from_path(path)
-        self.df_filtered_files = cleanse_files(self.df_files)
         self.m = StaticMap(500, 500, url_template='http://40.127.166.177:8103/tile/{z}/{x}/{y}.png')
 
         self.ten_crop = transforms.Compose([transforms.TenCrop(128)])
@@ -100,75 +99,54 @@ class GeoTileDataset(Dataset):
         self.center_transform = center_transform
 
     def __getitem__(self, index):
-        # x, y = random.randint(self.startx, self.endx), random.randint(self.starty, self.endy)
+        # url = 'http://a.tile.openstreetmap.us/usgs_large_scale/{z}/{x}/{y}.jpg'
+        url = 'https://khms1.google.com/kh/v=865?x={x}&y={y}&z={z}'
+        m = StaticMap(900, 900, url_template=url,
+                      delay_between_retries=15, tile_request_timeout=5)
 
-        # random spot in the area, only renders when needed
-        # rand_lat = random.randrange(31.74734, 48.995395, 0.01)
-        # rand_lon = random.randrange(-124.866258, -104.052404, 0.01
-        rand_lat = np.random.choice(np.linspace(40.6994, 40.8293, 1024))
-        rand_lon = np.random.choice(np.linspace(-74.0210, -73.8908, 1024))
-        # print(rand_lat, rand_lon)
-        ext = [rand_lon, rand_lat, rand_lon + 0.001, rand_lat + 0.001]
+        # lon, lat = [40.802187, -73.957066]
+        lon, lat = [40.807430, -74.003499]
+        ext = [lon, lat, lon + 0.001, lat + 0.001]
 
-        data = render_single_tile(self.m, ext)
+        data = render_single_tile(m, ext)
+        array = np.array(data)
+        array = (255 * equalize_hist(array)).astype(np.uint8)
+        # print(array.shape)
+        data = Image.fromarray(array)
+        matplotlib.image.imsave(r'C:\Users\adirdayan\OneDrive\Desktop\צבא\geoembedding\big_image2.png', array)
         import matplotlib.pyplot as plt
         plt.figure()
-        plt.imshow(np.array(data))
-        # print(np.array(data))
-        plt.savefig('/data/home/morpheus/coord2vec_Adir/coord2vec/Noam_Adir/Adir/try1.png')
-        res = f"data.shape =  {np.array(data).shape}\n"
-        # data = Image.open(self.df_filtered_files.iloc[index].path, 'r')
-        data = data.convert('RGB')
-        import matplotlib.pyplot as plt
-        res += f"dataRGB = {np.array(data).shape}\n"
+        plt.imshow(data)
+        plt.show()
+
         cropped_data = self.ten_crop(data)
-        res += f"cropped_data = {np.array(cropped_data[0]).shape}\n"
-        plt.figure()
-        plt.imshow(np.array(cropped_data[0]))
-        plt.savefig('/data/home/morpheus/coord2vec_Adir/coord2vec/Noam_Adir/Adir/try2.png')
         center_data_tensor = torch.stack([self.center_transform(data)
                                           for i in range(0, 10)], 0)
         ten_data = torch.stack([self.transform(x) for x in cropped_data], 0)
         twenty_data = torch.cat([center_data_tensor, ten_data], 0)
-        res += f"twenty_data = {twenty_data.shape}"
-
-        array_size = twenty_data.shape[0]
-        res += f"array_size =  {array_size}\n\n"
-        print(res)
-        tile_ids = torch.from_numpy((index) * np.ones([array_size, 1]))
-        tile_ids = tile_ids.type(torch.long)
-        return twenty_data, tile_ids
+        display_grid([np.moveaxis(np.array(twenty_data), 1, -1)[i] for i in range(20)], 5, save_path=r'C:\Users\adirdayan\OneDrive\Desktop\צבא\geoembedding\cut_image2.png')
+        return twenty_data
 
     def __len__(self):
         return self.SAMPLE_NUM
 
-    def get_file_df(self):
-        return self.df_filtered_files
 
+if __name__ == '__main__':
+    size = 128 * 9 // 5
+    anchor_transform = transforms.Compose([
+        transforms.RandomAffine(degrees=90, translate=(0.25, 0.25)),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomVerticalFlip(),
+        transforms.CenterCrop(size),
+        transforms.Resize(size),
+        transforms.ToTensor(),
+        ])
 
-class GeoTileInferDataset(Dataset):
-    """
-    A custom dataset to provide a single center cropped tile.
-    """
+    train_transforms = transforms.Compose([
+        transforms.Resize(size),
+        transforms.ToTensor(),
+        ])
 
-    transform = None
-    center_transform = None
-    ten_crop = None
-    pd = None
-
-    def __init__(self, path, center_transform):
-        self.df_files = get_files_from_path(path)
-        self.df_filtered_files = cleanse_files(self.df_files)
-        self.center_transform = center_transform
-
-    def __getitem__(self, index):
-        data = Image.open(self.df_filtered_files.iloc[index].path, 'r')
-        data = data.convert('RGB')
-        center_data = self.center_transform(data)
-        return center_data, index
-
-    def __len__(self):
-        return self.df_filtered_files.shape[0]
-
-    def get_file_df(self):
-        return self.df_filtered_files
+    #  Let's use 12 while developing as it reduces the start time.
+    g = GeoTileDataset(transform=train_transforms, center_transform=anchor_transform)
+    g[0]
