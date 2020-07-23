@@ -22,6 +22,8 @@ class TestTileImage(unittest.TestCase):
         # url = 'http://mt1.google.com/vt/lyrs=h@162000000&hl=en&x={x}&s=&y={y}&z={z}'
         cls.m = StaticMap(700, 700, url_template=url,
                           delay_between_retries=15, tile_request_timeout=5)
+        import folium
+        folium.LatLngPopup()
         # cls.center = list(reversed([40.750096, -73.984929]))
         # cls.center = [40.720096, -74.000000]
         cls.center = [40.802187, -73.957066]

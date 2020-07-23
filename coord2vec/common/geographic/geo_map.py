@@ -1,19 +1,19 @@
 from functools import partial
 from typing import List, Union
 
-import folium
+
 import geopandas as gpd
 import numpy as np
 # from geomet import wkt
 from cachetools import cached, LRUCache
-# from folium.plugins import MarkerCluster
+from folium.plugins import MarkerCluster
 from folium.features import FeatureGroup
 from matplotlib import colors
 from pandas import DataFrame
 from shapely import wkt
 from shapely.geometry import Point
 from shapely.wkt import loads
-
+import folium
 from coord2vec.common.geographic.folium_extensions import NoClickGeoJson
 from coord2vec.common.geographic.geo_utils import geoms2bbox, geom2image_projection, meters2degrees
 
@@ -68,7 +68,9 @@ class GeoMap:
 
     def _get_folium_map(self):
 
-        self.map = folium.Map(location=self.start_location, zoom_start=self.start_zoom)
+        self.map = folium.Map(location=self.start_location, zoom_start=self.start_zoom,
+                              tiles='https://khms1.google.com/kh/v=865?x={x}&y={y}&z={z}',
+                              attr="<a href=https://endless-sky.github.io/>Endless Sky</a>")
 
     def clear_map(self):
         """
@@ -277,7 +279,7 @@ if __name__ == '__main__':
     # a = pd.DataFrame()
     gdf = gpd.GeoDataFrame({'geom': [Point(32.031886, 34.762031)]}, geometry='geom')
     # print(b.to_json())
-    import folium
+    # import folium
 
     # Picked location between Sudbury and Somerville:
     maploc = folium.Map(location=[42.377157, -71.236088], zoom_start=11, tiles="Stamen Toner")
